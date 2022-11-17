@@ -14,28 +14,28 @@ public class Gui
     protected float zLevel;
     private static final String __OBFID = "CL_00000662";
 
-    protected void drawHorizontalLine(int p_73730_1_, int p_73730_2_, int p_73730_3_, int p_73730_4_)
+    protected void drawHorizontalLine(int start, int end, int y, int color)
     {
-        if (p_73730_2_ < p_73730_1_)
+        if (end < start)
         {
-            int var5 = p_73730_1_;
-            p_73730_1_ = p_73730_2_;
-            p_73730_2_ = var5;
+            int var5 = start;
+            start = end;
+            end = var5;
         }
 
-        drawRect(p_73730_1_, p_73730_3_, p_73730_2_ + 1, p_73730_3_ + 1, p_73730_4_);
+        drawRect(start, y, end + 1, y + 1, color);
     }
 
-    protected void drawVerticalLine(int p_73728_1_, int p_73728_2_, int p_73728_3_, int p_73728_4_)
+    protected void drawVerticalLine(int x, int start, int end, int color)
     {
-        if (p_73728_3_ < p_73728_2_)
+        if (end < start)
         {
-            int var5 = p_73728_2_;
-            p_73728_2_ = p_73728_3_;
-            p_73728_3_ = var5;
+            int var5 = start;
+            start = end;
+            end = var5;
         }
 
-        drawRect(p_73728_1_, p_73728_2_ + 1, p_73728_1_ + 1, p_73728_3_, p_73728_4_);
+        drawRect(x, start + 1, x + 1, end, color);
     }
 
     /**
@@ -81,16 +81,16 @@ public class Gui
     /**
      * Draws a rectangle with a vertical gradient between the specified colors.
      */
-    protected void drawGradientRect(int p_73733_1_, int p_73733_2_, int p_73733_3_, int p_73733_4_, int p_73733_5_, int p_73733_6_)
+    protected void drawGradientRect(int x, int y, int width, int height, int startColor, int endColor)
     {
-        float var7 = (float)(p_73733_5_ >> 24 & 255) / 255.0F;
-        float var8 = (float)(p_73733_5_ >> 16 & 255) / 255.0F;
-        float var9 = (float)(p_73733_5_ >> 8 & 255) / 255.0F;
-        float var10 = (float)(p_73733_5_ & 255) / 255.0F;
-        float var11 = (float)(p_73733_6_ >> 24 & 255) / 255.0F;
-        float var12 = (float)(p_73733_6_ >> 16 & 255) / 255.0F;
-        float var13 = (float)(p_73733_6_ >> 8 & 255) / 255.0F;
-        float var14 = (float)(p_73733_6_ & 255) / 255.0F;
+        float var7 = (float)(startColor >> 24 & 255) / 255.0F;
+        float var8 = (float)(startColor >> 16 & 255) / 255.0F;
+        float var9 = (float)(startColor >> 8 & 255) / 255.0F;
+        float var10 = (float)(startColor & 255) / 255.0F;
+        float var11 = (float)(endColor >> 24 & 255) / 255.0F;
+        float var12 = (float)(endColor >> 16 & 255) / 255.0F;
+        float var13 = (float)(endColor >> 8 & 255) / 255.0F;
+        float var14 = (float)(endColor & 255) / 255.0F;
         GL11.glDisable(GL11.GL_TEXTURE_2D);
         GL11.glEnable(GL11.GL_BLEND);
         GL11.glDisable(GL11.GL_ALPHA_TEST);
@@ -99,11 +99,11 @@ public class Gui
         Tessellator var15 = Tessellator.instance;
         var15.startDrawingQuads();
         var15.setColorRGBA_F(var8, var9, var10, var7);
-        var15.addVertex((double)p_73733_3_, (double)p_73733_2_, (double)this.zLevel);
-        var15.addVertex((double)p_73733_1_, (double)p_73733_2_, (double)this.zLevel);
+        var15.addVertex((double)width, (double)y, (double)this.zLevel);
+        var15.addVertex((double)x, (double)y, (double)this.zLevel);
         var15.setColorRGBA_F(var12, var13, var14, var11);
-        var15.addVertex((double)p_73733_1_, (double)p_73733_4_, (double)this.zLevel);
-        var15.addVertex((double)p_73733_3_, (double)p_73733_4_, (double)this.zLevel);
+        var15.addVertex((double)x, (double)height, (double)this.zLevel);
+        var15.addVertex((double)width, (double)height, (double)this.zLevel);
         var15.draw();
         GL11.glShadeModel(GL11.GL_FLAT);
         GL11.glDisable(GL11.GL_BLEND);
@@ -130,16 +130,16 @@ public class Gui
     /**
      * Draws a textured rectangle at the stored z-value. Args: x, y, u, v, width, height
      */
-    public void drawTexturedModalRect(int p_73729_1_, int p_73729_2_, int p_73729_3_, int p_73729_4_, int p_73729_5_, int p_73729_6_)
+    public void drawTexturedModalRect(int x, int y, int texX, int texY, int width, int height)
     {
         float var7 = 0.00390625F;
         float var8 = 0.00390625F;
         Tessellator var9 = Tessellator.instance;
         var9.startDrawingQuads();
-        var9.addVertexWithUV((double)(p_73729_1_ + 0), (double)(p_73729_2_ + p_73729_6_), (double)this.zLevel, (double)((float)(p_73729_3_ + 0) * var7), (double)((float)(p_73729_4_ + p_73729_6_) * var8));
-        var9.addVertexWithUV((double)(p_73729_1_ + p_73729_5_), (double)(p_73729_2_ + p_73729_6_), (double)this.zLevel, (double)((float)(p_73729_3_ + p_73729_5_) * var7), (double)((float)(p_73729_4_ + p_73729_6_) * var8));
-        var9.addVertexWithUV((double)(p_73729_1_ + p_73729_5_), (double)(p_73729_2_ + 0), (double)this.zLevel, (double)((float)(p_73729_3_ + p_73729_5_) * var7), (double)((float)(p_73729_4_ + 0) * var8));
-        var9.addVertexWithUV((double)(p_73729_1_ + 0), (double)(p_73729_2_ + 0), (double)this.zLevel, (double)((float)(p_73729_3_ + 0) * var7), (double)((float)(p_73729_4_ + 0) * var8));
+        var9.addVertexWithUV((double)(x + 0), (double)(y + height), (double)this.zLevel, (double)((float)(texX + 0) * var7), (double)((float)(texY + height) * var8));
+        var9.addVertexWithUV((double)(x + width), (double)(y + height), (double)this.zLevel, (double)((float)(texX + width) * var7), (double)((float)(texY + height) * var8));
+        var9.addVertexWithUV((double)(x + width), (double)(y + 0), (double)this.zLevel, (double)((float)(texX + width) * var7), (double)((float)(texY + 0) * var8));
+        var9.addVertexWithUV((double)(x + 0), (double)(y + 0), (double)this.zLevel, (double)((float)(texX + 0) * var7), (double)((float)(texY + 0) * var8));
         var9.draw();
     }
 

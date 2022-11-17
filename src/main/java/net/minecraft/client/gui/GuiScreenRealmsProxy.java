@@ -46,18 +46,18 @@ public class GuiScreenRealmsProxy extends GuiScreen
     /**
      * Draws a textured rectangle at the stored z-value. Args: x, y, u, v, width, height
      */
-    public void drawTexturedModalRect(int p_73729_1_, int p_73729_2_, int p_73729_3_, int p_73729_4_, int p_73729_5_, int p_73729_6_)
+    public void drawTexturedModalRect(int x, int y, int texX, int texY, int width, int height)
     {
-        this.field_154330_a.blit(p_73729_1_, p_73729_2_, p_73729_3_, p_73729_4_, p_73729_5_, p_73729_6_);
-        super.drawTexturedModalRect(p_73729_1_, p_73729_2_, p_73729_3_, p_73729_4_, p_73729_5_, p_73729_6_);
+        this.field_154330_a.blit(x, y, texX, texY, width, height);
+        super.drawTexturedModalRect(x, y, texX, texY, width, height);
     }
 
     /**
      * Draws a rectangle with a vertical gradient between the specified colors.
      */
-    public void drawGradientRect(int p_73733_1_, int p_73733_2_, int p_73733_3_, int p_73733_4_, int p_73733_5_, int p_73733_6_)
+    public void drawGradientRect(int x, int y, int width, int height, int startColor, int endColor)
     {
-        super.drawGradientRect(p_73733_1_, p_73733_2_, p_73733_3_, p_73733_4_, p_73733_5_, p_73733_6_);
+        super.drawGradientRect(x, y, width, height, startColor, endColor);
     }
 
     public void drawDefaultBackground()

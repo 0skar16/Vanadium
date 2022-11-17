@@ -1,6 +1,5 @@
 package dev.ztech.vanadium.api.input;
 
-import dev.ztech.vanadium.api.base.Base;
 import dev.ztech.vanadium.api.events.MouseMoveEvent;
 import dev.ztech.vanadium.api.events.UnsafeTickEvent;
 import dev.ztech.vanadium.events.EventManager;

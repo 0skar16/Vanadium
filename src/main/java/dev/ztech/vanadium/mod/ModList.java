@@ -6,7 +6,6 @@ import dev.ztech.vanadium.api.events.InitEvent;
 import dev.ztech.vanadium.events.EventManager;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 public class ModList {
