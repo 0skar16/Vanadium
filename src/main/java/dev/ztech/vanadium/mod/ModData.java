@@ -3,17 +3,23 @@ package dev.ztech.vanadium.mod;
 import java.util.List;
 
 public class ModData {
+    public ModData(String name, String description, String version){
+        this.name = name;
+        this.description = description;
+        this.version = version;
+        String[] parts = version.split("\\.");
+        ver_major = Integer.parseInt(parts[0]);
+        ver_minor = Integer.parseInt(parts[1]);
+    }
     public String name;
     public String description;
     public String version;
-    public List<String> authors;
+    //public List<String> authors;
     private int ver_major;
     private int ver_minor;
     public String id;
     public void init(){
-        String[] parts = version.split("\\.");
-        ver_major = Integer.parseInt(parts[0]);
-        ver_minor = Integer.parseInt(parts[1]);
+
     }
     public int getVer_major(){
         return this.ver_major;

@@ -30,6 +30,7 @@ public class ModList {
     }
 
     public static void load(Class cls, ModData moddata) {
+        Base.logger.logDebug("E");
         Mod mod = null;
         try {
             moddata.init();

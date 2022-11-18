@@ -9,7 +9,7 @@ particles:0
 bobView:true
 anaglyph3d:false
 advancedOpengl:false
-maxFps:120
+maxFps:260
 fboEnable:true
 difficulty:2
 fancyGraphics:true
@@ -25,9 +25,9 @@ chatLinksPrompt:true
 chatOpacity:1.0
 snooperEnabled:true
 fullscreen:false
-enableVsync:true
+enableVsync:false
 hideServerAddress:false
-advancedItemTooltips:false
+advancedItemTooltips:true
 pauseOnLostFocus:true
 showCape:true
 touchscreen:false
@@ -38,7 +38,7 @@ chatHeightFocused:1.0
 chatHeightUnfocused:0.44366196
 chatScale:1.0
 chatWidth:1.0
-showInventoryAchievementHint:true
+showInventoryAchievementHint:false
 mipmapLevels:4
 anisotropicFiltering:1
 streamBytesPerPixel:0.5
@@ -85,7 +85,7 @@ key_key.hotbar.6:7
 key_key.hotbar.7:8
 key_key.hotbar.8:9
 key_key.hotbar.9:10
-key_Zoom:29
+key_Zoom:46
 soundCategory_master:1.0
 soundCategory_music:0.0
 soundCategory_record:1.0

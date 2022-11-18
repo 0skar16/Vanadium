@@ -9,6 +9,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Callable;
+
+import dev.ztech.vanadium.api.base.Base;
+import dev.ztech.vanadium.api.events.GTickEvent;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.client.Minecraft;
@@ -64,6 +67,7 @@ import optifine.WrUpdates;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.lwjgl.Sys;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
@@ -1427,8 +1431,12 @@ public class EntityRenderer implements IResourceManagerReloadListener
                     throw new ReportedException(var10);
                 }
             }
-        }
 
+        }
+        if(mc.inGameHasFocus && !mc.gameSettings.showDebugInfo){
+            //V GTick Event
+            new GTickEvent().call();
+        }
         this.frameFinish();
         this.waitForServerThread();
 

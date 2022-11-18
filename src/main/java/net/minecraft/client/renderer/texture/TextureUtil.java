@@ -298,7 +298,7 @@ public class TextureUtil
         dataBuffer.position(0).limit(par2);
     }
 
-    static void bindTexture(int par0)
+    public static void bindTexture(int par0)
     {
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, par0);
     }

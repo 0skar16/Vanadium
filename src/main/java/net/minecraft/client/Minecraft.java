@@ -9,6 +9,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListenableFutureTask;
 import com.mojang.authlib.minecraft.MinecraftSessionService;
 import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
+import dev.ztech.vanadium.api.events.CTickEvent;
 import dev.ztech.vanadium.api.events.GameStartEvent;
 import dev.ztech.vanadium.api.events.UnsafeTickEvent;
 import dev.ztech.vanadium.mod.ModList;
@@ -264,7 +265,7 @@ public class Minecraft implements IPlayerUsage
      * This is set to fpsCounter every debug screen update, and is shown on the debug screen. It's also sent as part of
      * the usage snooping.
      */
-    private static int debugFPS;
+    public static int debugFPS;
 
     /**
      * When you place a block, it's set to 6, decremented once per tick, when it's 0, you can place another block.
@@ -2155,7 +2156,7 @@ public class Minecraft implements IPlayerUsage
             this.mcProfiler.endStartSection("pendingConnection");
             this.myNetworkManager.processReceivedPackets();
         }
-
+        new CTickEvent().call();
         this.mcProfiler.endSection();
         this.systemTime = getSystemTime();
         //V ScDrawEvent

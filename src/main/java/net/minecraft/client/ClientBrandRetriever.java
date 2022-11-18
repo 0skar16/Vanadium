@@ -6,6 +6,6 @@ public class ClientBrandRetriever
 
     public static String getClientModName()
     {
-        return "vanilla";
+        return "vanadium";
     }
 }

@@ -18,4 +18,9 @@ public class VanillaTextRenderer implements TextRenderer{
     public void render(String text, int x, int y, int color) {
         Minecraft.getMinecraft().fontRenderer.drawString(text, x, y, color);
     }
+
+    @Override
+    public void renderWithShadow(String text, int x, int y, int color) {
+        Minecraft.getMinecraft().fontRenderer.drawStringWithShadow(text,x,y,color);
+    }
 }

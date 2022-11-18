@@ -1,6 +1,7 @@
 package dev.ztech.vanadium.mod;
 
 import dev.ztech.vanadium.api.base.Base;
+import org.lwjgl.Sys;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
@@ -10,6 +11,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -24,10 +26,10 @@ public class ModLoader {
                     ClassLoader loader = new URLClassLoader(new URL[]{modJar.toURI().toURL()}, ModLoader.class.getClassLoader());
                     ZipFile zipFile = new ZipFile(modJar);
                     Enumeration<? extends ZipEntry> entries = zipFile.entries();
+                    Class oMod = null;
+                    ModData moddata = null;
                     while(entries.hasMoreElements()){
                         ZipEntry entry = entries.nextElement();
-                        Class oMod = null;
-                        ModData moddata = null;
                         if(entry.getName().endsWith(".class") && oMod == null){
                             Class modClass = loader.loadClass(entry.getName().replaceAll("/", ".").substring(0, entry.getName().length() - 6));
                             if(Mod.class.isAssignableFrom(modClass)){
@@ -37,13 +39,15 @@ public class ModLoader {
                         }else if(entry.getName().endsWith("vanadium.yml")){
                             Yaml modconf = new Yaml();
                             InputStream stream = zipFile.getInputStream(entry);
-                            moddata = modconf.load(stream);
-
+                            Map<String, Object> map = modconf.load(stream);
+                            moddata = new ModData((String) map.get("name"), (String) map.get("description"), (String) map.get("version"));
                         }
-                        if(oMod != null && moddata != null){
-                            ModList.load(oMod, moddata);
+                        if(oMod != null && moddata != null) {
+                            break;
                         }
-
+                    }
+                    if(oMod != null && moddata != null){
+                        ModList.load(oMod, moddata);
                     }
                 }catch(IOException e){
                     Base.logger.logWarning("Skipping corrupt jar: " + modJar.getName());

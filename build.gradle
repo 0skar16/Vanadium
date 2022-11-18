@@ -3,17 +3,24 @@ plugins {
 }
 
 group 'dev.ztech'
-version '1.0-SNAPSHOT'
-
+version '0.0.7'
+jar {
+    manifest {
+        attributes(
+                'Main-Class': 'dev.ztech.vanadium.Vanadium'
+        )
+    }
+}
 repositories {
     mavenCentral()
 }
 
 dependencies {
     implementation fileTree('libraries')
-    implementation 'org.yaml:snakeyaml:1.30'
+    implementation 'org.yaml:snakeyaml:1.33'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.0'
+    compileClasspath 'org.yaml:snakeyaml:1.33'
 }
 
 test {

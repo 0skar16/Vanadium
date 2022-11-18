@@ -1,9 +1,25 @@
-[16:32:06] [main/INFO]: Setting user: Player211
-[16:32:06] [main/INFO]: (Session ID is token:0:Player211)
-[16:32:06] [Client thread/INFO]: LWJGL Version: 2.9.1
-[16:32:07] [Client thread/ERROR]: Couldn't initialize twitch stream
-[16:32:07] [Client thread/INFO]: Reloading ResourceManager: Default
-[16:32:07] [Sound Library Loader/INFO]: Sound engine started
-[16:32:08] [Client thread/INFO]: Created: 1024x512 textures/blocks-atlas
-[16:32:08] [Client thread/INFO]: Created: 256x256 textures/items-atlas
-[16:32:20] [Client thread/INFO]: Stopping!
+[17:22:30] [main/INFO]: Setting user: Player20
+[17:22:30] [main/INFO]: (Session ID is token:0:Player20)
+[17:22:30] [Client thread/INFO]: LWJGL Version: 2.9.1
+[17:22:31] [Client thread/ERROR]: Couldn't initialize twitch stream
+[17:22:31] [Client thread/INFO]: Reloading ResourceManager: Default
+[17:22:31] [Sound Library Loader/INFO]: Sound engine started
+[17:22:32] [Client thread/INFO]: Created: 1024x512 textures/blocks-atlas
+[17:22:32] [Client thread/INFO]: Created: 256x256 textures/items-atlas
+[17:22:34] [Server thread/INFO]: Starting integrated minecraft server version 1.7.10
+[17:22:34] [Server thread/INFO]: Generating keypair
+[17:22:34] [Server thread/INFO]: Preparing start region for level 0
+[17:22:34] [Server thread/INFO]: Changing view distance to 12, from 10
+[17:22:34] [Server thread/INFO]: Player20[local:E:2c905a1c] logged in with entity id 26 at (48.91526938618901, 75.36556449953473, -17.532544308218334)
+[17:22:35] [Server thread/INFO]: Player20 joined the game
+[17:22:42] [Server thread/INFO]: [Player20: Teleported Player20 to -14.5,0.5,-14.5]
+[17:22:43] [Client thread/INFO]: [CHAT] Teleported Player20 to -14.5,0.5,-14.5
+[17:22:48] [Server thread/INFO]: Player20 has just earned the achievement [Taking Inventory]
+[17:22:48] [Client thread/INFO]: [CHAT] Player20 has just earned the achievement [Taking Inventory]
+[17:23:06] [Client thread/INFO]: Stopping!
+[17:23:06] [Server thread/INFO]: Stopping server
+[17:23:06] [Server thread/INFO]: Saving players
+[17:23:06] [Server thread/INFO]: Saving worlds
+[17:23:06] [Server thread/INFO]: Saving chunks for level 'mcpworld'/Overworld
+[17:23:06] [Server thread/INFO]: Saving chunks for level 'mcpworld'/Nether
+[17:23:06] [Server thread/INFO]: Saving chunks for level 'mcpworld'/The End

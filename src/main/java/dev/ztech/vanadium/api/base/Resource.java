@@ -1,6 +1,9 @@
 package dev.ztech.vanadium.api.base;
 
+import net.minecraft.client.resources.IResource;
 import net.minecraft.util.ResourceLocation;
+
+import java.awt.image.BufferedImage;
 
 public class Resource {
     private ResourceLocation rl;

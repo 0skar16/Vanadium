@@ -9,4 +9,10 @@ public interface TextRenderer {
         int offsety = this.getHeight()/2;
         this.render(text, x-offsetx, y-offsety, color);
     }
+    void renderWithShadow(String text, int x, int y, int color);
+    default void renderCenteredWithShadow(String text, int x, int y, int color){
+        int offsetx = this.getWidth(text)/2;
+        int offsety = this.getHeight()/2;
+        this.renderWithShadow(text, x-offsetx, y-offsety, color);
+    }
 }

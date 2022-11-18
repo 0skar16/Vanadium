@@ -24,4 +24,7 @@ public class Session {
         GuiScreen current = mc.currentScreen;
         mc.displayGuiScreen(new ScreenEmulator(screen, current));
     }
+    public int getFPS(){
+        return Minecraft.debugFPS;
+    }
 }

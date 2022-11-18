@@ -1,12 +1,15 @@
 package dev.ztech.vanadium.api.input;
 
-import dev.ztech.vanadium.api.events.MouseMoveEvent;
-import dev.ztech.vanadium.api.events.UnsafeTickEvent;
+import dev.ztech.vanadium.api.events.*;
 import dev.ztech.vanadium.events.EventManager;
 import dev.ztech.vanadium.events.EventTarget;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ScaledResolution;
+import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class MouseHandler {
     public static MouseHandler INSTANCE = new MouseHandler();
@@ -30,5 +33,16 @@ public class MouseHandler {
         if(x != ox || y != oy){
             new MouseMoveEvent(x,y).call();
         }
+        for (int i = 0; i < 3; i++) {
+            boolean key = Mouse.isButtonDown(i);
+            if((key && !keymap.containsKey(i)) || (keymap.containsKey(i) && keymap.get(i) != key)){
+                keymap.put(i, key);
+                new MouseClickEvent(i, x, y, key).call();
+            }
+        }
     }
+    public boolean isButtonDown(int button){
+        return Mouse.isButtonDown(button);
+    }
+    Map<Integer, Boolean> keymap = new HashMap<>();
 }
