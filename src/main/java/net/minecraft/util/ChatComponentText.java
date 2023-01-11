@@ -1,15 +1,12 @@
 package net.minecraft.util;
 
-import java.util.Iterator;
-
 public class ChatComponentText extends ChatComponentStyle
 {
     private final String text;
-    private static final String __OBFID = "CL_00001269";
 
-    public ChatComponentText(String p_i45159_1_)
+    public ChatComponentText(String msg)
     {
-        this.text = p_i45159_1_;
+        this.text = msg;
     }
 
     /**
@@ -35,17 +32,15 @@ public class ChatComponentText extends ChatComponentStyle
      */
     public ChatComponentText createCopy()
     {
-        ChatComponentText var1 = new ChatComponentText(this.text);
-        var1.setChatStyle(this.getChatStyle().createShallowCopy());
-        Iterator var2 = this.getSiblings().iterator();
+        ChatComponentText chatcomponenttext = new ChatComponentText(this.text);
+        chatcomponenttext.setChatStyle(this.getChatStyle().createShallowCopy());
 
-        while (var2.hasNext())
+        for (IChatComponent ichatcomponent : this.getSiblings())
         {
-            IChatComponent var3 = (IChatComponent)var2.next();
-            var1.appendSibling(var3.createCopy());
+            chatcomponenttext.appendSibling(ichatcomponent.createCopy());
         }
 
-        return var1;
+        return chatcomponenttext;
     }
 
     public boolean equals(Object p_equals_1_)
@@ -60,8 +55,8 @@ public class ChatComponentText extends ChatComponentStyle
         }
         else
         {
-            ChatComponentText var2 = (ChatComponentText)p_equals_1_;
-            return this.text.equals(var2.getChatComponentText_TextValue()) && super.equals(p_equals_1_);
+            ChatComponentText chatcomponenttext = (ChatComponentText)p_equals_1_;
+            return this.text.equals(chatcomponenttext.getChatComponentText_TextValue()) && super.equals(p_equals_1_);
         }
     }
 

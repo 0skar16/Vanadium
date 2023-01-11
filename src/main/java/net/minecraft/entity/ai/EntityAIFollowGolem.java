@@ -1,6 +1,5 @@
 package net.minecraft.entity.ai;
 
-import java.util.Iterator;
 import java.util.List;
 import net.minecraft.entity.monster.EntityIronGolem;
 import net.minecraft.entity.passive.EntityVillager;
@@ -11,11 +10,10 @@ public class EntityAIFollowGolem extends EntityAIBase
     private EntityIronGolem theGolem;
     private int takeGolemRoseTick;
     private boolean tookGolemRose;
-    private static final String __OBFID = "CL_00001615";
 
-    public EntityAIFollowGolem(EntityVillager p_i1656_1_)
+    public EntityAIFollowGolem(EntityVillager theVillagerIn)
     {
-        this.theVillager = p_i1656_1_;
+        this.theVillager = theVillagerIn;
         this.setMutexBits(3);
     }
 
@@ -34,23 +32,19 @@ public class EntityAIFollowGolem extends EntityAIBase
         }
         else
         {
-            List var1 = this.theVillager.worldObj.getEntitiesWithinAABB(EntityIronGolem.class, this.theVillager.boundingBox.expand(6.0D, 2.0D, 6.0D));
+            List<EntityIronGolem> list = this.theVillager.worldObj.<EntityIronGolem>getEntitiesWithinAABB(EntityIronGolem.class, this.theVillager.getEntityBoundingBox().expand(6.0D, 2.0D, 6.0D));
 
-            if (var1.isEmpty())
+            if (list.isEmpty())
             {
                 return false;
             }
             else
             {
-                Iterator var2 = var1.iterator();
-
-                while (var2.hasNext())
+                for (EntityIronGolem entityirongolem : list)
                 {
-                    EntityIronGolem var3 = (EntityIronGolem)var2.next();
-
-                    if (var3.getHoldRoseTick() > 0)
+                    if (entityirongolem.getHoldRoseTick() > 0)
                     {
-                        this.theGolem = var3;
+                        this.theGolem = entityirongolem;
                         break;
                     }
                 }

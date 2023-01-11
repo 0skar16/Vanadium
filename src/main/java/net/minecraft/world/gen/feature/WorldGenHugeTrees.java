@@ -3,7 +3,9 @@ package net.minecraft.world.gen.feature;
 import java.util.Random;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
+import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
 
 public abstract class WorldGenHugeTrees extends WorldGenAbstractTree
@@ -12,76 +14,65 @@ public abstract class WorldGenHugeTrees extends WorldGenAbstractTree
     protected final int baseHeight;
 
     /** Sets the metadata for the wood blocks used */
-    protected final int woodMetadata;
+    protected final IBlockState woodMetadata;
 
     /** Sets the metadata for the leaves used in huge trees */
-    protected final int leavesMetadata;
-    protected int field_150538_d;
-    private static final String __OBFID = "CL_00000423";
+    protected final IBlockState leavesMetadata;
+    protected int extraRandomHeight;
 
-    public WorldGenHugeTrees(boolean p_i45458_1_, int p_i45458_2_, int p_i45458_3_, int p_i45458_4_, int p_i45458_5_)
+    public WorldGenHugeTrees(boolean p_i46447_1_, int p_i46447_2_, int p_i46447_3_, IBlockState p_i46447_4_, IBlockState p_i46447_5_)
     {
-        super(p_i45458_1_);
-        this.baseHeight = p_i45458_2_;
-        this.field_150538_d = p_i45458_3_;
-        this.woodMetadata = p_i45458_4_;
-        this.leavesMetadata = p_i45458_5_;
+        super(p_i46447_1_);
+        this.baseHeight = p_i46447_2_;
+        this.extraRandomHeight = p_i46447_3_;
+        this.woodMetadata = p_i46447_4_;
+        this.leavesMetadata = p_i46447_5_;
     }
 
     protected int func_150533_a(Random p_150533_1_)
     {
-        int var2 = p_150533_1_.nextInt(3) + this.baseHeight;
+        int i = p_150533_1_.nextInt(3) + this.baseHeight;
 
-        if (this.field_150538_d > 1)
+        if (this.extraRandomHeight > 1)
         {
-            var2 += p_150533_1_.nextInt(this.field_150538_d);
+            i += p_150533_1_.nextInt(this.extraRandomHeight);
         }
 
-        return var2;
+        return i;
     }
 
-    private boolean func_150536_b(World p_150536_1_, Random p_150536_2_, int p_150536_3_, int p_150536_4_, int p_150536_5_, int p_150536_6_)
+    private boolean func_175926_c(World worldIn, BlockPos p_175926_2_, int p_175926_3_)
     {
-        boolean var7 = true;
+        boolean flag = true;
 
-        if (p_150536_4_ >= 1 && p_150536_4_ + p_150536_6_ + 1 <= 256)
+        if (p_175926_2_.getY() >= 1 && p_175926_2_.getY() + p_175926_3_ + 1 <= 256)
         {
-            for (int var8 = p_150536_4_; var8 <= p_150536_4_ + 1 + p_150536_6_; ++var8)
+            for (int i = 0; i <= 1 + p_175926_3_; ++i)
             {
-                byte var9 = 2;
+                int j = 2;
 
-                if (var8 == p_150536_4_)
+                if (i == 0)
                 {
-                    var9 = 1;
+                    j = 1;
+                }
+                else if (i >= 1 + p_175926_3_ - 2)
+                {
+                    j = 2;
                 }
 
-                if (var8 >= p_150536_4_ + 1 + p_150536_6_ - 2)
+                for (int k = -j; k <= j && flag; ++k)
                 {
-                    var9 = 2;
-                }
-
-                for (int var10 = p_150536_3_ - var9; var10 <= p_150536_3_ + var9 && var7; ++var10)
-                {
-                    for (int var11 = p_150536_5_ - var9; var11 <= p_150536_5_ + var9 && var7; ++var11)
+                    for (int l = -j; l <= j && flag; ++l)
                     {
-                        if (var8 >= 0 && var8 < 256)
+                        if (p_175926_2_.getY() + i < 0 || p_175926_2_.getY() + i >= 256 || !this.func_150523_a(worldIn.getBlockState(p_175926_2_.add(k, i, l)).getBlock()))
                         {
-                            Block var12 = p_150536_1_.getBlock(var10, var8, var11);
-
-                            if (!this.func_150523_a(var12))
-                            {
-                                var7 = false;
-                            }
-                        }
-                        else
-                        {
-                            var7 = false;
+                            flag = false;
                         }
                     }
                 }
             }
 
-            return var7;
+            return flag;
         }
         else
         {
@@ -89,16 +80,17 @@ public abstract class WorldGenHugeTrees extends WorldGenAbstractTree
         }
     }
 
-    private boolean func_150532_c(World p_150532_1_, Random p_150532_2_, int p_150532_3_, int p_150532_4_, int p_150532_5_)
+    private boolean func_175927_a(BlockPos p_175927_1_, World worldIn)
     {
-        Block var6 = p_150532_1_.getBlock(p_150532_3_, p_150532_4_ - 1, p_150532_5_);
+        BlockPos blockpos = p_175927_1_.down();
+        Block block = worldIn.getBlockState(blockpos).getBlock();
 
-        if ((var6 == Blocks.grass || var6 == Blocks.dirt) && p_150532_4_ >= 2)
+        if ((block == Blocks.grass || block == Blocks.dirt) && p_175927_1_.getY() >= 2)
         {
-            p_150532_1_.setBlock(p_150532_3_, p_150532_4_ - 1, p_150532_5_, Blocks.dirt, 0, 2);
-            p_150532_1_.setBlock(p_150532_3_ + 1, p_150532_4_ - 1, p_150532_5_, Blocks.dirt, 0, 2);
-            p_150532_1_.setBlock(p_150532_3_, p_150532_4_ - 1, p_150532_5_ + 1, Blocks.dirt, 0, 2);
-            p_150532_1_.setBlock(p_150532_3_ + 1, p_150532_4_ - 1, p_150532_5_ + 1, Blocks.dirt, 0, 2);
+            this.func_175921_a(worldIn, blockpos);
+            this.func_175921_a(worldIn, blockpos.east());
+            this.func_175921_a(worldIn, blockpos.south());
+            this.func_175921_a(worldIn, blockpos.south().east());
             return true;
         }
         else
@@ -107,57 +99,52 @@ public abstract class WorldGenHugeTrees extends WorldGenAbstractTree
         }
     }
 
-    protected boolean func_150537_a(World p_150537_1_, Random p_150537_2_, int p_150537_3_, int p_150537_4_, int p_150537_5_, int p_150537_6_)
+    protected boolean func_175929_a(World worldIn, Random p_175929_2_, BlockPos p_175929_3_, int p_175929_4_)
     {
-        return this.func_150536_b(p_150537_1_, p_150537_2_, p_150537_3_, p_150537_4_, p_150537_5_, p_150537_6_) && this.func_150532_c(p_150537_1_, p_150537_2_, p_150537_3_, p_150537_4_, p_150537_5_);
+        return this.func_175926_c(worldIn, p_175929_3_, p_175929_4_) && this.func_175927_a(p_175929_3_, worldIn);
     }
 
-    protected void func_150535_a(World p_150535_1_, int p_150535_2_, int p_150535_3_, int p_150535_4_, int p_150535_5_, Random p_150535_6_)
+    protected void func_175925_a(World worldIn, BlockPos p_175925_2_, int p_175925_3_)
     {
-        int var7 = p_150535_5_ * p_150535_5_;
+        int i = p_175925_3_ * p_175925_3_;
 
-        for (int var8 = p_150535_2_ - p_150535_5_; var8 <= p_150535_2_ + p_150535_5_ + 1; ++var8)
+        for (int j = -p_175925_3_; j <= p_175925_3_ + 1; ++j)
         {
-            int var9 = var8 - p_150535_2_;
-
-            for (int var10 = p_150535_4_ - p_150535_5_; var10 <= p_150535_4_ + p_150535_5_ + 1; ++var10)
+            for (int k = -p_175925_3_; k <= p_175925_3_ + 1; ++k)
             {
-                int var11 = var10 - p_150535_4_;
-                int var12 = var9 - 1;
-                int var13 = var11 - 1;
+                int l = j - 1;
+                int i1 = k - 1;
 
-                if (var9 * var9 + var11 * var11 <= var7 || var12 * var12 + var13 * var13 <= var7 || var9 * var9 + var13 * var13 <= var7 || var12 * var12 + var11 * var11 <= var7)
+                if (j * j + k * k <= i || l * l + i1 * i1 <= i || j * j + i1 * i1 <= i || l * l + k * k <= i)
                 {
-                    Block var14 = p_150535_1_.getBlock(var8, p_150535_3_, var10);
+                    BlockPos blockpos = p_175925_2_.add(j, 0, k);
+                    Material material = worldIn.getBlockState(blockpos).getBlock().getMaterial();
 
-                    if (var14.getMaterial() == Material.air || var14.getMaterial() == Material.leaves)
+                    if (material == Material.air || material == Material.leaves)
                     {
-                        this.func_150516_a(p_150535_1_, var8, p_150535_3_, var10, Blocks.leaves, this.leavesMetadata);
+                        this.setBlockAndNotifyAdequately(worldIn, blockpos, this.leavesMetadata);
                     }
                 }
             }
         }
     }
 
-    protected void func_150534_b(World p_150534_1_, int p_150534_2_, int p_150534_3_, int p_150534_4_, int p_150534_5_, Random p_150534_6_)
+    protected void func_175928_b(World worldIn, BlockPos p_175928_2_, int p_175928_3_)
     {
-        int var7 = p_150534_5_ * p_150534_5_;
+        int i = p_175928_3_ * p_175928_3_;
 
-        for (int var8 = p_150534_2_ - p_150534_5_; var8 <= p_150534_2_ + p_150534_5_; ++var8)
+        for (int j = -p_175928_3_; j <= p_175928_3_; ++j)
         {
-            int var9 = var8 - p_150534_2_;
-
-            for (int var10 = p_150534_4_ - p_150534_5_; var10 <= p_150534_4_ + p_150534_5_; ++var10)
+            for (int k = -p_175928_3_; k <= p_175928_3_; ++k)
             {
-                int var11 = var10 - p_150534_4_;
-
-                if (var9 * var9 + var11 * var11 <= var7)
+                if (j * j + k * k <= i)
                 {
-                    Block var12 = p_150534_1_.getBlock(var8, p_150534_3_, var10);
+                    BlockPos blockpos = p_175928_2_.add(j, 0, k);
+                    Material material = worldIn.getBlockState(blockpos).getBlock().getMaterial();
 
-                    if (var12.getMaterial() == Material.air || var12.getMaterial() == Material.leaves)
+                    if (material == Material.air || material == Material.leaves)
                     {
-                        this.func_150516_a(p_150534_1_, var8, p_150534_3_, var10, Blocks.leaves, this.leavesMetadata);
+                        this.setBlockAndNotifyAdequately(worldIn, blockpos, this.leavesMetadata);
                     }
                 }
             }

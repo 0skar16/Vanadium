@@ -2,124 +2,121 @@ package net.minecraft.util;
 
 public class AxisAlignedBB
 {
-    public double minX;
-    public double minY;
-    public double minZ;
-    public double maxX;
-    public double maxY;
-    public double maxZ;
-    private static final String __OBFID = "CL_00000607";
+    public final double minX;
+    public final double minY;
+    public final double minZ;
+    public final double maxX;
+    public final double maxY;
+    public final double maxZ;
 
-    /**
-     * Returns a bounding box with the specified bounds. Args: minX, minY, minZ, maxX, maxY, maxZ
-     */
-    public static AxisAlignedBB getBoundingBox(double p_72330_0_, double p_72330_2_, double p_72330_4_, double p_72330_6_, double p_72330_8_, double p_72330_10_)
+    public AxisAlignedBB(double x1, double y1, double z1, double x2, double y2, double z2)
     {
-        return new AxisAlignedBB(p_72330_0_, p_72330_2_, p_72330_4_, p_72330_6_, p_72330_8_, p_72330_10_);
+        this.minX = Math.min(x1, x2);
+        this.minY = Math.min(y1, y2);
+        this.minZ = Math.min(z1, z2);
+        this.maxX = Math.max(x1, x2);
+        this.maxY = Math.max(y1, y2);
+        this.maxZ = Math.max(z1, z2);
     }
 
-    protected AxisAlignedBB(double p_i2300_1_, double p_i2300_3_, double p_i2300_5_, double p_i2300_7_, double p_i2300_9_, double p_i2300_11_)
+    public AxisAlignedBB(BlockPos pos1, BlockPos pos2)
     {
-        this.minX = p_i2300_1_;
-        this.minY = p_i2300_3_;
-        this.minZ = p_i2300_5_;
-        this.maxX = p_i2300_7_;
-        this.maxY = p_i2300_9_;
-        this.maxZ = p_i2300_11_;
-    }
-
-    /**
-     * Sets the bounds of the bounding box. Args: minX, minY, minZ, maxX, maxY, maxZ
-     */
-    public AxisAlignedBB setBounds(double p_72324_1_, double p_72324_3_, double p_72324_5_, double p_72324_7_, double p_72324_9_, double p_72324_11_)
-    {
-        this.minX = p_72324_1_;
-        this.minY = p_72324_3_;
-        this.minZ = p_72324_5_;
-        this.maxX = p_72324_7_;
-        this.maxY = p_72324_9_;
-        this.maxZ = p_72324_11_;
-        return this;
+        this.minX = (double)pos1.getX();
+        this.minY = (double)pos1.getY();
+        this.minZ = (double)pos1.getZ();
+        this.maxX = (double)pos2.getX();
+        this.maxY = (double)pos2.getY();
+        this.maxZ = (double)pos2.getZ();
     }
 
     /**
      * Adds the coordinates to the bounding box extending it if the point lies outside the current ranges. Args: x, y, z
      */
-    public AxisAlignedBB addCoord(double p_72321_1_, double p_72321_3_, double p_72321_5_)
+    public AxisAlignedBB addCoord(double x, double y, double z)
     {
-        double var7 = this.minX;
-        double var9 = this.minY;
-        double var11 = this.minZ;
-        double var13 = this.maxX;
-        double var15 = this.maxY;
-        double var17 = this.maxZ;
+        double d0 = this.minX;
+        double d1 = this.minY;
+        double d2 = this.minZ;
+        double d3 = this.maxX;
+        double d4 = this.maxY;
+        double d5 = this.maxZ;
 
-        if (p_72321_1_ < 0.0D)
+        if (x < 0.0D)
         {
-            var7 += p_72321_1_;
+            d0 += x;
+        }
+        else if (x > 0.0D)
+        {
+            d3 += x;
         }
 
-        if (p_72321_1_ > 0.0D)
+        if (y < 0.0D)
         {
-            var13 += p_72321_1_;
+            d1 += y;
+        }
+        else if (y > 0.0D)
+        {
+            d4 += y;
         }
 
-        if (p_72321_3_ < 0.0D)
+        if (z < 0.0D)
         {
-            var9 += p_72321_3_;
+            d2 += z;
+        }
+        else if (z > 0.0D)
+        {
+            d5 += z;
         }
 
-        if (p_72321_3_ > 0.0D)
-        {
-            var15 += p_72321_3_;
-        }
-
-        if (p_72321_5_ < 0.0D)
-        {
-            var11 += p_72321_5_;
-        }
-
-        if (p_72321_5_ > 0.0D)
-        {
-            var17 += p_72321_5_;
-        }
-
-        return getBoundingBox(var7, var9, var11, var13, var15, var17);
+        return new AxisAlignedBB(d0, d1, d2, d3, d4, d5);
     }
 
     /**
      * Returns a bounding box expanded by the specified vector (if negative numbers are given it will shrink). Args: x,
      * y, z
      */
-    public AxisAlignedBB expand(double p_72314_1_, double p_72314_3_, double p_72314_5_)
+    public AxisAlignedBB expand(double x, double y, double z)
     {
-        double var7 = this.minX - p_72314_1_;
-        double var9 = this.minY - p_72314_3_;
-        double var11 = this.minZ - p_72314_5_;
-        double var13 = this.maxX + p_72314_1_;
-        double var15 = this.maxY + p_72314_3_;
-        double var17 = this.maxZ + p_72314_5_;
-        return getBoundingBox(var7, var9, var11, var13, var15, var17);
+        double d0 = this.minX - x;
+        double d1 = this.minY - y;
+        double d2 = this.minZ - z;
+        double d3 = this.maxX + x;
+        double d4 = this.maxY + y;
+        double d5 = this.maxZ + z;
+        return new AxisAlignedBB(d0, d1, d2, d3, d4, d5);
     }
 
-    public AxisAlignedBB func_111270_a(AxisAlignedBB p_111270_1_)
+    public AxisAlignedBB union(AxisAlignedBB other)
     {
-        double var2 = Math.min(this.minX, p_111270_1_.minX);
-        double var4 = Math.min(this.minY, p_111270_1_.minY);
-        double var6 = Math.min(this.minZ, p_111270_1_.minZ);
-        double var8 = Math.max(this.maxX, p_111270_1_.maxX);
-        double var10 = Math.max(this.maxY, p_111270_1_.maxY);
-        double var12 = Math.max(this.maxZ, p_111270_1_.maxZ);
-        return getBoundingBox(var2, var4, var6, var8, var10, var12);
+        double d0 = Math.min(this.minX, other.minX);
+        double d1 = Math.min(this.minY, other.minY);
+        double d2 = Math.min(this.minZ, other.minZ);
+        double d3 = Math.max(this.maxX, other.maxX);
+        double d4 = Math.max(this.maxY, other.maxY);
+        double d5 = Math.max(this.maxZ, other.maxZ);
+        return new AxisAlignedBB(d0, d1, d2, d3, d4, d5);
     }
 
     /**
-     * Returns a bounding box offseted by the specified vector (if negative numbers are given it will shrink). Args: x,
-     * y, z
+     * returns an AABB with corners x1, y1, z1 and x2, y2, z2
      */
-    public AxisAlignedBB getOffsetBoundingBox(double p_72325_1_, double p_72325_3_, double p_72325_5_)
+    public static AxisAlignedBB fromBounds(double x1, double y1, double z1, double x2, double y2, double z2)
     {
-        return getBoundingBox(this.minX + p_72325_1_, this.minY + p_72325_3_, this.minZ + p_72325_5_, this.maxX + p_72325_1_, this.maxY + p_72325_3_, this.maxZ + p_72325_5_);
+        double d0 = Math.min(x1, x2);
+        double d1 = Math.min(y1, y2);
+        double d2 = Math.min(z1, z2);
+        double d3 = Math.max(x1, x2);
+        double d4 = Math.max(y1, y2);
+        double d5 = Math.max(z1, z2);
+        return new AxisAlignedBB(d0, d1, d2, d3, d4, d5);
+    }
+
+    /**
+     * Offsets the current bounding box by the specified coordinates. Args: x, y, z
+     */
+    public AxisAlignedBB offset(double x, double y, double z)
+    {
+        return new AxisAlignedBB(this.minX + x, this.minY + y, this.minZ + z, this.maxX + x, this.maxY + y, this.maxZ + z);
     }
 
     /**
@@ -127,44 +124,34 @@ public class AxisAlignedBB
      * in the X dimension.  return var2 if the bounding boxes do not overlap or if var2 is closer to 0 then the
      * calculated offset.  Otherwise return the calculated offset.
      */
-    public double calculateXOffset(AxisAlignedBB p_72316_1_, double p_72316_2_)
+    public double calculateXOffset(AxisAlignedBB other, double offsetX)
     {
-        if (p_72316_1_.maxY > this.minY && p_72316_1_.minY < this.maxY)
+        if (other.maxY > this.minY && other.minY < this.maxY && other.maxZ > this.minZ && other.minZ < this.maxZ)
         {
-            if (p_72316_1_.maxZ > this.minZ && p_72316_1_.minZ < this.maxZ)
+            if (offsetX > 0.0D && other.maxX <= this.minX)
             {
-                double var4;
+                double d1 = this.minX - other.maxX;
 
-                if (p_72316_2_ > 0.0D && p_72316_1_.maxX <= this.minX)
+                if (d1 < offsetX)
                 {
-                    var4 = this.minX - p_72316_1_.maxX;
-
-                    if (var4 < p_72316_2_)
-                    {
-                        p_72316_2_ = var4;
-                    }
+                    offsetX = d1;
                 }
-
-                if (p_72316_2_ < 0.0D && p_72316_1_.minX >= this.maxX)
-                {
-                    var4 = this.maxX - p_72316_1_.minX;
-
-                    if (var4 > p_72316_2_)
-                    {
-                        p_72316_2_ = var4;
-                    }
-                }
-
-                return p_72316_2_;
             }
-            else
+            else if (offsetX < 0.0D && other.minX >= this.maxX)
             {
-                return p_72316_2_;
+                double d0 = this.maxX - other.minX;
+
+                if (d0 > offsetX)
+                {
+                    offsetX = d0;
+                }
             }
+
+            return offsetX;
         }
         else
         {
-            return p_72316_2_;
+            return offsetX;
         }
     }
 
@@ -173,44 +160,34 @@ public class AxisAlignedBB
      * in the Y dimension.  return var2 if the bounding boxes do not overlap or if var2 is closer to 0 then the
      * calculated offset.  Otherwise return the calculated offset.
      */
-    public double calculateYOffset(AxisAlignedBB p_72323_1_, double p_72323_2_)
+    public double calculateYOffset(AxisAlignedBB other, double offsetY)
     {
-        if (p_72323_1_.maxX > this.minX && p_72323_1_.minX < this.maxX)
+        if (other.maxX > this.minX && other.minX < this.maxX && other.maxZ > this.minZ && other.minZ < this.maxZ)
         {
-            if (p_72323_1_.maxZ > this.minZ && p_72323_1_.minZ < this.maxZ)
+            if (offsetY > 0.0D && other.maxY <= this.minY)
             {
-                double var4;
+                double d1 = this.minY - other.maxY;
 
-                if (p_72323_2_ > 0.0D && p_72323_1_.maxY <= this.minY)
+                if (d1 < offsetY)
                 {
-                    var4 = this.minY - p_72323_1_.maxY;
-
-                    if (var4 < p_72323_2_)
-                    {
-                        p_72323_2_ = var4;
-                    }
+                    offsetY = d1;
                 }
-
-                if (p_72323_2_ < 0.0D && p_72323_1_.minY >= this.maxY)
-                {
-                    var4 = this.maxY - p_72323_1_.minY;
-
-                    if (var4 > p_72323_2_)
-                    {
-                        p_72323_2_ = var4;
-                    }
-                }
-
-                return p_72323_2_;
             }
-            else
+            else if (offsetY < 0.0D && other.minY >= this.maxY)
             {
-                return p_72323_2_;
+                double d0 = this.maxY - other.minY;
+
+                if (d0 > offsetY)
+                {
+                    offsetY = d0;
+                }
             }
+
+            return offsetY;
         }
         else
         {
-            return p_72323_2_;
+            return offsetY;
         }
     }
 
@@ -219,75 +196,51 @@ public class AxisAlignedBB
      * in the Z dimension.  return var2 if the bounding boxes do not overlap or if var2 is closer to 0 then the
      * calculated offset.  Otherwise return the calculated offset.
      */
-    public double calculateZOffset(AxisAlignedBB p_72322_1_, double p_72322_2_)
+    public double calculateZOffset(AxisAlignedBB other, double offsetZ)
     {
-        if (p_72322_1_.maxX > this.minX && p_72322_1_.minX < this.maxX)
+        if (other.maxX > this.minX && other.minX < this.maxX && other.maxY > this.minY && other.minY < this.maxY)
         {
-            if (p_72322_1_.maxY > this.minY && p_72322_1_.minY < this.maxY)
+            if (offsetZ > 0.0D && other.maxZ <= this.minZ)
             {
-                double var4;
+                double d1 = this.minZ - other.maxZ;
 
-                if (p_72322_2_ > 0.0D && p_72322_1_.maxZ <= this.minZ)
+                if (d1 < offsetZ)
                 {
-                    var4 = this.minZ - p_72322_1_.maxZ;
-
-                    if (var4 < p_72322_2_)
-                    {
-                        p_72322_2_ = var4;
-                    }
+                    offsetZ = d1;
                 }
-
-                if (p_72322_2_ < 0.0D && p_72322_1_.minZ >= this.maxZ)
-                {
-                    var4 = this.maxZ - p_72322_1_.minZ;
-
-                    if (var4 > p_72322_2_)
-                    {
-                        p_72322_2_ = var4;
-                    }
-                }
-
-                return p_72322_2_;
             }
-            else
+            else if (offsetZ < 0.0D && other.minZ >= this.maxZ)
             {
-                return p_72322_2_;
+                double d0 = this.maxZ - other.minZ;
+
+                if (d0 > offsetZ)
+                {
+                    offsetZ = d0;
+                }
             }
+
+            return offsetZ;
         }
         else
         {
-            return p_72322_2_;
+            return offsetZ;
         }
     }
 
     /**
      * Returns whether the given bounding box intersects with this one. Args: axisAlignedBB
      */
-    public boolean intersectsWith(AxisAlignedBB p_72326_1_)
+    public boolean intersectsWith(AxisAlignedBB other)
     {
-        return p_72326_1_.maxX > this.minX && p_72326_1_.minX < this.maxX ? (p_72326_1_.maxY > this.minY && p_72326_1_.minY < this.maxY ? p_72326_1_.maxZ > this.minZ && p_72326_1_.minZ < this.maxZ : false) : false;
-    }
-
-    /**
-     * Offsets the current bounding box by the specified coordinates. Args: x, y, z
-     */
-    public AxisAlignedBB offset(double p_72317_1_, double p_72317_3_, double p_72317_5_)
-    {
-        this.minX += p_72317_1_;
-        this.minY += p_72317_3_;
-        this.minZ += p_72317_5_;
-        this.maxX += p_72317_1_;
-        this.maxY += p_72317_3_;
-        this.maxZ += p_72317_5_;
-        return this;
+        return other.maxX > this.minX && other.minX < this.maxX ? (other.maxY > this.minY && other.minY < this.maxY ? other.maxZ > this.minZ && other.minZ < this.maxZ : false) : false;
     }
 
     /**
      * Returns if the supplied Vec3D is completely inside the bounding box
      */
-    public boolean isVecInside(Vec3 p_72318_1_)
+    public boolean isVecInside(Vec3 vec)
     {
-        return p_72318_1_.xCoord > this.minX && p_72318_1_.xCoord < this.maxX ? (p_72318_1_.yCoord > this.minY && p_72318_1_.yCoord < this.maxY ? p_72318_1_.zCoord > this.minZ && p_72318_1_.zCoord < this.maxZ : false) : false;
+        return vec.xCoord > this.minX && vec.xCoord < this.maxX ? (vec.yCoord > this.minY && vec.yCoord < this.maxY ? vec.zCoord > this.minZ && vec.zCoord < this.maxZ : false) : false;
     }
 
     /**
@@ -295,186 +248,165 @@ public class AxisAlignedBB
      */
     public double getAverageEdgeLength()
     {
-        double var1 = this.maxX - this.minX;
-        double var3 = this.maxY - this.minY;
-        double var5 = this.maxZ - this.minZ;
-        return (var1 + var3 + var5) / 3.0D;
+        double d0 = this.maxX - this.minX;
+        double d1 = this.maxY - this.minY;
+        double d2 = this.maxZ - this.minZ;
+        return (d0 + d1 + d2) / 3.0D;
     }
 
     /**
      * Returns a bounding box that is inset by the specified amounts
      */
-    public AxisAlignedBB contract(double p_72331_1_, double p_72331_3_, double p_72331_5_)
+    public AxisAlignedBB contract(double x, double y, double z)
     {
-        double var7 = this.minX + p_72331_1_;
-        double var9 = this.minY + p_72331_3_;
-        double var11 = this.minZ + p_72331_5_;
-        double var13 = this.maxX - p_72331_1_;
-        double var15 = this.maxY - p_72331_3_;
-        double var17 = this.maxZ - p_72331_5_;
-        return getBoundingBox(var7, var9, var11, var13, var15, var17);
+        double d0 = this.minX + x;
+        double d1 = this.minY + y;
+        double d2 = this.minZ + z;
+        double d3 = this.maxX - x;
+        double d4 = this.maxY - y;
+        double d5 = this.maxZ - z;
+        return new AxisAlignedBB(d0, d1, d2, d3, d4, d5);
     }
 
-    /**
-     * Returns a copy of the bounding box.
-     */
-    public AxisAlignedBB copy()
+    public MovingObjectPosition calculateIntercept(Vec3 vecA, Vec3 vecB)
     {
-        return getBoundingBox(this.minX, this.minY, this.minZ, this.maxX, this.maxY, this.maxZ);
-    }
+        Vec3 vec3 = vecA.getIntermediateWithXValue(vecB, this.minX);
+        Vec3 vec31 = vecA.getIntermediateWithXValue(vecB, this.maxX);
+        Vec3 vec32 = vecA.getIntermediateWithYValue(vecB, this.minY);
+        Vec3 vec33 = vecA.getIntermediateWithYValue(vecB, this.maxY);
+        Vec3 vec34 = vecA.getIntermediateWithZValue(vecB, this.minZ);
+        Vec3 vec35 = vecA.getIntermediateWithZValue(vecB, this.maxZ);
 
-    public MovingObjectPosition calculateIntercept(Vec3 p_72327_1_, Vec3 p_72327_2_)
-    {
-        Vec3 var3 = p_72327_1_.getIntermediateWithXValue(p_72327_2_, this.minX);
-        Vec3 var4 = p_72327_1_.getIntermediateWithXValue(p_72327_2_, this.maxX);
-        Vec3 var5 = p_72327_1_.getIntermediateWithYValue(p_72327_2_, this.minY);
-        Vec3 var6 = p_72327_1_.getIntermediateWithYValue(p_72327_2_, this.maxY);
-        Vec3 var7 = p_72327_1_.getIntermediateWithZValue(p_72327_2_, this.minZ);
-        Vec3 var8 = p_72327_1_.getIntermediateWithZValue(p_72327_2_, this.maxZ);
-
-        if (!this.isVecInYZ(var3))
+        if (!this.isVecInYZ(vec3))
         {
-            var3 = null;
+            vec3 = null;
         }
 
-        if (!this.isVecInYZ(var4))
+        if (!this.isVecInYZ(vec31))
         {
-            var4 = null;
+            vec31 = null;
         }
 
-        if (!this.isVecInXZ(var5))
+        if (!this.isVecInXZ(vec32))
         {
-            var5 = null;
+            vec32 = null;
         }
 
-        if (!this.isVecInXZ(var6))
+        if (!this.isVecInXZ(vec33))
         {
-            var6 = null;
+            vec33 = null;
         }
 
-        if (!this.isVecInXY(var7))
+        if (!this.isVecInXY(vec34))
         {
-            var7 = null;
+            vec34 = null;
         }
 
-        if (!this.isVecInXY(var8))
+        if (!this.isVecInXY(vec35))
         {
-            var8 = null;
+            vec35 = null;
         }
 
-        Vec3 var9 = null;
+        Vec3 vec36 = null;
 
-        if (var3 != null && (var9 == null || p_72327_1_.squareDistanceTo(var3) < p_72327_1_.squareDistanceTo(var9)))
+        if (vec3 != null)
         {
-            var9 = var3;
+            vec36 = vec3;
         }
 
-        if (var4 != null && (var9 == null || p_72327_1_.squareDistanceTo(var4) < p_72327_1_.squareDistanceTo(var9)))
+        if (vec31 != null && (vec36 == null || vecA.squareDistanceTo(vec31) < vecA.squareDistanceTo(vec36)))
         {
-            var9 = var4;
+            vec36 = vec31;
         }
 
-        if (var5 != null && (var9 == null || p_72327_1_.squareDistanceTo(var5) < p_72327_1_.squareDistanceTo(var9)))
+        if (vec32 != null && (vec36 == null || vecA.squareDistanceTo(vec32) < vecA.squareDistanceTo(vec36)))
         {
-            var9 = var5;
+            vec36 = vec32;
         }
 
-        if (var6 != null && (var9 == null || p_72327_1_.squareDistanceTo(var6) < p_72327_1_.squareDistanceTo(var9)))
+        if (vec33 != null && (vec36 == null || vecA.squareDistanceTo(vec33) < vecA.squareDistanceTo(vec36)))
         {
-            var9 = var6;
+            vec36 = vec33;
         }
 
-        if (var7 != null && (var9 == null || p_72327_1_.squareDistanceTo(var7) < p_72327_1_.squareDistanceTo(var9)))
+        if (vec34 != null && (vec36 == null || vecA.squareDistanceTo(vec34) < vecA.squareDistanceTo(vec36)))
         {
-            var9 = var7;
+            vec36 = vec34;
         }
 
-        if (var8 != null && (var9 == null || p_72327_1_.squareDistanceTo(var8) < p_72327_1_.squareDistanceTo(var9)))
+        if (vec35 != null && (vec36 == null || vecA.squareDistanceTo(vec35) < vecA.squareDistanceTo(vec36)))
         {
-            var9 = var8;
+            vec36 = vec35;
         }
 
-        if (var9 == null)
+        if (vec36 == null)
         {
             return null;
         }
         else
         {
-            byte var10 = -1;
+            EnumFacing enumfacing = null;
 
-            if (var9 == var3)
+            if (vec36 == vec3)
             {
-                var10 = 4;
+                enumfacing = EnumFacing.WEST;
+            }
+            else if (vec36 == vec31)
+            {
+                enumfacing = EnumFacing.EAST;
+            }
+            else if (vec36 == vec32)
+            {
+                enumfacing = EnumFacing.DOWN;
+            }
+            else if (vec36 == vec33)
+            {
+                enumfacing = EnumFacing.UP;
+            }
+            else if (vec36 == vec34)
+            {
+                enumfacing = EnumFacing.NORTH;
+            }
+            else
+            {
+                enumfacing = EnumFacing.SOUTH;
             }
 
-            if (var9 == var4)
-            {
-                var10 = 5;
-            }
-
-            if (var9 == var5)
-            {
-                var10 = 0;
-            }
-
-            if (var9 == var6)
-            {
-                var10 = 1;
-            }
-
-            if (var9 == var7)
-            {
-                var10 = 2;
-            }
-
-            if (var9 == var8)
-            {
-                var10 = 3;
-            }
-
-            return new MovingObjectPosition(0, 0, 0, var10, var9);
+            return new MovingObjectPosition(vec36, enumfacing);
         }
     }
 
     /**
      * Checks if the specified vector is within the YZ dimensions of the bounding box. Args: Vec3D
      */
-    private boolean isVecInYZ(Vec3 p_72333_1_)
+    private boolean isVecInYZ(Vec3 vec)
     {
-        return p_72333_1_ == null ? false : p_72333_1_.yCoord >= this.minY && p_72333_1_.yCoord <= this.maxY && p_72333_1_.zCoord >= this.minZ && p_72333_1_.zCoord <= this.maxZ;
+        return vec == null ? false : vec.yCoord >= this.minY && vec.yCoord <= this.maxY && vec.zCoord >= this.minZ && vec.zCoord <= this.maxZ;
     }
 
     /**
      * Checks if the specified vector is within the XZ dimensions of the bounding box. Args: Vec3D
      */
-    private boolean isVecInXZ(Vec3 p_72315_1_)
+    private boolean isVecInXZ(Vec3 vec)
     {
-        return p_72315_1_ == null ? false : p_72315_1_.xCoord >= this.minX && p_72315_1_.xCoord <= this.maxX && p_72315_1_.zCoord >= this.minZ && p_72315_1_.zCoord <= this.maxZ;
+        return vec == null ? false : vec.xCoord >= this.minX && vec.xCoord <= this.maxX && vec.zCoord >= this.minZ && vec.zCoord <= this.maxZ;
     }
 
     /**
      * Checks if the specified vector is within the XY dimensions of the bounding box. Args: Vec3D
      */
-    private boolean isVecInXY(Vec3 p_72319_1_)
+    private boolean isVecInXY(Vec3 vec)
     {
-        return p_72319_1_ == null ? false : p_72319_1_.xCoord >= this.minX && p_72319_1_.xCoord <= this.maxX && p_72319_1_.yCoord >= this.minY && p_72319_1_.yCoord <= this.maxY;
-    }
-
-    /**
-     * Sets the bounding box to the same bounds as the bounding box passed in. Args: axisAlignedBB
-     */
-    public void setBB(AxisAlignedBB p_72328_1_)
-    {
-        this.minX = p_72328_1_.minX;
-        this.minY = p_72328_1_.minY;
-        this.minZ = p_72328_1_.minZ;
-        this.maxX = p_72328_1_.maxX;
-        this.maxY = p_72328_1_.maxY;
-        this.maxZ = p_72328_1_.maxZ;
+        return vec == null ? false : vec.xCoord >= this.minX && vec.xCoord <= this.maxX && vec.yCoord >= this.minY && vec.yCoord <= this.maxY;
     }
 
     public String toString()
     {
         return "box[" + this.minX + ", " + this.minY + ", " + this.minZ + " -> " + this.maxX + ", " + this.maxY + ", " + this.maxZ + "]";
+    }
+
+    public boolean hasNaN()
+    {
+        return Double.isNaN(this.minX) || Double.isNaN(this.minY) || Double.isNaN(this.minZ) || Double.isNaN(this.maxX) || Double.isNaN(this.maxY) || Double.isNaN(this.maxZ);
     }
 }

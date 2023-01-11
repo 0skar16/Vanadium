@@ -1,39 +1,40 @@
 package net.minecraft.scoreboard;
 
-import java.util.Iterator;
 import java.util.List;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.MathHelper;
 
 public class ScoreHealthCriteria extends ScoreDummyCriteria
 {
-    private static final String __OBFID = "CL_00000623";
-
-    public ScoreHealthCriteria(String p_i2312_1_)
+    public ScoreHealthCriteria(String name)
     {
-        super(p_i2312_1_);
+        super(name);
     }
 
-    public int func_96635_a(List p_96635_1_)
+    public int setScore(List<EntityPlayer> p_96635_1_)
     {
-        float var2 = 0.0F;
-        EntityPlayer var4;
+        float f = 0.0F;
 
-        for (Iterator var3 = p_96635_1_.iterator(); var3.hasNext(); var2 += var4.getHealth() + var4.getAbsorptionAmount())
+        for (EntityPlayer entityplayer : p_96635_1_)
         {
-            var4 = (EntityPlayer)var3.next();
+            f += entityplayer.getHealth() + entityplayer.getAbsorptionAmount();
         }
 
         if (p_96635_1_.size() > 0)
         {
-            var2 /= (float)p_96635_1_.size();
+            f /= (float)p_96635_1_.size();
         }
 
-        return MathHelper.ceiling_float_int(var2);
+        return MathHelper.ceiling_float_int(f);
     }
 
     public boolean isReadOnly()
     {
         return true;
+    }
+
+    public IScoreObjectiveCriteria.EnumRenderType getRenderType()
+    {
+        return IScoreObjectiveCriteria.EnumRenderType.HEARTS;
     }
 }

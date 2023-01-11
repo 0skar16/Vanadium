@@ -8,27 +8,28 @@ public class NBTTagByte extends NBTBase.NBTPrimitive
 {
     /** The byte value for the tag. */
     private byte data;
-    private static final String __OBFID = "CL_00001214";
 
-    NBTTagByte() {}
-
-    public NBTTagByte(byte p_i45129_1_)
+    NBTTagByte()
     {
-        this.data = p_i45129_1_;
+    }
+
+    public NBTTagByte(byte data)
+    {
+        this.data = data;
     }
 
     /**
      * Write the actual data contents of the tag, implemented in NBT extension classes
      */
-    void write(DataOutput p_74734_1_) throws IOException
+    void write(DataOutput output) throws IOException
     {
-        p_74734_1_.writeByte(this.data);
+        output.writeByte(this.data);
     }
 
-    void func_152446_a(DataInput p_152446_1_, int p_152446_2_, NBTSizeTracker p_152446_3_) throws IOException
+    void read(DataInput input, int depth, NBTSizeTracker sizeTracker) throws IOException
     {
-        p_152446_3_.func_152450_a(8L);
-        this.data = p_152446_1_.readByte();
+        sizeTracker.read(72L);
+        this.data = input.readByte();
     }
 
     /**
@@ -56,8 +57,8 @@ public class NBTTagByte extends NBTBase.NBTPrimitive
     {
         if (super.equals(p_equals_1_))
         {
-            NBTTagByte var2 = (NBTTagByte)p_equals_1_;
-            return this.data == var2.data;
+            NBTTagByte nbttagbyte = (NBTTagByte)p_equals_1_;
+            return this.data == nbttagbyte.data;
         }
         else
         {
@@ -70,32 +71,32 @@ public class NBTTagByte extends NBTBase.NBTPrimitive
         return super.hashCode() ^ this.data;
     }
 
-    public long func_150291_c()
+    public long getLong()
     {
         return (long)this.data;
     }
 
-    public int func_150287_d()
+    public int getInt()
     {
         return this.data;
     }
 
-    public short func_150289_e()
+    public short getShort()
     {
         return (short)this.data;
     }
 
-    public byte func_150290_f()
+    public byte getByte()
     {
         return this.data;
     }
 
-    public double func_150286_g()
+    public double getDouble()
     {
         return (double)this.data;
     }
 
-    public float func_150288_h()
+    public float getFloat()
     {
         return (float)this.data;
     }

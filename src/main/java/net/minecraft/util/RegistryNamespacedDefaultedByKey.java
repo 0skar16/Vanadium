@@ -1,46 +1,52 @@
 package net.minecraft.util;
 
-public class RegistryNamespacedDefaultedByKey extends RegistryNamespaced
-{
-    private final String field_148760_d;
-    private Object field_148761_e;
-    private static final String __OBFID = "CL_00001196";
+import org.apache.commons.lang3.Validate;
 
-    public RegistryNamespacedDefaultedByKey(String p_i45127_1_)
+public class RegistryNamespacedDefaultedByKey<K, V> extends RegistryNamespaced<K, V>
+{
+    /** The key of the default value. */
+    private final K defaultValueKey;
+
+    /**
+     * The default value for this registry, retrurned in the place of a null value.
+     */
+    private V defaultValue;
+
+    public RegistryNamespacedDefaultedByKey(K defaultValueKeyIn)
     {
-        this.field_148760_d = p_i45127_1_;
+        this.defaultValueKey = defaultValueKeyIn;
+    }
+
+    public void register(int id, K key, V value)
+    {
+        if (this.defaultValueKey.equals(key))
+        {
+            this.defaultValue = value;
+        }
+
+        super.register(id, key, value);
     }
 
     /**
-     * Adds a new object to this registry, keyed by both the given integer ID and the given string.
+     * validates that this registry's key is non-null
      */
-    public void addObject(int p_148756_1_, String p_148756_2_, Object p_148756_3_)
+    public void validateKey()
     {
-        if (this.field_148760_d.equals(p_148756_2_))
-        {
-            this.field_148761_e = p_148756_3_;
-        }
-
-        super.addObject(p_148756_1_, p_148756_2_, p_148756_3_);
+        Validate.notNull(this.defaultValueKey);
     }
 
-    public Object getObject(String p_82594_1_)
+    public V getObject(K name)
     {
-        Object var2 = super.getObject(p_82594_1_);
-        return var2 == null ? this.field_148761_e : var2;
+        V v = super.getObject(name);
+        return (V)(v == null ? this.defaultValue : v);
     }
 
     /**
      * Gets the object identified by the given ID.
      */
-    public Object getObjectForID(int p_148754_1_)
+    public V getObjectById(int id)
     {
-        Object var2 = super.getObjectForID(p_148754_1_);
-        return var2 == null ? this.field_148761_e : var2;
-    }
-
-    public Object getObject(Object p_82594_1_)
-    {
-        return this.getObject((String)p_82594_1_);
+        V v = super.getObjectById(id);
+        return (V)(v == null ? this.defaultValue : v);
     }
 }

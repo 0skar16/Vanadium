@@ -2,13 +2,15 @@ package net.minecraft.command;
 
 import java.util.List;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.ChatComponentTranslation;
 import net.minecraft.world.EnumDifficulty;
 
 public class CommandDifficulty extends CommandBase
 {
-    private static final String __OBFID = "CL_00000422";
-
+    /**
+     * Gets the name of the command
+     */
     public String getCommandName()
     {
         return "difficulty";
@@ -22,35 +24,38 @@ public class CommandDifficulty extends CommandBase
         return 2;
     }
 
-    public String getCommandUsage(ICommandSender p_71518_1_)
+    /**
+     * Gets the usage string for the command.
+     */
+    public String getCommandUsage(ICommandSender sender)
     {
         return "commands.difficulty.usage";
     }
 
-    public void processCommand(ICommandSender p_71515_1_, String[] p_71515_2_)
+    /**
+     * Callback when the command is invoked
+     */
+    public void processCommand(ICommandSender sender, String[] args) throws CommandException
     {
-        if (p_71515_2_.length > 0)
-        {
-            EnumDifficulty var3 = this.func_147201_h(p_71515_1_, p_71515_2_[0]);
-            MinecraftServer.getServer().func_147139_a(var3);
-            func_152373_a(p_71515_1_, this, "commands.difficulty.success", new Object[] {new ChatComponentTranslation(var3.getDifficultyResourceKey(), new Object[0])});
-        }
-        else
+        if (args.length <= 0)
         {
             throw new WrongUsageException("commands.difficulty.usage", new Object[0]);
         }
+        else
+        {
+            EnumDifficulty enumdifficulty = this.getDifficultyFromCommand(args[0]);
+            MinecraftServer.getServer().setDifficultyForAllWorlds(enumdifficulty);
+            notifyOperators(sender, this, "commands.difficulty.success", new Object[] {new ChatComponentTranslation(enumdifficulty.getDifficultyResourceKey(), new Object[0])});
+        }
     }
 
-    protected EnumDifficulty func_147201_h(ICommandSender p_147201_1_, String p_147201_2_)
+    protected EnumDifficulty getDifficultyFromCommand(String p_180531_1_) throws CommandException, NumberInvalidException
     {
-        return !p_147201_2_.equalsIgnoreCase("peaceful") && !p_147201_2_.equalsIgnoreCase("p") ? (!p_147201_2_.equalsIgnoreCase("easy") && !p_147201_2_.equalsIgnoreCase("e") ? (!p_147201_2_.equalsIgnoreCase("normal") && !p_147201_2_.equalsIgnoreCase("n") ? (!p_147201_2_.equalsIgnoreCase("hard") && !p_147201_2_.equalsIgnoreCase("h") ? EnumDifficulty.getDifficultyEnum(parseIntBounded(p_147201_1_, p_147201_2_, 0, 3)) : EnumDifficulty.HARD) : EnumDifficulty.NORMAL) : EnumDifficulty.EASY) : EnumDifficulty.PEACEFUL;
+        return !p_180531_1_.equalsIgnoreCase("peaceful") && !p_180531_1_.equalsIgnoreCase("p") ? (!p_180531_1_.equalsIgnoreCase("easy") && !p_180531_1_.equalsIgnoreCase("e") ? (!p_180531_1_.equalsIgnoreCase("normal") && !p_180531_1_.equalsIgnoreCase("n") ? (!p_180531_1_.equalsIgnoreCase("hard") && !p_180531_1_.equalsIgnoreCase("h") ? EnumDifficulty.getDifficultyEnum(parseInt(p_180531_1_, 0, 3)) : EnumDifficulty.HARD) : EnumDifficulty.NORMAL) : EnumDifficulty.EASY) : EnumDifficulty.PEACEFUL;
     }
 
-    /**
-     * Adds the strings available in this command to the given list of tab completion options.
-     */
-    public List addTabCompletionOptions(ICommandSender p_71516_1_, String[] p_71516_2_)
+    public List<String> addTabCompletionOptions(ICommandSender sender, String[] args, BlockPos pos)
     {
-        return p_71516_2_.length == 1 ? getListOfStringsMatchingLastWord(p_71516_2_, new String[] {"peaceful", "easy", "normal", "hard"}): null;
+        return args.length == 1 ? getListOfStringsMatchingLastWord(args, new String[] {"peaceful", "easy", "normal", "hard"}): null;
     }
 }

@@ -1,0 +1,100 @@
+---- Minecraft Crash Report ----
+// Ouch. That hurt :(
+
+Time: 11/21/22 1:02 PM
+Description: Rendering screen
+
+java.lang.NullPointerException: Rendering screen
+	at dev.ztech.vanadium.api.entity.Player.getArmor(Player.java:15)
+	at dev.ztech.zclient.gui.hud.mods.impl.ArmorStatus.render(ArmorStatus.java:70)
+	at dev.ztech.zclient.gui.hud.HudConfigScreen.draw(HudConfigScreen.java:38)
+	at dev.ztech.vanadium.api.screen.VScreen.draw(VScreen.java:9)
+	at dev.ztech.vanadium.api.screen.ScreenEmulator.drawScreen(ScreenEmulator.java:23)
+	at net.minecraft.client.renderer.EntityRenderer.updateCameraAndRender(EntityRenderer.java:1400)
+	at net.minecraft.client.Minecraft.runGameLoop(Minecraft.java:1151)
+	at net.minecraft.client.Minecraft.run(Minecraft.java:430)
+	at net.minecraft.client.main.Main.main(Main.java:113)
+	at dev.ztech.vanadium.Vanadium.main(Vanadium.java:29)
+	at VanadiumTestStart.main(VanadiumTestStart.java:9)
+
+
+A detailed walkthrough of the error, its code path and all known details is as follows:
+---------------------------------------------------------------------------------------
+
+-- Head --
+Stacktrace:
+	at dev.ztech.vanadium.api.entity.Player.getArmor(Player.java:15)
+	at dev.ztech.zclient.gui.hud.mods.impl.ArmorStatus.render(ArmorStatus.java:70)
+	at dev.ztech.zclient.gui.hud.HudConfigScreen.draw(HudConfigScreen.java:38)
+	at dev.ztech.vanadium.api.screen.VScreen.draw(VScreen.java:9)
+	at dev.ztech.vanadium.api.screen.ScreenEmulator.drawScreen(ScreenEmulator.java:23)
+
+-- Screen render details --
+Details:
+	Screen name: dev.ztech.vanadium.api.screen.ScreenEmulator
+	Mouse location: Scaled: (213, 119). Absolute: (427, 240)
+	Screen size: Scaled: (427, 240). Absolute: (854, 480). Scale factor of 2
+
+-- Affected level --
+Details:
+	Level name: MpServer
+	All players: 1 total; [EntityPlayerSP['Player890'/59, l='MpServer', x=103.37, y=64.00, z=1563.33]]
+	Chunk stats: MultiplayerChunkCache: 598, 598
+	Level seed: 0
+	Level generator: ID 02 - largeBiomes, ver 0. Features enabled: false
+	Level generator options: 
+	Level spawn location: 584.00,64.00,166.00 - World: (584,64,166), Chunk: (at 8,4,6 in 36,10; contains blocks 576,0,160 to 591,255,175), Region: (1,0; contains chunks 32,0 to 63,31, blocks 512,0,0 to 1023,255,511)
+	Level time: 114874 game time, 114254 day time
+	Level dimension: 0
+	Level storage version: 0x00000 - Unknown?
+	Level weather: Rain time: 0 (now: false), thunder time: 0 (now: false)
+	Level game mode: Game mode: creative (ID 1). Hardcore: false. Cheats: false
+	Forced entities: 68 total; [EntityCreeper['Creeper'/128, l='MpServer', x=129.66, y=63.00, z=1539.44], EntityCreeper['Creeper'/133, l='MpServer', x=157.94, y=71.00, z=1487.03], EntitySquid['Squid'/134, l='MpServer', x=145.36, y=60.12, z=1625.05], EntitySquid['Squid'/135, l='MpServer', x=143.92, y=61.00, z=1618.49], EntityCreeper['Creeper'/142, l='MpServer', x=166.50, y=70.00, z=1485.50], EntitySpider['Spider'/143, l='MpServer', x=159.09, y=70.00, z=1491.66], EntityMinecartChest['container.minecart'/144, l='MpServer', x=171.50, y=31.06, z=1544.50], EntityZombie['Zombie'/145, l='MpServer', x=167.31, y=63.00, z=1553.09], EntityCreeper['Creeper'/146, l='MpServer', x=166.50, y=37.00, z=1559.50], EntityCreeper['Creeper'/147, l='MpServer', x=165.50, y=37.00, z=1558.50], EntitySpider['Spider'/148, l='MpServer', x=170.50, y=63.00, z=1552.50], EntitySpider['Spider'/149, l='MpServer', x=171.50, y=63.00, z=1557.50], EntityBat['Bat'/156, l='MpServer', x=175.03, y=28.00, z=1595.66], EntitySpider['Spider'/60, l='MpServer', x=106.31, y=68.00, z=1566.94], EntityPlayerSP['Player890'/59, l='MpServer', x=103.37, y=64.00, z=1563.33], EntityChicken['Chicken'/73, l='MpServer', x=33.50, y=65.00, z=1613.50], EntityChicken['Chicken'/74, l='MpServer', x=35.25, y=65.00, z=1611.66], EntityChicken['Chicken'/75, l='MpServer', x=34.63, y=65.00, z=1612.38], EntityChicken['Chicken'/76, l='MpServer', x=34.50, y=65.00, z=1613.50], EntityChicken['Chicken'/77, l='MpServer', x=33.50, y=65.00, z=1613.50], EntityChicken['Chicken'/78, l='MpServer', x=36.97, y=65.00, z=1611.19], EntityChicken['Chicken'/79, l='MpServer', x=32.28, y=65.00, z=1610.97], EntityChicken['Chicken'/80, l='MpServer', x=34.50, y=65.00, z=1613.50], EntityBat['Bat'/81, l='MpServer', x=55.35, y=25.89, z=1531.56], EntityZombie['Zombie'/82, l='MpServer', x=66.50, y=51.00, z=1486.50], EntityBat['Bat'/83, l='MpServer', x=73.63, y=49.63, z=1487.50], EntityBat['Bat'/84, l='MpServer', x=71.84, y=49.00, z=1487.75], EntityBat['Bat'/86, l='MpServer', x=72.88, y=49.63, z=1487.53], EntityBat['Bat'/87, l='MpServer', x=72.84, y=49.47, z=1487.53], EntityEnderman['Enderman'/88, l='MpServer', x=72.22, y=72.00, z=1531.53], EntityEnderman['Enderman'/89, l='MpServer', x=77.50, y=11.00, z=1574.50], EntityEnderman['Enderman'/90, l='MpServer', x=71.69, y=11.00, z=1575.81], EntityCreeper['Creeper'/91, l='MpServer', x=73.59, y=64.00, z=1576.91], EntityZombie['Zombie'/92, l='MpServer', x=69.50, y=15.00, z=1584.50], EntityCreeper['Creeper'/93, l='MpServer', x=76.50, y=64.00, z=1585.50], EntitySpider['Spider'/94, l='MpServer', x=77.76, y=64.98, z=1579.14], EntitySkeleton['Skeleton'/97, l='MpServer', x=88.91, y=68.00, z=1537.44], EntityEnderman['Enderman'/98, l='MpServer', x=85.43, y=16.00, z=1568.86], EntityEnderman['Enderman'/99, l='MpServer', x=81.53, y=16.00, z=1574.06], EntitySkeleton['Skeleton'/227, l='MpServer', x=181.20, y=41.00, z=1581.28], EntitySkeleton['Skeleton'/100, l='MpServer', x=80.50, y=51.00, z=1596.50], EntityCreeper['Creeper'/228, l='MpServer', x=182.50, y=41.00, z=1581.50], EntityCreeper['Creeper'/229, l='MpServer', x=179.63, y=41.00, z=1582.31], EntityBat['Bat'/102, l='MpServer', x=102.09, y=25.87, z=1520.69], EntityCreeper['Creeper'/230, l='MpServer', x=178.03, y=41.00, z=1582.59], EntitySkeleton['Skeleton'/103, l='MpServer', x=96.25, y=71.00, z=1520.69], EntitySpider['Spider'/104, l='MpServer', x=106.84, y=71.00, z=1522.69], EntityCreeper['Creeper'/105, l='MpServer', x=97.50, y=34.00, z=1542.50], EntityCreeper['Creeper'/107, l='MpServer', x=119.50, y=15.00, z=1495.50], EntityCreeper['Creeper'/108, l='MpServer', x=120.50, y=15.00, z=1489.50], EntityCreeper['Creeper'/109, l='MpServer', x=120.50, y=16.00, z=1491.50], EntityBat['Bat'/110, l='MpServer', x=114.25, y=32.84, z=1496.63], EntityCreeper['Creeper'/111, l='MpServer', x=123.50, y=51.00, z=1490.50], EntityCreeper['Creeper'/112, l='MpServer', x=123.00, y=51.00, z=1488.66], EntityCreeper['Creeper'/113, l='MpServer', x=117.22, y=51.00, z=1487.66], EntityCreeper['Creeper'/114, l='MpServer', x=117.50, y=51.00, z=1489.50], EntitySkeleton['Skeleton'/115, l='MpServer', x=117.09, y=54.00, z=1532.41], EntitySkeleton['Skeleton'/116, l='MpServer', x=114.53, y=54.00, z=1528.91], EntitySkeleton['Skeleton'/117, l='MpServer', x=120.13, y=56.00, z=1522.44], EntityBat['Bat'/118, l='MpServer', x=114.25, y=57.10, z=1526.75], EntityZombie['Zombie'/119, l='MpServer', x=123.84, y=69.00, z=1567.50], EntitySkeleton['Skeleton'/120, l='MpServer', x=124.09, y=64.00, z=1565.31], EntitySkeleton['Skeleton'/121, l='MpServer', x=119.09, y=64.00, z=1565.03], EntityCreeper['Creeper'/122, l='MpServer', x=126.47, y=70.00, z=1588.97], EntityCreeper['Creeper'/123, l='MpServer', x=126.39, y=70.00, z=1598.00], EntityBat['Bat'/125, l='MpServer', x=137.44, y=33.10, z=1519.75], EntitySkeleton['Skeleton'/126, l='MpServer', x=141.50, y=56.00, z=1520.50], EntityCreeper['Creeper'/127, l='MpServer', x=132.75, y=65.00, z=1521.81]]
+	Retry entities: 0 total; []
+	Server brand: vanilla
+	Server type: Integrated singleplayer server
+Stacktrace:
+	at net.minecraft.client.multiplayer.WorldClient.addWorldInfoToCrashReport(WorldClient.java:403)
+	at net.minecraft.client.Minecraft.addGraphicsAndWorldToCrashReport(Minecraft.java:2782)
+	at net.minecraft.client.Minecraft.run(Minecraft.java:451)
+	at net.minecraft.client.main.Main.main(Main.java:113)
+	at dev.ztech.vanadium.Vanadium.main(Vanadium.java:29)
+	at VanadiumTestStart.main(VanadiumTestStart.java:9)
+
+-- System Details --
+Details:
+	Minecraft Version: 1.8.9
+	Operating System: Linux (amd64) version 5.19.0-23-generic
+	Java Version: 1.8.0_352, Amazon.com Inc.
+	Java VM Version: OpenJDK 64-Bit Server VM (mixed mode), Amazon.com Inc.
+	Memory: 685361920 bytes (653 MB) / 964165632 bytes (919 MB) up to 3715629056 bytes (3543 MB)
+	JVM Flags: 0 total; 
+	IntCache: cache: 0, tcache: 0, allocated: 13, tallocated: 99
+	Launched Version: vanadium
+	LWJGL: 2.9.4
+	OpenGL: NVIDIA GeForce GTX 1070/PCIe/SSE2 GL version 4.6.0 NVIDIA 515.65.01, NVIDIA Corporation
+	GL Caps: Using GL 1.3 multitexturing.
+Using GL 1.3 texture combiners.
+Using framebuffer objects because OpenGL 3.0 is supported and separate blending is supported.
+Shaders are available because OpenGL 2.1 is supported.
+VBOs are available because OpenGL 1.5 is supported.
+
+	Using VBOs: No
+	Is Modded: Definitely; Client brand changed to 'vanadium'
+	Type: Client (map_client.txt)
+	Resource Packs: 
+	Current Language: ~~ERROR~~ NullPointerException: null
+	Profiler Position: N/A (disabled)
+	CPU: 6x Intel(R) Core(TM) i5-8600 CPU @ 3.10GHz
+	OptiFine Version: OptiFine_1.8.9_HD_U_M5
+	OptiFine Build: ~~NULL~~
+	Render Distance Chunks: 12
+	Mipmaps: 4
+	Anisotropic Filtering: 1
+	Antialiasing: 0
+	Multitexture: false
+	Shaders: null
+	OpenGlVersion: 4.6.0 NVIDIA 515.65.01
+	OpenGlRenderer: NVIDIA GeForce GTX 1070/PCIe/SSE2
+	OpenGlVendor: NVIDIA Corporation
+	CpuCount: 6

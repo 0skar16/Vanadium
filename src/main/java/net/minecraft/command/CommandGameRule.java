@@ -1,14 +1,18 @@
 package net.minecraft.command;
 
 import java.util.List;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.network.play.server.S19PacketEntityStatus;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.world.GameRules;
 
 public class CommandGameRule extends CommandBase
 {
-    private static final String __OBFID = "CL_00000475";
-
+    /**
+     * Gets the name of the command
+     */
     public String getCommandName()
     {
         return "gamerule";
@@ -22,63 +26,85 @@ public class CommandGameRule extends CommandBase
         return 2;
     }
 
-    public String getCommandUsage(ICommandSender p_71518_1_)
+    /**
+     * Gets the usage string for the command.
+     */
+    public String getCommandUsage(ICommandSender sender)
     {
         return "commands.gamerule.usage";
     }
 
-    public void processCommand(ICommandSender p_71515_1_, String[] p_71515_2_)
+    /**
+     * Callback when the command is invoked
+     */
+    public void processCommand(ICommandSender sender, String[] args) throws CommandException
     {
-        String var6;
+        GameRules gamerules = this.getGameRules();
+        String s = args.length > 0 ? args[0] : "";
+        String s1 = args.length > 1 ? buildString(args, 1) : "";
 
-        if (p_71515_2_.length == 2)
+        switch (args.length)
         {
-            var6 = p_71515_2_[0];
-            String var7 = p_71515_2_[1];
-            GameRules var8 = this.getGameRules();
+            case 0:
+                sender.addChatMessage(new ChatComponentText(joinNiceString(gamerules.getRules())));
+                break;
 
-            if (var8.hasRule(var6))
-            {
-                var8.setOrCreateGameRule(var6, var7);
-                func_152373_a(p_71515_1_, this, "commands.gamerule.success", new Object[0]);
-            }
-            else
-            {
-                func_152373_a(p_71515_1_, this, "commands.gamerule.norule", new Object[] {var6});
-            }
-        }
-        else if (p_71515_2_.length == 1)
-        {
-            var6 = p_71515_2_[0];
-            GameRules var4 = this.getGameRules();
+            case 1:
+                if (!gamerules.hasRule(s))
+                {
+                    throw new CommandException("commands.gamerule.norule", new Object[] {s});
+                }
 
-            if (var4.hasRule(var6))
-            {
-                String var5 = var4.getGameRuleStringValue(var6);
-                p_71515_1_.addChatMessage((new ChatComponentText(var6)).appendText(" = ").appendText(var5));
-            }
-            else
-            {
-                func_152373_a(p_71515_1_, this, "commands.gamerule.norule", new Object[] {var6});
-            }
-        }
-        else if (p_71515_2_.length == 0)
-        {
-            GameRules var3 = this.getGameRules();
-            p_71515_1_.addChatMessage(new ChatComponentText(joinNiceString(var3.getRules())));
-        }
-        else
-        {
-            throw new WrongUsageException("commands.gamerule.usage", new Object[0]);
+                String s2 = gamerules.getString(s);
+                sender.addChatMessage((new ChatComponentText(s)).appendText(" = ").appendText(s2));
+                sender.setCommandStat(CommandResultStats.Type.QUERY_RESULT, gamerules.getInt(s));
+                break;
+
+            default:
+                if (gamerules.areSameType(s, GameRules.ValueType.BOOLEAN_VALUE) && !"true".equals(s1) && !"false".equals(s1))
+                {
+                    throw new CommandException("commands.generic.boolean.invalid", new Object[] {s1});
+                }
+
+                gamerules.setOrCreateGameRule(s, s1);
+                func_175773_a(gamerules, s);
+                notifyOperators(sender, this, "commands.gamerule.success", new Object[0]);
         }
     }
 
-    /**
-     * Adds the strings available in this command to the given list of tab completion options.
-     */
-    public List addTabCompletionOptions(ICommandSender p_71516_1_, String[] p_71516_2_)
+    public static void func_175773_a(GameRules rules, String p_175773_1_)
     {
-        return p_71516_2_.length == 1 ? getListOfStringsMatchingLastWord(p_71516_2_, this.getGameRules().getRules()) : (p_71516_2_.length == 2 ? getListOfStringsMatchingLastWord(p_71516_2_, new String[] {"true", "false"}): null);
+        if ("reducedDebugInfo".equals(p_175773_1_))
+        {
+            byte b0 = (byte)(rules.getBoolean(p_175773_1_) ? 22 : 23);
+
+            for (EntityPlayerMP entityplayermp : MinecraftServer.getServer().getConfigurationManager().getPlayerList())
+            {
+                entityplayermp.playerNetServerHandler.sendPacket(new S19PacketEntityStatus(entityplayermp, b0));
+            }
+        }
+    }
+
+    public List<String> addTabCompletionOptions(ICommandSender sender, String[] args, BlockPos pos)
+    {
+        if (args.length == 1)
+        {
+            return getListOfStringsMatchingLastWord(args, this.getGameRules().getRules());
+        }
+        else
+        {
+            if (args.length == 2)
+            {
+                GameRules gamerules = this.getGameRules();
+
+                if (gamerules.areSameType(args[0], GameRules.ValueType.BOOLEAN_VALUE))
+                {
+                    return getListOfStringsMatchingLastWord(args, new String[] {"true", "false"});
+                }
+            }
+
+            return null;
+        }
     }
 
     /**

@@ -10,60 +10,80 @@ public class ImageBufferDownload implements IImageBuffer
     private int[] imageData;
     private int imageWidth;
     private int imageHeight;
-    private static final String __OBFID = "CL_00000956";
 
-    public BufferedImage parseUserSkin(BufferedImage par1BufferedImage)
+    public BufferedImage parseUserSkin(BufferedImage image)
     {
-        if (par1BufferedImage == null)
+        if (image == null)
         {
             return null;
         }
         else
         {
             this.imageWidth = 64;
-            this.imageHeight = 32;
-            int srcWidth = par1BufferedImage.getWidth();
-            int srcHeight = par1BufferedImage.getHeight();
+            this.imageHeight = 64;
+            int i = image.getWidth();
+            int j = image.getHeight();
+            int k;
 
-            if (srcWidth != 64 || srcHeight != 32 && srcHeight != 64)
+            for (k = 1; this.imageWidth < i || this.imageHeight < j; k *= 2)
             {
-                while (this.imageWidth < srcWidth || this.imageHeight < srcHeight)
-                {
-                    this.imageWidth *= 2;
-                    this.imageHeight *= 2;
-                }
+                this.imageWidth *= 2;
+                this.imageHeight *= 2;
             }
 
             BufferedImage bufferedimage = new BufferedImage(this.imageWidth, this.imageHeight, 2);
-            Graphics g = bufferedimage.getGraphics();
-            g.drawImage(par1BufferedImage, 0, 0, (ImageObserver)null);
-            g.dispose();
+            Graphics graphics = bufferedimage.getGraphics();
+            graphics.drawImage(image, 0, 0, (ImageObserver)null);
+
+            if (image.getHeight() == 32 * k)
+            {
+                graphics.drawImage(bufferedimage, 24 * k, 48 * k, 20 * k, 52 * k, 4 * k, 16 * k, 8 * k, 20 * k, (ImageObserver)null);
+                graphics.drawImage(bufferedimage, 28 * k, 48 * k, 24 * k, 52 * k, 8 * k, 16 * k, 12 * k, 20 * k, (ImageObserver)null);
+                graphics.drawImage(bufferedimage, 20 * k, 52 * k, 16 * k, 64 * k, 8 * k, 20 * k, 12 * k, 32 * k, (ImageObserver)null);
+                graphics.drawImage(bufferedimage, 24 * k, 52 * k, 20 * k, 64 * k, 4 * k, 20 * k, 8 * k, 32 * k, (ImageObserver)null);
+                graphics.drawImage(bufferedimage, 28 * k, 52 * k, 24 * k, 64 * k, 0 * k, 20 * k, 4 * k, 32 * k, (ImageObserver)null);
+                graphics.drawImage(bufferedimage, 32 * k, 52 * k, 28 * k, 64 * k, 12 * k, 20 * k, 16 * k, 32 * k, (ImageObserver)null);
+                graphics.drawImage(bufferedimage, 40 * k, 48 * k, 36 * k, 52 * k, 44 * k, 16 * k, 48 * k, 20 * k, (ImageObserver)null);
+                graphics.drawImage(bufferedimage, 44 * k, 48 * k, 40 * k, 52 * k, 48 * k, 16 * k, 52 * k, 20 * k, (ImageObserver)null);
+                graphics.drawImage(bufferedimage, 36 * k, 52 * k, 32 * k, 64 * k, 48 * k, 20 * k, 52 * k, 32 * k, (ImageObserver)null);
+                graphics.drawImage(bufferedimage, 40 * k, 52 * k, 36 * k, 64 * k, 44 * k, 20 * k, 48 * k, 32 * k, (ImageObserver)null);
+                graphics.drawImage(bufferedimage, 44 * k, 52 * k, 40 * k, 64 * k, 40 * k, 20 * k, 44 * k, 32 * k, (ImageObserver)null);
+                graphics.drawImage(bufferedimage, 48 * k, 52 * k, 44 * k, 64 * k, 52 * k, 20 * k, 56 * k, 32 * k, (ImageObserver)null);
+            }
+
+            graphics.dispose();
             this.imageData = ((DataBufferInt)bufferedimage.getRaster().getDataBuffer()).getData();
-            int w = this.imageWidth;
-            int h = this.imageHeight;
-            this.setAreaOpaque(0, 0, w / 2, h / 2);
-            this.setAreaTransparent(w / 2, 0, w, h);
-            this.setAreaOpaque(0, h / 2, w, h);
+            this.setAreaOpaque(0 * k, 0 * k, 32 * k, 16 * k);
+            this.setAreaTransparent(32 * k, 0 * k, 64 * k, 32 * k);
+            this.setAreaOpaque(0 * k, 16 * k, 64 * k, 32 * k);
+            this.setAreaTransparent(0 * k, 32 * k, 16 * k, 48 * k);
+            this.setAreaTransparent(16 * k, 32 * k, 40 * k, 48 * k);
+            this.setAreaTransparent(40 * k, 32 * k, 56 * k, 48 * k);
+            this.setAreaTransparent(0 * k, 48 * k, 16 * k, 64 * k);
+            this.setAreaOpaque(16 * k, 48 * k, 48 * k, 64 * k);
+            this.setAreaTransparent(48 * k, 48 * k, 64 * k, 64 * k);
             return bufferedimage;
         }
     }
 
-    public void func_152634_a() {}
+    public void skinAvailable()
+    {
+    }
 
     /**
      * Makes the given area of the image transparent if it was previously completely opaque (used to remove the outer
      * layer of a skin around the head if it was saved all opaque; this would be redundant so it's assumed that the skin
      * maker is just using an image editor without an alpha channel)
      */
-    private void setAreaTransparent(int par1, int par2, int par3, int par4)
+    private void setAreaTransparent(int p_78434_1_, int p_78434_2_, int p_78434_3_, int p_78434_4_)
     {
-        if (!this.hasTransparency(par1, par2, par3, par4))
+        if (!this.hasTransparency(p_78434_1_, p_78434_2_, p_78434_3_, p_78434_4_))
         {
-            for (int var5 = par1; var5 < par3; ++var5)
+            for (int i = p_78434_1_; i < p_78434_3_; ++i)
             {
-                for (int var6 = par2; var6 < par4; ++var6)
+                for (int j = p_78434_2_; j < p_78434_4_; ++j)
                 {
-                    this.imageData[var5 + var6 * this.imageWidth] &= 16777215;
+                    this.imageData[i + j * this.imageWidth] &= 16777215;
                 }
             }
         }
@@ -72,13 +92,13 @@ public class ImageBufferDownload implements IImageBuffer
     /**
      * Makes the given area of the image opaque
      */
-    private void setAreaOpaque(int par1, int par2, int par3, int par4)
+    private void setAreaOpaque(int p_78433_1_, int p_78433_2_, int p_78433_3_, int p_78433_4_)
     {
-        for (int var5 = par1; var5 < par3; ++var5)
+        for (int i = p_78433_1_; i < p_78433_3_; ++i)
         {
-            for (int var6 = par2; var6 < par4; ++var6)
+            for (int j = p_78433_2_; j < p_78433_4_; ++j)
             {
-                this.imageData[var5 + var6 * this.imageWidth] |= -16777216;
+                this.imageData[i + j * this.imageWidth] |= -16777216;
             }
         }
     }
@@ -86,15 +106,15 @@ public class ImageBufferDownload implements IImageBuffer
     /**
      * Returns true if the given area of the image contains transparent pixels
      */
-    private boolean hasTransparency(int par1, int par2, int par3, int par4)
+    private boolean hasTransparency(int p_78435_1_, int p_78435_2_, int p_78435_3_, int p_78435_4_)
     {
-        for (int var5 = par1; var5 < par3; ++var5)
+        for (int i = p_78435_1_; i < p_78435_3_; ++i)
         {
-            for (int var6 = par2; var6 < par4; ++var6)
+            for (int j = p_78435_2_; j < p_78435_4_; ++j)
             {
-                int var7 = this.imageData[var5 + var6 * this.imageWidth];
+                int k = this.imageData[i + j * this.imageWidth];
 
-                if ((var7 >> 24 & 255) < 128)
+                if ((k >> 24 & 255) < 128)
                 {
                     return true;
                 }

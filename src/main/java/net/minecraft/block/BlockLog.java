@@ -1,17 +1,18 @@
 package net.minecraft.block;
 
-import java.util.Random;
 import net.minecraft.block.material.Material;
+import net.minecraft.block.properties.PropertyEnum;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.item.Item;
-import net.minecraft.util.IIcon;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.IStringSerializable;
 import net.minecraft.world.World;
 
 public abstract class BlockLog extends BlockRotatedPillar
 {
-    protected IIcon[] field_150167_a;
-    protected IIcon[] field_150166_b;
-    private static final String __OBFID = "CL_00000266";
+    public static final PropertyEnum<BlockLog.EnumAxis> LOG_AXIS = PropertyEnum.<BlockLog.EnumAxis>create("axis", BlockLog.EnumAxis.class);
 
     public BlockLog()
     {
@@ -21,59 +22,74 @@ public abstract class BlockLog extends BlockRotatedPillar
         this.setStepSound(soundTypeWood);
     }
 
-    public static int func_150165_c(int p_150165_0_)
+    public void breakBlock(World worldIn, BlockPos pos, IBlockState state)
     {
-        return p_150165_0_ & 3;
-    }
+        int i = 4;
+        int j = i + 1;
 
-    /**
-     * Returns the quantity of items to drop on block destruction.
-     */
-    public int quantityDropped(Random p_149745_1_)
-    {
-        return 1;
-    }
-
-    public Item getItemDropped(int p_149650_1_, Random p_149650_2_, int p_149650_3_)
-    {
-        return Item.getItemFromBlock(this);
-    }
-
-    public void breakBlock(World p_149749_1_, int p_149749_2_, int p_149749_3_, int p_149749_4_, Block p_149749_5_, int p_149749_6_)
-    {
-        byte var7 = 4;
-        int var8 = var7 + 1;
-
-        if (p_149749_1_.checkChunksExist(p_149749_2_ - var8, p_149749_3_ - var8, p_149749_4_ - var8, p_149749_2_ + var8, p_149749_3_ + var8, p_149749_4_ + var8))
+        if (worldIn.isAreaLoaded(pos.add(-j, -j, -j), pos.add(j, j, j)))
         {
-            for (int var9 = -var7; var9 <= var7; ++var9)
+            for (BlockPos blockpos : BlockPos.getAllInBox(pos.add(-i, -i, -i), pos.add(i, i, i)))
             {
-                for (int var10 = -var7; var10 <= var7; ++var10)
-                {
-                    for (int var11 = -var7; var11 <= var7; ++var11)
-                    {
-                        if (p_149749_1_.getBlock(p_149749_2_ + var9, p_149749_3_ + var10, p_149749_4_ + var11).getMaterial() == Material.leaves)
-                        {
-                            int var12 = p_149749_1_.getBlockMetadata(p_149749_2_ + var9, p_149749_3_ + var10, p_149749_4_ + var11);
+                IBlockState iblockstate = worldIn.getBlockState(blockpos);
 
-                            if ((var12 & 8) == 0)
-                            {
-                                p_149749_1_.setBlockMetadataWithNotify(p_149749_2_ + var9, p_149749_3_ + var10, p_149749_4_ + var11, var12 | 8, 4);
-                            }
-                        }
-                    }
+                if (iblockstate.getBlock().getMaterial() == Material.leaves && !((Boolean)iblockstate.getValue(BlockLeaves.CHECK_DECAY)).booleanValue())
+                {
+                    worldIn.setBlockState(blockpos, iblockstate.withProperty(BlockLeaves.CHECK_DECAY, Boolean.valueOf(true)), 4);
                 }
             }
         }
     }
 
-    protected IIcon func_150163_b(int p_150163_1_)
+    /**
+     * Called by ItemBlocks just before a block is actually set in the world, to allow for adjustments to the
+     * IBlockstate
+     */
+    public IBlockState onBlockPlaced(World worldIn, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta, EntityLivingBase placer)
     {
-        return this.field_150167_a[p_150163_1_ % this.field_150167_a.length];
+        return super.onBlockPlaced(worldIn, pos, facing, hitX, hitY, hitZ, meta, placer).withProperty(LOG_AXIS, BlockLog.EnumAxis.fromFacingAxis(facing.getAxis()));
     }
 
-    protected IIcon func_150161_d(int p_150161_1_)
+    public static enum EnumAxis implements IStringSerializable
     {
-        return this.field_150166_b[p_150161_1_ % this.field_150166_b.length];
+        X("x"),
+        Y("y"),
+        Z("z"),
+        NONE("none");
+
+        private final String name;
+
+        private EnumAxis(String name)
+        {
+            this.name = name;
+        }
+
+        public String toString()
+        {
+            return this.name;
+        }
+
+        public static BlockLog.EnumAxis fromFacingAxis(EnumFacing.Axis axis)
+        {
+            switch (axis)
+            {
+                case X:
+                    return X;
+
+                case Y:
+                    return Y;
+
+                case Z:
+                    return Z;
+
+                default:
+                    return NONE;
+            }
+        }
+
+        public String getName()
+        {
+            return this.name;
+        }
     }
 }

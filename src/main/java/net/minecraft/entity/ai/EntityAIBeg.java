@@ -12,14 +12,13 @@ public class EntityAIBeg extends EntityAIBase
     private EntityPlayer thePlayer;
     private World worldObject;
     private float minPlayerDistance;
-    private int field_75384_e;
-    private static final String __OBFID = "CL_00001576";
+    private int timeoutCounter;
 
-    public EntityAIBeg(EntityWolf p_i1617_1_, float p_i1617_2_)
+    public EntityAIBeg(EntityWolf wolf, float minDistance)
     {
-        this.theWolf = p_i1617_1_;
-        this.worldObject = p_i1617_1_.worldObj;
-        this.minPlayerDistance = p_i1617_2_;
+        this.theWolf = wolf;
+        this.worldObject = wolf.worldObj;
+        this.minPlayerDistance = minDistance;
         this.setMutexBits(2);
     }
 
@@ -37,7 +36,7 @@ public class EntityAIBeg extends EntityAIBase
      */
     public boolean continueExecuting()
     {
-        return !this.thePlayer.isEntityAlive() ? false : (this.theWolf.getDistanceSqToEntity(this.thePlayer) > (double)(this.minPlayerDistance * this.minPlayerDistance) ? false : this.field_75384_e > 0 && this.hasPlayerGotBoneInHand(this.thePlayer));
+        return !this.thePlayer.isEntityAlive() ? false : (this.theWolf.getDistanceSqToEntity(this.thePlayer) > (double)(this.minPlayerDistance * this.minPlayerDistance) ? false : this.timeoutCounter > 0 && this.hasPlayerGotBoneInHand(this.thePlayer));
     }
 
     /**
@@ -45,8 +44,8 @@ public class EntityAIBeg extends EntityAIBase
      */
     public void startExecuting()
     {
-        this.theWolf.func_70918_i(true);
-        this.field_75384_e = 40 + this.theWolf.getRNG().nextInt(40);
+        this.theWolf.setBegging(true);
+        this.timeoutCounter = 40 + this.theWolf.getRNG().nextInt(40);
     }
 
     /**
@@ -54,7 +53,7 @@ public class EntityAIBeg extends EntityAIBase
      */
     public void resetTask()
     {
-        this.theWolf.func_70918_i(false);
+        this.theWolf.setBegging(false);
         this.thePlayer = null;
     }
 
@@ -64,15 +63,15 @@ public class EntityAIBeg extends EntityAIBase
     public void updateTask()
     {
         this.theWolf.getLookHelper().setLookPosition(this.thePlayer.posX, this.thePlayer.posY + (double)this.thePlayer.getEyeHeight(), this.thePlayer.posZ, 10.0F, (float)this.theWolf.getVerticalFaceSpeed());
-        --this.field_75384_e;
+        --this.timeoutCounter;
     }
 
     /**
      * Gets if the Player has the Bone in the hand.
      */
-    private boolean hasPlayerGotBoneInHand(EntityPlayer p_75382_1_)
+    private boolean hasPlayerGotBoneInHand(EntityPlayer player)
     {
-        ItemStack var2 = p_75382_1_.inventory.getCurrentItem();
-        return var2 == null ? false : (!this.theWolf.isTamed() && var2.getItem() == Items.bone ? true : this.theWolf.isBreedingItem(var2));
+        ItemStack itemstack = player.inventory.getCurrentItem();
+        return itemstack == null ? false : (!this.theWolf.isTamed() && itemstack.getItem() == Items.bone ? true : this.theWolf.isBreedingItem(itemstack));
     }
 }

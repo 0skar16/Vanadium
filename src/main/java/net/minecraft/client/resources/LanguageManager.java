@@ -4,8 +4,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
@@ -21,66 +19,58 @@ public class LanguageManager implements IResourceManagerReloadListener
     private final IMetadataSerializer theMetadataSerializer;
     private String currentLanguage;
     protected static final Locale currentLocale = new Locale();
-    private Map languageMap = Maps.newHashMap();
-    private static final String __OBFID = "CL_00001096";
+    private Map<String, Language> languageMap = Maps.<String, Language>newHashMap();
 
-    public LanguageManager(IMetadataSerializer p_i1304_1_, String p_i1304_2_)
+    public LanguageManager(IMetadataSerializer theMetadataSerializerIn, String currentLanguageIn)
     {
-        this.theMetadataSerializer = p_i1304_1_;
-        this.currentLanguage = p_i1304_2_;
+        this.theMetadataSerializer = theMetadataSerializerIn;
+        this.currentLanguage = currentLanguageIn;
         I18n.setLocale(currentLocale);
     }
 
-    public void parseLanguageMetadata(List p_135043_1_)
+    public void parseLanguageMetadata(List<IResourcePack> resourcesPacks)
     {
         this.languageMap.clear();
-        Iterator var2 = p_135043_1_.iterator();
 
-        while (var2.hasNext())
+        for (IResourcePack iresourcepack : resourcesPacks)
         {
-            IResourcePack var3 = (IResourcePack)var2.next();
-
             try
             {
-                LanguageMetadataSection var4 = (LanguageMetadataSection)var3.getPackMetadata(this.theMetadataSerializer, "language");
+                LanguageMetadataSection languagemetadatasection = (LanguageMetadataSection)iresourcepack.getPackMetadata(this.theMetadataSerializer, "language");
 
-                if (var4 != null)
+                if (languagemetadatasection != null)
                 {
-                    Iterator var5 = var4.getLanguages().iterator();
-
-                    while (var5.hasNext())
+                    for (Language language : languagemetadatasection.getLanguages())
                     {
-                        Language var6 = (Language)var5.next();
-
-                        if (!this.languageMap.containsKey(var6.getLanguageCode()))
+                        if (!this.languageMap.containsKey(language.getLanguageCode()))
                         {
-                            this.languageMap.put(var6.getLanguageCode(), var6);
+                            this.languageMap.put(language.getLanguageCode(), language);
                         }
                     }
                 }
             }
-            catch (RuntimeException var7)
+            catch (RuntimeException runtimeexception)
             {
-                logger.warn("Unable to parse metadata section of resourcepack: " + var3.getPackName(), var7);
+                logger.warn((String)("Unable to parse metadata section of resourcepack: " + iresourcepack.getPackName()), (Throwable)runtimeexception);
             }
-            catch (IOException var8)
+            catch (IOException ioexception)
             {
-                logger.warn("Unable to parse metadata section of resourcepack: " + var3.getPackName(), var8);
+                logger.warn((String)("Unable to parse metadata section of resourcepack: " + iresourcepack.getPackName()), (Throwable)ioexception);
             }
         }
     }
 
-    public void onResourceManagerReload(IResourceManager p_110549_1_)
+    public void onResourceManagerReload(IResourceManager resourceManager)
     {
-        ArrayList var2 = Lists.newArrayList(new String[] {"en_US"});
+        List<String> list = Lists.newArrayList(new String[] {"en_US"});
 
         if (!"en_US".equals(this.currentLanguage))
         {
-            var2.add(this.currentLanguage);
+            list.add(this.currentLanguage);
         }
 
-        currentLocale.loadLocaleDataFiles(p_110549_1_, var2);
-        StringTranslate.replaceWith(currentLocale.field_135032_a);
+        currentLocale.loadLocaleDataFiles(resourceManager, list);
+        StringTranslate.replaceWith(currentLocale.properties);
     }
 
     public boolean isCurrentLocaleUnicode()
@@ -93,9 +83,9 @@ public class LanguageManager implements IResourceManagerReloadListener
         return this.getCurrentLanguage() != null && this.getCurrentLanguage().isBidirectional();
     }
 
-    public void setCurrentLanguage(Language p_135045_1_)
+    public void setCurrentLanguage(Language currentLanguageIn)
     {
-        this.currentLanguage = p_135045_1_.getLanguageCode();
+        this.currentLanguage = currentLanguageIn.getLanguageCode();
     }
 
     public Language getCurrentLanguage()
@@ -103,7 +93,7 @@ public class LanguageManager implements IResourceManagerReloadListener
         return this.languageMap.containsKey(this.currentLanguage) ? (Language)this.languageMap.get(this.currentLanguage) : (Language)this.languageMap.get("en_US");
     }
 
-    public SortedSet getLanguages()
+    public SortedSet<Language> getLanguages()
     {
         return Sets.newTreeSet(this.languageMap.values());
     }

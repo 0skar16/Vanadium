@@ -9,39 +9,38 @@ public class StatCollector
      * StringTranslate singleton instance fails to translate a key.
      */
     private static StringTranslate fallbackTranslator = new StringTranslate();
-    private static final String __OBFID = "CL_00001211";
 
     /**
      * Translates a Stat name
      */
-    public static String translateToLocal(String p_74838_0_)
+    public static String translateToLocal(String key)
     {
-        return localizedName.translateKey(p_74838_0_);
+        return localizedName.translateKey(key);
     }
 
     /**
      * Translates a Stat name with format args
      */
-    public static String translateToLocalFormatted(String p_74837_0_, Object ... p_74837_1_)
+    public static String translateToLocalFormatted(String key, Object... format)
     {
-        return localizedName.translateKeyFormat(p_74837_0_, p_74837_1_);
+        return localizedName.translateKeyFormat(key, format);
     }
 
     /**
      * Translates a Stat name using the fallback (hardcoded en_US) locale.  Looks like it's only intended to be used if
      * translateToLocal fails.
      */
-    public static String translateToFallback(String p_150826_0_)
+    public static String translateToFallback(String key)
     {
-        return fallbackTranslator.translateKey(p_150826_0_);
+        return fallbackTranslator.translateKey(key);
     }
 
     /**
      * Determines whether or not translateToLocal will find a translation for the given key.
      */
-    public static boolean canTranslate(String p_94522_0_)
+    public static boolean canTranslate(String key)
     {
-        return localizedName.containsTranslateKey(p_94522_0_);
+        return localizedName.isKeyTranslated(key);
     }
 
     /**

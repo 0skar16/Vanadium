@@ -11,15 +11,14 @@ public class Session
     private final String username;
     private final String playerID;
     private final String token;
-    private final Session.Type field_152429_d;
-    private static final String __OBFID = "CL_00000659";
+    private final Session.Type sessionType;
 
-    public Session(String p_i1098_1_, String p_i1098_2_, String p_i1098_3_, String p_i1098_4_)
+    public Session(String usernameIn, String playerIDIn, String tokenIn, String sessionTypeIn)
     {
-        this.username = p_i1098_1_;
-        this.playerID = p_i1098_2_;
-        this.token = p_i1098_3_;
-        this.field_152429_d = Session.Type.func_152421_a(p_i1098_4_);
+        this.username = usernameIn;
+        this.playerID = playerIDIn;
+        this.token = tokenIn;
+        this.sessionType = Session.Type.setSessionType(sessionTypeIn);
     }
 
     public String getSessionID()
@@ -42,12 +41,12 @@ public class Session
         return this.token;
     }
 
-    public GameProfile func_148256_e()
+    public GameProfile getProfile()
     {
         try
         {
-            UUID var1 = UUIDTypeAdapter.fromString(this.getPlayerID());
-            return new GameProfile(var1, this.getUsername());
+            UUID uuid = UUIDTypeAdapter.fromString(this.getPlayerID());
+            return new GameProfile(uuid, this.getUsername());
         }
         catch (IllegalArgumentException var2)
         {
@@ -55,39 +54,36 @@ public class Session
         }
     }
 
-    public Session.Type func_152428_f()
+    /**
+     * Returns either 'legacy' or 'mojang' whether the account is migrated or not
+     */
+    public Session.Type getSessionType()
     {
-        return this.field_152429_d;
+        return this.sessionType;
     }
 
     public static enum Type
     {
-        LEGACY("LEGACY", 0, "legacy"),
-        MOJANG("MOJANG", 1, "mojang");
-        private static final Map field_152425_c = Maps.newHashMap();
-        private final String field_152426_d;
+        LEGACY("legacy"),
+        MOJANG("mojang");
 
-        private static final Session.Type[] $VALUES = new Session.Type[]{LEGACY, MOJANG};
-        private static final String __OBFID = "CL_00001851";
+        private static final Map<String, Session.Type> SESSION_TYPES = Maps.<String, Session.Type>newHashMap();
+        private final String sessionType;
 
-        private Type(String p_i1096_1_, int p_i1096_2_, String p_i1096_3_)
+        private Type(String sessionTypeIn)
         {
-            this.field_152426_d = p_i1096_3_;
+            this.sessionType = sessionTypeIn;
         }
 
-        public static Session.Type func_152421_a(String p_152421_0_)
+        public static Session.Type setSessionType(String sessionTypeIn)
         {
-            return (Session.Type)field_152425_c.get(p_152421_0_.toLowerCase());
+            return (Session.Type)SESSION_TYPES.get(sessionTypeIn.toLowerCase());
         }
 
         static {
-            Session.Type[] var0 = values();
-            int var1 = var0.length;
-
-            for (int var2 = 0; var2 < var1; ++var2)
+            for (Session.Type session$type : values())
             {
-                Session.Type var3 = var0[var2];
-                field_152425_c.put(var3.field_152426_d, var3);
+                SESSION_TYPES.put(session$type.sessionType, session$type);
             }
         }
     }

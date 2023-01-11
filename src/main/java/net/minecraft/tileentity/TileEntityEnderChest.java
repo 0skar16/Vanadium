@@ -2,79 +2,84 @@ package net.minecraft.tileentity;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
+import net.minecraft.util.ITickable;
 
-public class TileEntityEnderChest extends TileEntity
+public class TileEntityEnderChest extends TileEntity implements ITickable
 {
-    public float field_145972_a;
-    public float field_145975_i;
-    public int field_145973_j;
-    private int field_145974_k;
-    private static final String __OBFID = "CL_00000355";
+    public float lidAngle;
 
-    public void updateEntity()
+    /** The angle of the ender chest lid last tick */
+    public float prevLidAngle;
+    public int numPlayersUsing;
+    private int ticksSinceSync;
+
+    /**
+     * Like the old updateEntity(), except more generic.
+     */
+    public void update()
     {
-        super.updateEntity();
-
-        if (++this.field_145974_k % 20 * 4 == 0)
+        if (++this.ticksSinceSync % 20 * 4 == 0)
         {
-            this.worldObj.func_147452_c(this.field_145851_c, this.field_145848_d, this.field_145849_e, Blocks.ender_chest, 1, this.field_145973_j);
+            this.worldObj.addBlockEvent(this.pos, Blocks.ender_chest, 1, this.numPlayersUsing);
         }
 
-        this.field_145975_i = this.field_145972_a;
-        float var1 = 0.1F;
-        double var4;
+        this.prevLidAngle = this.lidAngle;
+        int i = this.pos.getX();
+        int j = this.pos.getY();
+        int k = this.pos.getZ();
+        float f = 0.1F;
 
-        if (this.field_145973_j > 0 && this.field_145972_a == 0.0F)
+        if (this.numPlayersUsing > 0 && this.lidAngle == 0.0F)
         {
-            double var2 = (double)this.field_145851_c + 0.5D;
-            var4 = (double)this.field_145849_e + 0.5D;
-            this.worldObj.playSoundEffect(var2, (double)this.field_145848_d + 0.5D, var4, "random.chestopen", 0.5F, this.worldObj.rand.nextFloat() * 0.1F + 0.9F);
+            double d0 = (double)i + 0.5D;
+            double d1 = (double)k + 0.5D;
+            this.worldObj.playSoundEffect(d0, (double)j + 0.5D, d1, "random.chestopen", 0.5F, this.worldObj.rand.nextFloat() * 0.1F + 0.9F);
         }
 
-        if (this.field_145973_j == 0 && this.field_145972_a > 0.0F || this.field_145973_j > 0 && this.field_145972_a < 1.0F)
+        if (this.numPlayersUsing == 0 && this.lidAngle > 0.0F || this.numPlayersUsing > 0 && this.lidAngle < 1.0F)
         {
-            float var8 = this.field_145972_a;
+            float f2 = this.lidAngle;
 
-            if (this.field_145973_j > 0)
+            if (this.numPlayersUsing > 0)
             {
-                this.field_145972_a += var1;
+                this.lidAngle += f;
             }
             else
             {
-                this.field_145972_a -= var1;
+                this.lidAngle -= f;
             }
 
-            if (this.field_145972_a > 1.0F)
+            if (this.lidAngle > 1.0F)
             {
-                this.field_145972_a = 1.0F;
+                this.lidAngle = 1.0F;
             }
 
-            float var3 = 0.5F;
+            float f1 = 0.5F;
 
-            if (this.field_145972_a < var3 && var8 >= var3)
+            if (this.lidAngle < f1 && f2 >= f1)
             {
-                var4 = (double)this.field_145851_c + 0.5D;
-                double var6 = (double)this.field_145849_e + 0.5D;
-                this.worldObj.playSoundEffect(var4, (double)this.field_145848_d + 0.5D, var6, "random.chestclosed", 0.5F, this.worldObj.rand.nextFloat() * 0.1F + 0.9F);
+                double d3 = (double)i + 0.5D;
+                double d2 = (double)k + 0.5D;
+                this.worldObj.playSoundEffect(d3, (double)j + 0.5D, d2, "random.chestclosed", 0.5F, this.worldObj.rand.nextFloat() * 0.1F + 0.9F);
             }
 
-            if (this.field_145972_a < 0.0F)
+            if (this.lidAngle < 0.0F)
             {
-                this.field_145972_a = 0.0F;
+                this.lidAngle = 0.0F;
             }
         }
     }
 
-    public boolean receiveClientEvent(int p_145842_1_, int p_145842_2_)
+    public boolean receiveClientEvent(int id, int type)
     {
-        if (p_145842_1_ == 1)
+        if (id == 1)
         {
-            this.field_145973_j = p_145842_2_;
+            this.numPlayersUsing = type;
             return true;
         }
         else
         {
-            return super.receiveClientEvent(p_145842_1_, p_145842_2_);
+            return super.receiveClientEvent(id, type);
         }
     }
 
@@ -87,20 +92,20 @@ public class TileEntityEnderChest extends TileEntity
         super.invalidate();
     }
 
-    public void func_145969_a()
+    public void openChest()
     {
-        ++this.field_145973_j;
-        this.worldObj.func_147452_c(this.field_145851_c, this.field_145848_d, this.field_145849_e, Blocks.ender_chest, 1, this.field_145973_j);
+        ++this.numPlayersUsing;
+        this.worldObj.addBlockEvent(this.pos, Blocks.ender_chest, 1, this.numPlayersUsing);
     }
 
-    public void func_145970_b()
+    public void closeChest()
     {
-        --this.field_145973_j;
-        this.worldObj.func_147452_c(this.field_145851_c, this.field_145848_d, this.field_145849_e, Blocks.ender_chest, 1, this.field_145973_j);
+        --this.numPlayersUsing;
+        this.worldObj.addBlockEvent(this.pos, Blocks.ender_chest, 1, this.numPlayersUsing);
     }
 
-    public boolean func_145971_a(EntityPlayer p_145971_1_)
+    public boolean canBeUsed(EntityPlayer p_145971_1_)
     {
-        return this.worldObj.getTileEntity(this.field_145851_c, this.field_145848_d, this.field_145849_e) != this ? false : p_145971_1_.getDistanceSq((double)this.field_145851_c + 0.5D, (double)this.field_145848_d + 0.5D, (double)this.field_145849_e + 0.5D) <= 64.0D;
+        return this.worldObj.getTileEntity(this.pos) != this ? false : p_145971_1_.getDistanceSq((double)this.pos.getX() + 0.5D, (double)this.pos.getY() + 0.5D, (double)this.pos.getZ() + 0.5D) <= 64.0D;
     }
 }

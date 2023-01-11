@@ -1,22 +1,22 @@
 package net.minecraft.client.particle;
 
-import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.WorldRenderer;
+import net.minecraft.entity.Entity;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 
 public class EntityNoteFX extends EntityFX
 {
     float noteParticleScale;
-    private static final String __OBFID = "CL_00000913";
 
-    public EntityNoteFX(World p_i46353_1_, double p_i46353_2_, double p_i46353_4_, double p_i46353_6_, double p_i46353_8_, double p_i46353_10_, double p_i46353_12_)
+    protected EntityNoteFX(World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double p_i46353_8_, double p_i46353_10_, double p_i46353_12_)
     {
-        this(p_i46353_1_, p_i46353_2_, p_i46353_4_, p_i46353_6_, p_i46353_8_, p_i46353_10_, p_i46353_12_, 2.0F);
+        this(worldIn, xCoordIn, yCoordIn, zCoordIn, p_i46353_8_, p_i46353_10_, p_i46353_12_, 2.0F);
     }
 
-    public EntityNoteFX(World p_i1217_1_, double p_i1217_2_, double p_i1217_4_, double p_i1217_6_, double p_i1217_8_, double p_i1217_10_, double p_i1217_12_, float p_i1217_14_)
+    protected EntityNoteFX(World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double p_i1217_8_, double p_i1217_10_, double p_i1217_12_, float p_i1217_14_)
     {
-        super(p_i1217_1_, p_i1217_2_, p_i1217_4_, p_i1217_6_, 0.0D, 0.0D, 0.0D);
+        super(worldIn, xCoordIn, yCoordIn, zCoordIn, 0.0D, 0.0D, 0.0D);
         this.motionX *= 0.009999999776482582D;
         this.motionY *= 0.009999999776482582D;
         this.motionZ *= 0.009999999776482582D;
@@ -32,22 +32,15 @@ public class EntityNoteFX extends EntityFX
         this.setParticleTextureIndex(64);
     }
 
-    public void renderParticle(Tessellator p_70539_1_, float p_70539_2_, float p_70539_3_, float p_70539_4_, float p_70539_5_, float p_70539_6_, float p_70539_7_)
+    /**
+     * Renders the particle
+     */
+    public void renderParticle(WorldRenderer worldRendererIn, Entity entityIn, float partialTicks, float rotationX, float rotationZ, float rotationYZ, float rotationXY, float rotationXZ)
     {
-        float var8 = ((float)this.particleAge + p_70539_2_) / (float)this.particleMaxAge * 32.0F;
-
-        if (var8 < 0.0F)
-        {
-            var8 = 0.0F;
-        }
-
-        if (var8 > 1.0F)
-        {
-            var8 = 1.0F;
-        }
-
-        this.particleScale = this.noteParticleScale * var8;
-        super.renderParticle(p_70539_1_, p_70539_2_, p_70539_3_, p_70539_4_, p_70539_5_, p_70539_6_, p_70539_7_);
+        float f = ((float)this.particleAge + partialTicks) / (float)this.particleMaxAge * 32.0F;
+        f = MathHelper.clamp_float(f, 0.0F, 1.0F);
+        this.particleScale = this.noteParticleScale * f;
+        super.renderParticle(worldRendererIn, entityIn, partialTicks, rotationX, rotationZ, rotationYZ, rotationXY, rotationXZ);
     }
 
     /**
@@ -80,6 +73,14 @@ public class EntityNoteFX extends EntityFX
         {
             this.motionX *= 0.699999988079071D;
             this.motionZ *= 0.699999988079071D;
+        }
+    }
+
+    public static class Factory implements IParticleFactory
+    {
+        public EntityFX getEntityFX(int particleID, World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double xSpeedIn, double ySpeedIn, double zSpeedIn, int... p_178902_15_)
+        {
+            return new EntityNoteFX(worldIn, xCoordIn, yCoordIn, zCoordIn, xSpeedIn, ySpeedIn, zSpeedIn);
         }
     }
 }

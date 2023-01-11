@@ -5,138 +5,127 @@ import java.util.List;
 
 public class SoundList
 {
-    private final List field_148577_a = Lists.newArrayList();
-    private boolean field_148575_b;
-    private SoundCategory field_148576_c;
-    private static final String __OBFID = "CL_00001121";
+    private final List<SoundList.SoundEntry> soundList = Lists.<SoundList.SoundEntry>newArrayList();
 
-    public List func_148570_a()
+    /**
+     * if true it will override all the sounds from the resourcepacks loaded before
+     */
+    private boolean replaceExisting;
+    private SoundCategory category;
+
+    public List<SoundList.SoundEntry> getSoundList()
     {
-        return this.field_148577_a;
+        return this.soundList;
     }
 
-    public boolean func_148574_b()
+    public boolean canReplaceExisting()
     {
-        return this.field_148575_b;
+        return this.replaceExisting;
     }
 
-    public void func_148572_a(boolean p_148572_1_)
+    public void setReplaceExisting(boolean p_148572_1_)
     {
-        this.field_148575_b = p_148572_1_;
+        this.replaceExisting = p_148572_1_;
     }
 
-    public SoundCategory func_148573_c()
+    public SoundCategory getSoundCategory()
     {
-        return this.field_148576_c;
+        return this.category;
     }
 
-    public void func_148571_a(SoundCategory p_148571_1_)
+    public void setSoundCategory(SoundCategory soundCat)
     {
-        this.field_148576_c = p_148571_1_;
+        this.category = soundCat;
     }
 
     public static class SoundEntry
     {
-        private String field_148569_a;
-        private float field_148567_b = 1.0F;
-        private float field_148568_c = 1.0F;
-        private int field_148565_d = 1;
-        private SoundList.SoundEntry.Type field_148566_e;
-        private boolean field_148564_f;
-        private static final String __OBFID = "CL_00001122";
+        private String name;
+        private float volume = 1.0F;
+        private float pitch = 1.0F;
+        private int weight = 1;
+        private SoundList.SoundEntry.Type type = SoundList.SoundEntry.Type.FILE;
+        private boolean streaming = false;
 
-        public SoundEntry()
+        public String getSoundEntryName()
         {
-            this.field_148566_e = SoundList.SoundEntry.Type.FILE;
-            this.field_148564_f = false;
+            return this.name;
         }
 
-        public String func_148556_a()
+        public void setSoundEntryName(String nameIn)
         {
-            return this.field_148569_a;
+            this.name = nameIn;
         }
 
-        public void func_148561_a(String p_148561_1_)
+        public float getSoundEntryVolume()
         {
-            this.field_148569_a = p_148561_1_;
+            return this.volume;
         }
 
-        public float func_148558_b()
+        public void setSoundEntryVolume(float volumeIn)
         {
-            return this.field_148567_b;
+            this.volume = volumeIn;
         }
 
-        public void func_148553_a(float p_148553_1_)
+        public float getSoundEntryPitch()
         {
-            this.field_148567_b = p_148553_1_;
+            return this.pitch;
         }
 
-        public float func_148560_c()
+        public void setSoundEntryPitch(float pitchIn)
         {
-            return this.field_148568_c;
+            this.pitch = pitchIn;
         }
 
-        public void func_148559_b(float p_148559_1_)
+        public int getSoundEntryWeight()
         {
-            this.field_148568_c = p_148559_1_;
+            return this.weight;
         }
 
-        public int func_148555_d()
+        public void setSoundEntryWeight(int weightIn)
         {
-            return this.field_148565_d;
+            this.weight = weightIn;
         }
 
-        public void func_148554_a(int p_148554_1_)
+        public SoundList.SoundEntry.Type getSoundEntryType()
         {
-            this.field_148565_d = p_148554_1_;
+            return this.type;
         }
 
-        public SoundList.SoundEntry.Type func_148563_e()
+        public void setSoundEntryType(SoundList.SoundEntry.Type typeIn)
         {
-            return this.field_148566_e;
+            this.type = typeIn;
         }
 
-        public void func_148562_a(SoundList.SoundEntry.Type p_148562_1_)
+        public boolean isStreaming()
         {
-            this.field_148566_e = p_148562_1_;
+            return this.streaming;
         }
 
-        public boolean func_148552_f()
+        public void setStreaming(boolean isStreaming)
         {
-            return this.field_148564_f;
-        }
-
-        public void func_148557_a(boolean p_148557_1_)
-        {
-            this.field_148564_f = p_148557_1_;
+            this.streaming = isStreaming;
         }
 
         public static enum Type
         {
-            FILE("FILE", 0, "file"),
-            SOUND_EVENT("SOUND_EVENT", 1, "event");
+            FILE("file"),
+            SOUND_EVENT("event");
+
             private final String field_148583_c;
 
-            private static final SoundList.SoundEntry.Type[] $VALUES = new SoundList.SoundEntry.Type[]{FILE, SOUND_EVENT};
-            private static final String __OBFID = "CL_00001123";
-
-            private Type(String p_i45109_1_, int p_i45109_2_, String p_i45109_3_)
+            private Type(String p_i45109_3_)
             {
                 this.field_148583_c = p_i45109_3_;
             }
 
-            public static SoundList.SoundEntry.Type func_148580_a(String p_148580_0_)
+            public static SoundList.SoundEntry.Type getType(String p_148580_0_)
             {
-                SoundList.SoundEntry.Type[] var1 = values();
-                int var2 = var1.length;
-
-                for (int var3 = 0; var3 < var2; ++var3)
+                for (SoundList.SoundEntry.Type soundlist$soundentry$type : values())
                 {
-                    SoundList.SoundEntry.Type var4 = var1[var3];
-
-                    if (var4.field_148583_c.equals(p_148580_0_))
+                    if (soundlist$soundentry$type.field_148583_c.equals(p_148580_0_))
                     {
-                        return var4;
+                        return soundlist$soundentry$type;
                     }
                 }
 

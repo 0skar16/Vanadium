@@ -2,6 +2,7 @@ package net.minecraft.entity.ai;
 
 import java.util.Random;
 import net.minecraft.entity.EntityCreature;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.Vec3;
 
@@ -11,95 +12,114 @@ public class RandomPositionGenerator
      * used to store a driection when the user passes a point to move towards or away from. WARNING: NEVER THREAD SAFE.
      * MULTIPLE findTowards and findAway calls, will share this var
      */
-    private static Vec3 staticVector = Vec3.createVectorHelper(0.0D, 0.0D, 0.0D);
-    private static final String __OBFID = "CL_00001629";
+    private static Vec3 staticVector = new Vec3(0.0D, 0.0D, 0.0D);
 
     /**
      * finds a random target within par1(x,z) and par2 (y) blocks
      */
-    public static Vec3 findRandomTarget(EntityCreature p_75463_0_, int p_75463_1_, int p_75463_2_)
+    public static Vec3 findRandomTarget(EntityCreature entitycreatureIn, int xz, int y)
     {
-        return findRandomTargetBlock(p_75463_0_, p_75463_1_, p_75463_2_, (Vec3)null);
+        return findRandomTargetBlock(entitycreatureIn, xz, y, (Vec3)null);
     }
 
     /**
      * finds a random target within par1(x,z) and par2 (y) blocks in the direction of the point par3
      */
-    public static Vec3 findRandomTargetBlockTowards(EntityCreature p_75464_0_, int p_75464_1_, int p_75464_2_, Vec3 p_75464_3_)
+    public static Vec3 findRandomTargetBlockTowards(EntityCreature entitycreatureIn, int xz, int y, Vec3 targetVec3)
     {
-        staticVector.xCoord = p_75464_3_.xCoord - p_75464_0_.posX;
-        staticVector.yCoord = p_75464_3_.yCoord - p_75464_0_.posY;
-        staticVector.zCoord = p_75464_3_.zCoord - p_75464_0_.posZ;
-        return findRandomTargetBlock(p_75464_0_, p_75464_1_, p_75464_2_, staticVector);
+        staticVector = targetVec3.subtract(entitycreatureIn.posX, entitycreatureIn.posY, entitycreatureIn.posZ);
+        return findRandomTargetBlock(entitycreatureIn, xz, y, staticVector);
     }
 
     /**
      * finds a random target within par1(x,z) and par2 (y) blocks in the reverse direction of the point par3
      */
-    public static Vec3 findRandomTargetBlockAwayFrom(EntityCreature p_75461_0_, int p_75461_1_, int p_75461_2_, Vec3 p_75461_3_)
+    public static Vec3 findRandomTargetBlockAwayFrom(EntityCreature entitycreatureIn, int xz, int y, Vec3 targetVec3)
     {
-        staticVector.xCoord = p_75461_0_.posX - p_75461_3_.xCoord;
-        staticVector.yCoord = p_75461_0_.posY - p_75461_3_.yCoord;
-        staticVector.zCoord = p_75461_0_.posZ - p_75461_3_.zCoord;
-        return findRandomTargetBlock(p_75461_0_, p_75461_1_, p_75461_2_, staticVector);
+        staticVector = (new Vec3(entitycreatureIn.posX, entitycreatureIn.posY, entitycreatureIn.posZ)).subtract(targetVec3);
+        return findRandomTargetBlock(entitycreatureIn, xz, y, staticVector);
     }
 
     /**
      * searches 10 blocks at random in a within par1(x,z) and par2 (y) distance, ignores those not in the direction of
      * par3Vec3, then points to the tile for which creature.getBlockPathWeight returns the highest number
      */
-    private static Vec3 findRandomTargetBlock(EntityCreature p_75462_0_, int p_75462_1_, int p_75462_2_, Vec3 p_75462_3_)
+    private static Vec3 findRandomTargetBlock(EntityCreature entitycreatureIn, int xz, int y, Vec3 targetVec3)
     {
-        Random var4 = p_75462_0_.getRNG();
-        boolean var5 = false;
-        int var6 = 0;
-        int var7 = 0;
-        int var8 = 0;
-        float var9 = -99999.0F;
-        boolean var10;
+        Random random = entitycreatureIn.getRNG();
+        boolean flag = false;
+        int i = 0;
+        int j = 0;
+        int k = 0;
+        float f = -99999.0F;
+        boolean flag1;
 
-        if (p_75462_0_.hasHome())
+        if (entitycreatureIn.hasHome())
         {
-            double var11 = (double)(p_75462_0_.getHomePosition().getDistanceSquared(MathHelper.floor_double(p_75462_0_.posX), MathHelper.floor_double(p_75462_0_.posY), MathHelper.floor_double(p_75462_0_.posZ)) + 4.0F);
-            double var13 = (double)(p_75462_0_.func_110174_bM() + (float)p_75462_1_);
-            var10 = var11 < var13 * var13;
+            double d0 = entitycreatureIn.getHomePosition().distanceSq((double)MathHelper.floor_double(entitycreatureIn.posX), (double)MathHelper.floor_double(entitycreatureIn.posY), (double)MathHelper.floor_double(entitycreatureIn.posZ)) + 4.0D;
+            double d1 = (double)(entitycreatureIn.getMaximumHomeDistance() + (float)xz);
+            flag1 = d0 < d1 * d1;
         }
         else
         {
-            var10 = false;
+            flag1 = false;
         }
 
-        for (int var16 = 0; var16 < 10; ++var16)
+        for (int j1 = 0; j1 < 10; ++j1)
         {
-            int var12 = var4.nextInt(2 * p_75462_1_) - p_75462_1_;
-            int var17 = var4.nextInt(2 * p_75462_2_) - p_75462_2_;
-            int var14 = var4.nextInt(2 * p_75462_1_) - p_75462_1_;
+            int l = random.nextInt(2 * xz + 1) - xz;
+            int k1 = random.nextInt(2 * y + 1) - y;
+            int i1 = random.nextInt(2 * xz + 1) - xz;
 
-            if (p_75462_3_ == null || (double)var12 * p_75462_3_.xCoord + (double)var14 * p_75462_3_.zCoord >= 0.0D)
+            if (targetVec3 == null || (double)l * targetVec3.xCoord + (double)i1 * targetVec3.zCoord >= 0.0D)
             {
-                var12 += MathHelper.floor_double(p_75462_0_.posX);
-                var17 += MathHelper.floor_double(p_75462_0_.posY);
-                var14 += MathHelper.floor_double(p_75462_0_.posZ);
-
-                if (!var10 || p_75462_0_.isWithinHomeDistance(var12, var17, var14))
+                if (entitycreatureIn.hasHome() && xz > 1)
                 {
-                    float var15 = p_75462_0_.getBlockPathWeight(var12, var17, var14);
+                    BlockPos blockpos = entitycreatureIn.getHomePosition();
 
-                    if (var15 > var9)
+                    if (entitycreatureIn.posX > (double)blockpos.getX())
                     {
-                        var9 = var15;
-                        var6 = var12;
-                        var7 = var17;
-                        var8 = var14;
-                        var5 = true;
+                        l -= random.nextInt(xz / 2);
+                    }
+                    else
+                    {
+                        l += random.nextInt(xz / 2);
+                    }
+
+                    if (entitycreatureIn.posZ > (double)blockpos.getZ())
+                    {
+                        i1 -= random.nextInt(xz / 2);
+                    }
+                    else
+                    {
+                        i1 += random.nextInt(xz / 2);
+                    }
+                }
+
+                l = l + MathHelper.floor_double(entitycreatureIn.posX);
+                k1 = k1 + MathHelper.floor_double(entitycreatureIn.posY);
+                i1 = i1 + MathHelper.floor_double(entitycreatureIn.posZ);
+                BlockPos blockpos1 = new BlockPos(l, k1, i1);
+
+                if (!flag1 || entitycreatureIn.isWithinHomeDistanceFromPosition(blockpos1))
+                {
+                    float f1 = entitycreatureIn.getBlockPathWeight(blockpos1);
+
+                    if (f1 > f)
+                    {
+                        f = f1;
+                        i = l;
+                        j = k1;
+                        k = i1;
+                        flag = true;
                     }
                 }
             }
         }
 
-        if (var5)
+        if (flag)
         {
-            return Vec3.createVectorHelper((double)var6, (double)var7, (double)var8);
+            return new Vec3((double)i, (double)j, (double)k);
         }
         else
         {

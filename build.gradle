@@ -3,7 +3,7 @@ plugins {
 }
 
 group 'dev.ztech'
-version '0.0.7'
+version '1.8.9-0.0.41'
 jar {
     manifest {
         attributes(

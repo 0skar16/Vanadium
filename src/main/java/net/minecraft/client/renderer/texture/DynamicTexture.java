@@ -13,24 +13,25 @@ public class DynamicTexture extends AbstractTexture
 
     /** height of this icon in pixels */
     private final int height;
-    private static final String __OBFID = "CL_00001048";
 
-    public DynamicTexture(BufferedImage p_i1270_1_)
+    public DynamicTexture(BufferedImage bufferedImage)
     {
-        this(p_i1270_1_.getWidth(), p_i1270_1_.getHeight());
-        p_i1270_1_.getRGB(0, 0, p_i1270_1_.getWidth(), p_i1270_1_.getHeight(), this.dynamicTextureData, 0, p_i1270_1_.getWidth());
+        this(bufferedImage.getWidth(), bufferedImage.getHeight());
+        bufferedImage.getRGB(0, 0, bufferedImage.getWidth(), bufferedImage.getHeight(), this.dynamicTextureData, 0, bufferedImage.getWidth());
         this.updateDynamicTexture();
     }
 
-    public DynamicTexture(int p_i1271_1_, int p_i1271_2_)
+    public DynamicTexture(int textureWidth, int textureHeight)
     {
-        this.width = p_i1271_1_;
-        this.height = p_i1271_2_;
-        this.dynamicTextureData = new int[p_i1271_1_ * p_i1271_2_];
-        TextureUtil.allocateTexture(this.getGlTextureId(), p_i1271_1_, p_i1271_2_);
+        this.width = textureWidth;
+        this.height = textureHeight;
+        this.dynamicTextureData = new int[textureWidth * textureHeight];
+        TextureUtil.allocateTexture(this.getGlTextureId(), textureWidth, textureHeight);
     }
 
-    public void loadTexture(IResourceManager p_110551_1_) throws IOException {}
+    public void loadTexture(IResourceManager resourceManager) throws IOException
+    {
+    }
 
     public void updateDynamicTexture()
     {

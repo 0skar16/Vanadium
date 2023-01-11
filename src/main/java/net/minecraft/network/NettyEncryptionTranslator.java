@@ -7,49 +7,48 @@ import javax.crypto.ShortBufferException;
 
 public class NettyEncryptionTranslator
 {
-    private final Cipher field_150507_a;
+    private final Cipher cipher;
     private byte[] field_150505_b = new byte[0];
     private byte[] field_150506_c = new byte[0];
-    private static final String __OBFID = "CL_00001237";
 
-    protected NettyEncryptionTranslator(Cipher p_i45140_1_)
+    protected NettyEncryptionTranslator(Cipher cipherIn)
     {
-        this.field_150507_a = p_i45140_1_;
+        this.cipher = cipherIn;
     }
 
-    private byte[] func_150502_a(ByteBuf p_150502_1_)
+    private byte[] func_150502_a(ByteBuf buf)
     {
-        int var2 = p_150502_1_.readableBytes();
+        int i = buf.readableBytes();
 
-        if (this.field_150505_b.length < var2)
+        if (this.field_150505_b.length < i)
         {
-            this.field_150505_b = new byte[var2];
+            this.field_150505_b = new byte[i];
         }
 
-        p_150502_1_.readBytes(this.field_150505_b, 0, var2);
+        buf.readBytes((byte[])this.field_150505_b, 0, i);
         return this.field_150505_b;
     }
 
-    protected ByteBuf func_150503_a(ChannelHandlerContext p_150503_1_, ByteBuf p_150503_2_) throws ShortBufferException
+    protected ByteBuf decipher(ChannelHandlerContext ctx, ByteBuf buffer) throws ShortBufferException
     {
-        int var3 = p_150503_2_.readableBytes();
-        byte[] var4 = this.func_150502_a(p_150503_2_);
-        ByteBuf var5 = p_150503_1_.alloc().heapBuffer(this.field_150507_a.getOutputSize(var3));
-        var5.writerIndex(this.field_150507_a.update(var4, 0, var3, var5.array(), var5.arrayOffset()));
-        return var5;
+        int i = buffer.readableBytes();
+        byte[] abyte = this.func_150502_a(buffer);
+        ByteBuf bytebuf = ctx.alloc().heapBuffer(this.cipher.getOutputSize(i));
+        bytebuf.writerIndex(this.cipher.update(abyte, 0, i, bytebuf.array(), bytebuf.arrayOffset()));
+        return bytebuf;
     }
 
-    protected void func_150504_a(ByteBuf p_150504_1_, ByteBuf p_150504_2_) throws ShortBufferException
+    protected void cipher(ByteBuf in, ByteBuf out) throws ShortBufferException
     {
-        int var3 = p_150504_1_.readableBytes();
-        byte[] var4 = this.func_150502_a(p_150504_1_);
-        int var5 = this.field_150507_a.getOutputSize(var3);
+        int i = in.readableBytes();
+        byte[] abyte = this.func_150502_a(in);
+        int j = this.cipher.getOutputSize(i);
 
-        if (this.field_150506_c.length < var5)
+        if (this.field_150506_c.length < j)
         {
-            this.field_150506_c = new byte[var5];
+            this.field_150506_c = new byte[j];
         }
 
-        p_150504_2_.writeBytes(this.field_150506_c, 0, this.field_150507_a.update(var4, 0, var3, this.field_150506_c));
+        out.writeBytes((byte[])this.field_150506_c, 0, this.cipher.update(abyte, 0, i, this.field_150506_c));
     }
 }

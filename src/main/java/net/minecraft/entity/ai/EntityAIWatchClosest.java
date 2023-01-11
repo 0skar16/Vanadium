@@ -6,33 +6,32 @@ import net.minecraft.entity.player.EntityPlayer;
 
 public class EntityAIWatchClosest extends EntityAIBase
 {
-    private EntityLiving theWatcher;
+    protected EntityLiving theWatcher;
 
     /** The closest entity which is being watched by this one. */
     protected Entity closestEntity;
 
     /** This is the Maximum distance that the AI will look for the Entity */
-    private float maxDistanceForPlayer;
+    protected float maxDistanceForPlayer;
     private int lookTime;
-    private float field_75331_e;
-    private Class watchedClass;
-    private static final String __OBFID = "CL_00001592";
+    private float chance;
+    protected Class <? extends Entity > watchedClass;
 
-    public EntityAIWatchClosest(EntityLiving p_i1631_1_, Class p_i1631_2_, float p_i1631_3_)
+    public EntityAIWatchClosest(EntityLiving entitylivingIn, Class <? extends Entity > watchTargetClass, float maxDistance)
     {
-        this.theWatcher = p_i1631_1_;
-        this.watchedClass = p_i1631_2_;
-        this.maxDistanceForPlayer = p_i1631_3_;
-        this.field_75331_e = 0.02F;
+        this.theWatcher = entitylivingIn;
+        this.watchedClass = watchTargetClass;
+        this.maxDistanceForPlayer = maxDistance;
+        this.chance = 0.02F;
         this.setMutexBits(2);
     }
 
-    public EntityAIWatchClosest(EntityLiving p_i1632_1_, Class p_i1632_2_, float p_i1632_3_, float p_i1632_4_)
+    public EntityAIWatchClosest(EntityLiving entitylivingIn, Class <? extends Entity > watchTargetClass, float maxDistance, float chanceIn)
     {
-        this.theWatcher = p_i1632_1_;
-        this.watchedClass = p_i1632_2_;
-        this.maxDistanceForPlayer = p_i1632_3_;
-        this.field_75331_e = p_i1632_4_;
+        this.theWatcher = entitylivingIn;
+        this.watchedClass = watchTargetClass;
+        this.maxDistanceForPlayer = maxDistance;
+        this.chance = chanceIn;
         this.setMutexBits(2);
     }
 
@@ -41,7 +40,7 @@ public class EntityAIWatchClosest extends EntityAIBase
      */
     public boolean shouldExecute()
     {
-        if (this.theWatcher.getRNG().nextFloat() >= this.field_75331_e)
+        if (this.theWatcher.getRNG().nextFloat() >= this.chance)
         {
             return false;
         }
@@ -58,7 +57,7 @@ public class EntityAIWatchClosest extends EntityAIBase
             }
             else
             {
-                this.closestEntity = this.theWatcher.worldObj.findNearestEntityWithinAABB(this.watchedClass, this.theWatcher.boundingBox.expand((double)this.maxDistanceForPlayer, 3.0D, (double)this.maxDistanceForPlayer), this.theWatcher);
+                this.closestEntity = this.theWatcher.worldObj.findNearestEntityWithinAABB(this.watchedClass, this.theWatcher.getEntityBoundingBox().expand((double)this.maxDistanceForPlayer, 3.0D, (double)this.maxDistanceForPlayer), this.theWatcher);
             }
 
             return this.closestEntity != null;

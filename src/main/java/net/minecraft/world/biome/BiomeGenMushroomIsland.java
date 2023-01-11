@@ -5,17 +5,15 @@ import net.minecraft.init.Blocks;
 
 public class BiomeGenMushroomIsland extends BiomeGenBase
 {
-    private static final String __OBFID = "CL_00000177";
-
-    public BiomeGenMushroomIsland(int p_i1984_1_)
+    public BiomeGenMushroomIsland(int id)
     {
-        super(p_i1984_1_);
+        super(id);
         this.theBiomeDecorator.treesPerChunk = -100;
         this.theBiomeDecorator.flowersPerChunk = -100;
         this.theBiomeDecorator.grassPerChunk = -100;
         this.theBiomeDecorator.mushroomsPerChunk = 1;
         this.theBiomeDecorator.bigMushroomsPerChunk = 1;
-        this.topBlock = Blocks.mycelium;
+        this.topBlock = Blocks.mycelium.getDefaultState();
         this.spawnableMonsterList.clear();
         this.spawnableCreatureList.clear();
         this.spawnableWaterCreatureList.clear();

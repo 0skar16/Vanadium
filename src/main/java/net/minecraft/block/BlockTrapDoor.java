@@ -1,10 +1,21 @@
 package net.minecraft.block;
 
 import net.minecraft.block.material.Material;
+import net.minecraft.block.properties.IProperty;
+import net.minecraft.block.properties.PropertyBool;
+import net.minecraft.block.properties.PropertyDirection;
+import net.minecraft.block.properties.PropertyEnum;
+import net.minecraft.block.state.BlockState;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.EnumWorldBlockLayer;
+import net.minecraft.util.IStringSerializable;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.IBlockAccess;
@@ -12,62 +23,53 @@ import net.minecraft.world.World;
 
 public class BlockTrapDoor extends Block
 {
-    private static final String __OBFID = "CL_00000327";
+    public static final PropertyDirection FACING = PropertyDirection.create("facing", EnumFacing.Plane.HORIZONTAL);
+    public static final PropertyBool OPEN = PropertyBool.create("open");
+    public static final PropertyEnum<BlockTrapDoor.DoorHalf> HALF = PropertyEnum.<BlockTrapDoor.DoorHalf>create("half", BlockTrapDoor.DoorHalf.class);
 
-    protected BlockTrapDoor(Material p_i45434_1_)
+    protected BlockTrapDoor(Material materialIn)
     {
-        super(p_i45434_1_);
-        float var2 = 0.5F;
-        float var3 = 1.0F;
-        this.setBlockBounds(0.5F - var2, 0.0F, 0.5F - var2, 0.5F + var2, var3, 0.5F + var2);
+        super(materialIn);
+        this.setDefaultState(this.blockState.getBaseState().withProperty(FACING, EnumFacing.NORTH).withProperty(OPEN, Boolean.valueOf(false)).withProperty(HALF, BlockTrapDoor.DoorHalf.BOTTOM));
+        float f = 0.5F;
+        float f1 = 1.0F;
+        this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
         this.setCreativeTab(CreativeTabs.tabRedstone);
     }
 
+    /**
+     * Used to determine ambient occlusion and culling when rebuilding chunks for render
+     */
     public boolean isOpaqueCube()
     {
         return false;
     }
 
-    public boolean renderAsNormalBlock()
+    public boolean isFullCube()
     {
         return false;
     }
 
-    public boolean getBlocksMovement(IBlockAccess p_149655_1_, int p_149655_2_, int p_149655_3_, int p_149655_4_)
+    public boolean isPassable(IBlockAccess worldIn, BlockPos pos)
     {
-        return !func_150118_d(p_149655_1_.getBlockMetadata(p_149655_2_, p_149655_3_, p_149655_4_));
+        return !((Boolean)worldIn.getBlockState(pos).getValue(OPEN)).booleanValue();
     }
 
-    /**
-     * The type of render function that is called for this block
-     */
-    public int getRenderType()
+    public AxisAlignedBB getSelectedBoundingBox(World worldIn, BlockPos pos)
     {
-        return 0;
+        this.setBlockBoundsBasedOnState(worldIn, pos);
+        return super.getSelectedBoundingBox(worldIn, pos);
     }
 
-    /**
-     * Returns the bounding box of the wired rectangular prism to render.
-     */
-    public AxisAlignedBB getSelectedBoundingBoxFromPool(World p_149633_1_, int p_149633_2_, int p_149633_3_, int p_149633_4_)
+    public AxisAlignedBB getCollisionBoundingBox(World worldIn, BlockPos pos, IBlockState state)
     {
-        this.setBlockBoundsBasedOnState(p_149633_1_, p_149633_2_, p_149633_3_, p_149633_4_);
-        return super.getSelectedBoundingBoxFromPool(p_149633_1_, p_149633_2_, p_149633_3_, p_149633_4_);
+        this.setBlockBoundsBasedOnState(worldIn, pos);
+        return super.getCollisionBoundingBox(worldIn, pos, state);
     }
 
-    /**
-     * Returns a bounding box from the pool of bounding boxes (this means this box can change after the pool has been
-     * cleared to be reused)
-     */
-    public AxisAlignedBB getCollisionBoundingBoxFromPool(World p_149668_1_, int p_149668_2_, int p_149668_3_, int p_149668_4_)
+    public void setBlockBoundsBasedOnState(IBlockAccess worldIn, BlockPos pos)
     {
-        this.setBlockBoundsBasedOnState(p_149668_1_, p_149668_2_, p_149668_3_, p_149668_4_);
-        return super.getCollisionBoundingBoxFromPool(p_149668_1_, p_149668_2_, p_149668_3_, p_149668_4_);
-    }
-
-    public void setBlockBoundsBasedOnState(IBlockAccess p_149719_1_, int p_149719_2_, int p_149719_3_, int p_149719_4_)
-    {
-        this.func_150117_b(p_149719_1_.getBlockMetadata(p_149719_2_, p_149719_3_, p_149719_4_));
+        this.setBounds(worldIn.getBlockState(pos));
     }
 
     /**
@@ -75,56 +77,54 @@ public class BlockTrapDoor extends Block
      */
     public void setBlockBoundsForItemRender()
     {
-        float var1 = 0.1875F;
-        this.setBlockBounds(0.0F, 0.5F - var1 / 2.0F, 0.0F, 1.0F, 0.5F + var1 / 2.0F, 1.0F);
+        float f = 0.1875F;
+        this.setBlockBounds(0.0F, 0.40625F, 0.0F, 1.0F, 0.59375F, 1.0F);
     }
 
-    public void func_150117_b(int p_150117_1_)
+    public void setBounds(IBlockState state)
     {
-        float var2 = 0.1875F;
+        if (state.getBlock() == this)
+        {
+            boolean flag = state.getValue(HALF) == BlockTrapDoor.DoorHalf.TOP;
+            Boolean obool = (Boolean)state.getValue(OPEN);
+            EnumFacing enumfacing = (EnumFacing)state.getValue(FACING);
+            float f = 0.1875F;
 
-        if ((p_150117_1_ & 8) != 0)
-        {
-            this.setBlockBounds(0.0F, 1.0F - var2, 0.0F, 1.0F, 1.0F, 1.0F);
-        }
-        else
-        {
-            this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, var2, 1.0F);
-        }
-
-        if (func_150118_d(p_150117_1_))
-        {
-            if ((p_150117_1_ & 3) == 0)
+            if (flag)
             {
-                this.setBlockBounds(0.0F, 0.0F, 1.0F - var2, 1.0F, 1.0F, 1.0F);
+                this.setBlockBounds(0.0F, 0.8125F, 0.0F, 1.0F, 1.0F, 1.0F);
+            }
+            else
+            {
+                this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 0.1875F, 1.0F);
             }
 
-            if ((p_150117_1_ & 3) == 1)
+            if (obool.booleanValue())
             {
-                this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, var2);
-            }
+                if (enumfacing == EnumFacing.NORTH)
+                {
+                    this.setBlockBounds(0.0F, 0.0F, 0.8125F, 1.0F, 1.0F, 1.0F);
+                }
 
-            if ((p_150117_1_ & 3) == 2)
-            {
-                this.setBlockBounds(1.0F - var2, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
-            }
+                if (enumfacing == EnumFacing.SOUTH)
+                {
+                    this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 0.1875F);
+                }
 
-            if ((p_150117_1_ & 3) == 3)
-            {
-                this.setBlockBounds(0.0F, 0.0F, 0.0F, var2, 1.0F, 1.0F);
+                if (enumfacing == EnumFacing.WEST)
+                {
+                    this.setBlockBounds(0.8125F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
+                }
+
+                if (enumfacing == EnumFacing.EAST)
+                {
+                    this.setBlockBounds(0.0F, 0.0F, 0.0F, 0.1875F, 1.0F, 1.0F);
+                }
             }
         }
     }
 
-    /**
-     * Called when a player hits the block. Args: world, x, y, z, player
-     */
-    public void onBlockClicked(World p_149699_1_, int p_149699_2_, int p_149699_3_, int p_149699_4_, EntityPlayer p_149699_5_) {}
-
-    /**
-     * Called upon block activation (right click on the block.)
-     */
-    public boolean onBlockActivated(World p_149727_1_, int p_149727_2_, int p_149727_3_, int p_149727_4_, EntityPlayer p_149727_5_, int p_149727_6_, float p_149727_7_, float p_149727_8_, float p_149727_9_)
+    public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumFacing side, float hitX, float hitY, float hitZ)
     {
         if (this.blockMaterial == Material.iron)
         {
@@ -132,152 +132,181 @@ public class BlockTrapDoor extends Block
         }
         else
         {
-            int var10 = p_149727_1_.getBlockMetadata(p_149727_2_, p_149727_3_, p_149727_4_);
-            p_149727_1_.setBlockMetadataWithNotify(p_149727_2_, p_149727_3_, p_149727_4_, var10 ^ 4, 2);
-            p_149727_1_.playAuxSFXAtEntity(p_149727_5_, 1003, p_149727_2_, p_149727_3_, p_149727_4_, 0);
+            state = state.cycleProperty(OPEN);
+            worldIn.setBlockState(pos, state, 2);
+            worldIn.playAuxSFXAtEntity(playerIn, ((Boolean)state.getValue(OPEN)).booleanValue() ? 1003 : 1006, pos, 0);
             return true;
         }
     }
 
-    public void func_150120_a(World p_150120_1_, int p_150120_2_, int p_150120_3_, int p_150120_4_, boolean p_150120_5_)
+    /**
+     * Called when a neighboring block changes.
+     */
+    public void onNeighborBlockChange(World worldIn, BlockPos pos, IBlockState state, Block neighborBlock)
     {
-        int var6 = p_150120_1_.getBlockMetadata(p_150120_2_, p_150120_3_, p_150120_4_);
-        boolean var7 = (var6 & 4) > 0;
-
-        if (var7 != p_150120_5_)
+        if (!worldIn.isRemote)
         {
-            p_150120_1_.setBlockMetadataWithNotify(p_150120_2_, p_150120_3_, p_150120_4_, var6 ^ 4, 2);
-            p_150120_1_.playAuxSFXAtEntity((EntityPlayer)null, 1003, p_150120_2_, p_150120_3_, p_150120_4_, 0);
-        }
-    }
+            BlockPos blockpos = pos.offset(((EnumFacing)state.getValue(FACING)).getOpposite());
 
-    public void onNeighborBlockChange(World p_149695_1_, int p_149695_2_, int p_149695_3_, int p_149695_4_, Block p_149695_5_)
-    {
-        if (!p_149695_1_.isClient)
-        {
-            int var6 = p_149695_1_.getBlockMetadata(p_149695_2_, p_149695_3_, p_149695_4_);
-            int var7 = p_149695_2_;
-            int var8 = p_149695_4_;
-
-            if ((var6 & 3) == 0)
+            if (!isValidSupportBlock(worldIn.getBlockState(blockpos).getBlock()))
             {
-                var8 = p_149695_4_ + 1;
+                worldIn.setBlockToAir(pos);
+                this.dropBlockAsItem(worldIn, pos, state, 0);
             }
-
-            if ((var6 & 3) == 1)
+            else
             {
-                --var8;
-            }
+                boolean flag = worldIn.isBlockPowered(pos);
 
-            if ((var6 & 3) == 2)
-            {
-                var7 = p_149695_2_ + 1;
-            }
+                if (flag || neighborBlock.canProvidePower())
+                {
+                    boolean flag1 = ((Boolean)state.getValue(OPEN)).booleanValue();
 
-            if ((var6 & 3) == 3)
-            {
-                --var7;
-            }
-
-            if (!func_150119_a(p_149695_1_.getBlock(var7, p_149695_3_, var8)))
-            {
-                p_149695_1_.setBlockToAir(p_149695_2_, p_149695_3_, p_149695_4_);
-                this.dropBlockAsItem(p_149695_1_, p_149695_2_, p_149695_3_, p_149695_4_, var6, 0);
-            }
-
-            boolean var9 = p_149695_1_.isBlockIndirectlyGettingPowered(p_149695_2_, p_149695_3_, p_149695_4_);
-
-            if (var9 || p_149695_5_.canProvidePower())
-            {
-                this.func_150120_a(p_149695_1_, p_149695_2_, p_149695_3_, p_149695_4_, var9);
+                    if (flag1 != flag)
+                    {
+                        worldIn.setBlockState(pos, state.withProperty(OPEN, Boolean.valueOf(flag)), 2);
+                        worldIn.playAuxSFXAtEntity((EntityPlayer)null, flag ? 1003 : 1006, pos, 0);
+                    }
+                }
             }
         }
-    }
-
-    public MovingObjectPosition collisionRayTrace(World p_149731_1_, int p_149731_2_, int p_149731_3_, int p_149731_4_, Vec3 p_149731_5_, Vec3 p_149731_6_)
-    {
-        this.setBlockBoundsBasedOnState(p_149731_1_, p_149731_2_, p_149731_3_, p_149731_4_);
-        return super.collisionRayTrace(p_149731_1_, p_149731_2_, p_149731_3_, p_149731_4_, p_149731_5_, p_149731_6_);
-    }
-
-    public int onBlockPlaced(World p_149660_1_, int p_149660_2_, int p_149660_3_, int p_149660_4_, int p_149660_5_, float p_149660_6_, float p_149660_7_, float p_149660_8_, int p_149660_9_)
-    {
-        int var10 = 0;
-
-        if (p_149660_5_ == 2)
-        {
-            var10 = 0;
-        }
-
-        if (p_149660_5_ == 3)
-        {
-            var10 = 1;
-        }
-
-        if (p_149660_5_ == 4)
-        {
-            var10 = 2;
-        }
-
-        if (p_149660_5_ == 5)
-        {
-            var10 = 3;
-        }
-
-        if (p_149660_5_ != 1 && p_149660_5_ != 0 && p_149660_7_ > 0.5F)
-        {
-            var10 |= 8;
-        }
-
-        return var10;
     }
 
     /**
-     * checks to see if you can place this block can be placed on that side of a block: BlockLever overrides
+     * Ray traces through the blocks collision from start vector to end vector returning a ray trace hit.
      */
-    public boolean canPlaceBlockOnSide(World p_149707_1_, int p_149707_2_, int p_149707_3_, int p_149707_4_, int p_149707_5_)
+    public MovingObjectPosition collisionRayTrace(World worldIn, BlockPos pos, Vec3 start, Vec3 end)
     {
-        if (p_149707_5_ == 0)
+        this.setBlockBoundsBasedOnState(worldIn, pos);
+        return super.collisionRayTrace(worldIn, pos, start, end);
+    }
+
+    /**
+     * Called by ItemBlocks just before a block is actually set in the world, to allow for adjustments to the
+     * IBlockstate
+     */
+    public IBlockState onBlockPlaced(World worldIn, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta, EntityLivingBase placer)
+    {
+        IBlockState iblockstate = this.getDefaultState();
+
+        if (facing.getAxis().isHorizontal())
         {
-            return false;
+            iblockstate = iblockstate.withProperty(FACING, facing).withProperty(OPEN, Boolean.valueOf(false));
+            iblockstate = iblockstate.withProperty(HALF, hitY > 0.5F ? BlockTrapDoor.DoorHalf.TOP : BlockTrapDoor.DoorHalf.BOTTOM);
         }
-        else if (p_149707_5_ == 1)
+
+        return iblockstate;
+    }
+
+    /**
+     * Check whether this Block can be placed on the given side
+     */
+    public boolean canPlaceBlockOnSide(World worldIn, BlockPos pos, EnumFacing side)
+    {
+        return !side.getAxis().isVertical() && isValidSupportBlock(worldIn.getBlockState(pos.offset(side.getOpposite())).getBlock());
+    }
+
+    protected static EnumFacing getFacing(int meta)
+    {
+        switch (meta & 3)
         {
-            return false;
-        }
-        else
-        {
-            if (p_149707_5_ == 2)
-            {
-                ++p_149707_4_;
-            }
+            case 0:
+                return EnumFacing.NORTH;
 
-            if (p_149707_5_ == 3)
-            {
-                --p_149707_4_;
-            }
+            case 1:
+                return EnumFacing.SOUTH;
 
-            if (p_149707_5_ == 4)
-            {
-                ++p_149707_2_;
-            }
+            case 2:
+                return EnumFacing.WEST;
 
-            if (p_149707_5_ == 5)
-            {
-                --p_149707_2_;
-            }
-
-            return func_150119_a(p_149707_1_.getBlock(p_149707_2_, p_149707_3_, p_149707_4_));
+            case 3:
+            default:
+                return EnumFacing.EAST;
         }
     }
 
-    public static boolean func_150118_d(int p_150118_0_)
+    protected static int getMetaForFacing(EnumFacing facing)
     {
-        return (p_150118_0_ & 4) != 0;
+        switch (facing)
+        {
+            case NORTH:
+                return 0;
+
+            case SOUTH:
+                return 1;
+
+            case WEST:
+                return 2;
+
+            case EAST:
+            default:
+                return 3;
+        }
     }
 
-    private static boolean func_150119_a(Block p_150119_0_)
+    private static boolean isValidSupportBlock(Block blockIn)
     {
-        return p_150119_0_.blockMaterial.isOpaque() && p_150119_0_.renderAsNormalBlock() || p_150119_0_ == Blocks.glowstone || p_150119_0_ instanceof BlockSlab || p_150119_0_ instanceof BlockStairs;
+        return blockIn.blockMaterial.isOpaque() && blockIn.isFullCube() || blockIn == Blocks.glowstone || blockIn instanceof BlockSlab || blockIn instanceof BlockStairs;
+    }
+
+    public EnumWorldBlockLayer getBlockLayer()
+    {
+        return EnumWorldBlockLayer.CUTOUT;
+    }
+
+    /**
+     * Convert the given metadata into a BlockState for this Block
+     */
+    public IBlockState getStateFromMeta(int meta)
+    {
+        return this.getDefaultState().withProperty(FACING, getFacing(meta)).withProperty(OPEN, Boolean.valueOf((meta & 4) != 0)).withProperty(HALF, (meta & 8) == 0 ? BlockTrapDoor.DoorHalf.BOTTOM : BlockTrapDoor.DoorHalf.TOP);
+    }
+
+    /**
+     * Convert the BlockState into the correct metadata value
+     */
+    public int getMetaFromState(IBlockState state)
+    {
+        int i = 0;
+        i = i | getMetaForFacing((EnumFacing)state.getValue(FACING));
+
+        if (((Boolean)state.getValue(OPEN)).booleanValue())
+        {
+            i |= 4;
+        }
+
+        if (state.getValue(HALF) == BlockTrapDoor.DoorHalf.TOP)
+        {
+            i |= 8;
+        }
+
+        return i;
+    }
+
+    protected BlockState createBlockState()
+    {
+        return new BlockState(this, new IProperty[] {FACING, OPEN, HALF});
+    }
+
+    public static enum DoorHalf implements IStringSerializable
+    {
+        TOP("top"),
+        BOTTOM("bottom");
+
+        private final String name;
+
+        private DoorHalf(String name)
+        {
+            this.name = name;
+        }
+
+        public String toString()
+        {
+            return this.name;
+        }
+
+        public String getName()
+        {
+            return this.name;
+        }
     }
 }

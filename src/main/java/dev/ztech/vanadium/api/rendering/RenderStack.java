@@ -1,6 +1,9 @@
 package dev.ztech.vanadium.api.rendering;
 
+import net.minecraft.client.renderer.GlStateManager;
 import org.lwjgl.opengl.GL11;
+
+import java.awt.*;
 
 public class RenderStack {
     public static void push(){
@@ -39,5 +42,11 @@ public class RenderStack {
     public static float getScaleZ(){
         return csz;
     }
-
+    public static void color(float r, float g, float b, float a){
+        GlStateManager.color(r,g,b,a);
+    }
+    public static int getChroma(int x, int y){
+        long l = System.currentTimeMillis() - (x * 10L - y * 10L);
+        return Color.HSBtoRGB(l % (int) 2000.0F / 2000.0F, 0.8F, 0.8F);
+    }
 }

@@ -2,11 +2,10 @@ package net.minecraft.realms;
 
 import java.util.Random;
 import net.minecraft.util.MathHelper;
+import org.apache.commons.lang3.StringUtils;
 
 public class RealmsMth
 {
-    private static final String __OBFID = "CL_00001900";
-
     public static float sin(float p_sin_0_)
     {
         return MathHelper.sin(p_sin_0_);
@@ -54,7 +53,7 @@ public class RealmsMth
 
     public static boolean isEmpty(String p_isEmpty_0_)
     {
-        return MathHelper.stringNullOrLengthZero(p_isEmpty_0_);
+        return StringUtils.isEmpty(p_isEmpty_0_);
     }
 
     public static long lfloor(double p_lfloor_0_)
@@ -117,9 +116,9 @@ public class RealmsMth
         return MathHelper.truncateDoubleToInt(p_fastFloor_0_);
     }
 
-    public static double asbMax(double p_asbMax_0_, double p_asbMax_2_)
+    public static double absMax(double p_absMax_0_, double p_absMax_2_)
     {
-        return MathHelper.abs_max(p_asbMax_0_, p_asbMax_2_);
+        return MathHelper.abs_max(p_absMax_0_, p_absMax_2_);
     }
 
     public static float nextFloat(Random p_nextFloat_0_, float p_nextFloat_1_, float p_nextFloat_2_)
@@ -149,7 +148,7 @@ public class RealmsMth
 
     public static int roundUp(int p_roundUp_0_, int p_roundUp_1_)
     {
-        return MathHelper.func_154354_b(p_roundUp_0_, p_roundUp_1_);
+        return MathHelper.roundUp(p_roundUp_0_, p_roundUp_1_);
     }
 
     public static double average(long[] p_average_0_)

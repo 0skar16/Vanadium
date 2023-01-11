@@ -2,11 +2,9 @@ package net.minecraft.block.material;
 
 public class MaterialLiquid extends Material
 {
-    private static final String __OBFID = "CL_00000541";
-
-    public MaterialLiquid(MapColor p_i2114_1_)
+    public MaterialLiquid(MapColor color)
     {
-        super(p_i2114_1_);
+        super(color);
         this.setReplaceable();
         this.setNoPushMobility();
     }
@@ -27,6 +25,9 @@ public class MaterialLiquid extends Material
         return false;
     }
 
+    /**
+     * Returns true if the block is a considered solid. This is true by default.
+     */
     public boolean isSolid()
     {
         return false;

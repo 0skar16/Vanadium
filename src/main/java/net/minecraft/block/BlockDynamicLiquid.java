@@ -1,357 +1,293 @@
 package net.minecraft.block;
 
+import java.util.EnumSet;
 import java.util.Random;
+import java.util.Set;
 import net.minecraft.block.material.Material;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.world.World;
 
 public class BlockDynamicLiquid extends BlockLiquid
 {
-    int field_149815_a;
-    boolean[] field_149814_b = new boolean[4];
-    int[] field_149816_M = new int[4];
-    private static final String __OBFID = "CL_00000234";
+    int adjacentSourceBlocks;
 
-    protected BlockDynamicLiquid(Material p_i45403_1_)
+    protected BlockDynamicLiquid(Material materialIn)
     {
-        super(p_i45403_1_);
+        super(materialIn);
     }
 
-    private void func_149811_n(World p_149811_1_, int p_149811_2_, int p_149811_3_, int p_149811_4_)
+    private void placeStaticBlock(World worldIn, BlockPos pos, IBlockState currentState)
     {
-        int var5 = p_149811_1_.getBlockMetadata(p_149811_2_, p_149811_3_, p_149811_4_);
-        p_149811_1_.setBlock(p_149811_2_, p_149811_3_, p_149811_4_, Block.getBlockById(Block.getIdFromBlock(this) + 1), var5, 2);
+        worldIn.setBlockState(pos, getStaticBlock(this.blockMaterial).getDefaultState().withProperty(LEVEL, currentState.getValue(LEVEL)), 2);
     }
 
-    /**
-     * Ticks the block if it's been scheduled
-     */
-    public void updateTick(World p_149674_1_, int p_149674_2_, int p_149674_3_, int p_149674_4_, Random p_149674_5_)
+    public void updateTick(World worldIn, BlockPos pos, IBlockState state, Random rand)
     {
-        int var6 = this.func_149804_e(p_149674_1_, p_149674_2_, p_149674_3_, p_149674_4_);
-        byte var7 = 1;
+        int i = ((Integer)state.getValue(LEVEL)).intValue();
+        int j = 1;
 
-        if (this.blockMaterial == Material.lava && !p_149674_1_.provider.isHellWorld)
+        if (this.blockMaterial == Material.lava && !worldIn.provider.doesWaterVaporize())
         {
-            var7 = 2;
+            j = 2;
         }
 
-        boolean var8 = true;
-        int var9 = this.func_149738_a(p_149674_1_);
-        int var11;
+        int k = this.tickRate(worldIn);
 
-        if (var6 > 0)
+        if (i > 0)
         {
-            byte var10 = -100;
-            this.field_149815_a = 0;
-            int var13 = this.func_149810_a(p_149674_1_, p_149674_2_ - 1, p_149674_3_, p_149674_4_, var10);
-            var13 = this.func_149810_a(p_149674_1_, p_149674_2_ + 1, p_149674_3_, p_149674_4_, var13);
-            var13 = this.func_149810_a(p_149674_1_, p_149674_2_, p_149674_3_, p_149674_4_ - 1, var13);
-            var13 = this.func_149810_a(p_149674_1_, p_149674_2_, p_149674_3_, p_149674_4_ + 1, var13);
-            var11 = var13 + var7;
+            int l = -100;
+            this.adjacentSourceBlocks = 0;
 
-            if (var11 >= 8 || var13 < 0)
+            for (EnumFacing enumfacing : EnumFacing.Plane.HORIZONTAL)
             {
-                var11 = -1;
+                l = this.checkAdjacentBlock(worldIn, pos.offset(enumfacing), l);
             }
 
-            if (this.func_149804_e(p_149674_1_, p_149674_2_, p_149674_3_ + 1, p_149674_4_) >= 0)
-            {
-                int var12 = this.func_149804_e(p_149674_1_, p_149674_2_, p_149674_3_ + 1, p_149674_4_);
+            int i1 = l + j;
 
-                if (var12 >= 8)
+            if (i1 >= 8 || l < 0)
+            {
+                i1 = -1;
+            }
+
+            if (this.getLevel(worldIn, pos.up()) >= 0)
+            {
+                int j1 = this.getLevel(worldIn, pos.up());
+
+                if (j1 >= 8)
                 {
-                    var11 = var12;
+                    i1 = j1;
                 }
                 else
                 {
-                    var11 = var12 + 8;
+                    i1 = j1 + 8;
                 }
             }
 
-            if (this.field_149815_a >= 2 && this.blockMaterial == Material.water)
+            if (this.adjacentSourceBlocks >= 2 && this.blockMaterial == Material.water)
             {
-                if (p_149674_1_.getBlock(p_149674_2_, p_149674_3_ - 1, p_149674_4_).getMaterial().isSolid())
+                IBlockState iblockstate1 = worldIn.getBlockState(pos.down());
+
+                if (iblockstate1.getBlock().getMaterial().isSolid())
                 {
-                    var11 = 0;
+                    i1 = 0;
                 }
-                else if (p_149674_1_.getBlock(p_149674_2_, p_149674_3_ - 1, p_149674_4_).getMaterial() == this.blockMaterial && p_149674_1_.getBlockMetadata(p_149674_2_, p_149674_3_ - 1, p_149674_4_) == 0)
+                else if (iblockstate1.getBlock().getMaterial() == this.blockMaterial && ((Integer)iblockstate1.getValue(LEVEL)).intValue() == 0)
                 {
-                    var11 = 0;
+                    i1 = 0;
                 }
             }
 
-            if (this.blockMaterial == Material.lava && var6 < 8 && var11 < 8 && var11 > var6 && p_149674_5_.nextInt(4) != 0)
+            if (this.blockMaterial == Material.lava && i < 8 && i1 < 8 && i1 > i && rand.nextInt(4) != 0)
             {
-                var9 *= 4;
+                k *= 4;
             }
 
-            if (var11 == var6)
+            if (i1 == i)
             {
-                if (var8)
-                {
-                    this.func_149811_n(p_149674_1_, p_149674_2_, p_149674_3_, p_149674_4_);
-                }
+                this.placeStaticBlock(worldIn, pos, state);
             }
             else
             {
-                var6 = var11;
+                i = i1;
 
-                if (var11 < 0)
+                if (i1 < 0)
                 {
-                    p_149674_1_.setBlockToAir(p_149674_2_, p_149674_3_, p_149674_4_);
+                    worldIn.setBlockToAir(pos);
                 }
                 else
                 {
-                    p_149674_1_.setBlockMetadataWithNotify(p_149674_2_, p_149674_3_, p_149674_4_, var11, 2);
-                    p_149674_1_.scheduleBlockUpdate(p_149674_2_, p_149674_3_, p_149674_4_, this, var9);
-                    p_149674_1_.notifyBlocksOfNeighborChange(p_149674_2_, p_149674_3_, p_149674_4_, this);
+                    state = state.withProperty(LEVEL, Integer.valueOf(i1));
+                    worldIn.setBlockState(pos, state, 2);
+                    worldIn.scheduleUpdate(pos, this, k);
+                    worldIn.notifyNeighborsOfStateChange(pos, this);
                 }
             }
         }
         else
         {
-            this.func_149811_n(p_149674_1_, p_149674_2_, p_149674_3_, p_149674_4_);
+            this.placeStaticBlock(worldIn, pos, state);
         }
 
-        if (this.func_149809_q(p_149674_1_, p_149674_2_, p_149674_3_ - 1, p_149674_4_))
+        IBlockState iblockstate = worldIn.getBlockState(pos.down());
+
+        if (this.canFlowInto(worldIn, pos.down(), iblockstate))
         {
-            if (this.blockMaterial == Material.lava && p_149674_1_.getBlock(p_149674_2_, p_149674_3_ - 1, p_149674_4_).getMaterial() == Material.water)
+            if (this.blockMaterial == Material.lava && worldIn.getBlockState(pos.down()).getBlock().getMaterial() == Material.water)
             {
-                p_149674_1_.setBlock(p_149674_2_, p_149674_3_ - 1, p_149674_4_, Blocks.stone);
-                this.func_149799_m(p_149674_1_, p_149674_2_, p_149674_3_ - 1, p_149674_4_);
+                worldIn.setBlockState(pos.down(), Blocks.stone.getDefaultState());
+                this.triggerMixEffects(worldIn, pos.down());
                 return;
             }
 
-            if (var6 >= 8)
+            if (i >= 8)
             {
-                this.func_149813_h(p_149674_1_, p_149674_2_, p_149674_3_ - 1, p_149674_4_, var6);
+                this.tryFlowInto(worldIn, pos.down(), iblockstate, i);
             }
             else
             {
-                this.func_149813_h(p_149674_1_, p_149674_2_, p_149674_3_ - 1, p_149674_4_, var6 + 8);
+                this.tryFlowInto(worldIn, pos.down(), iblockstate, i + 8);
             }
         }
-        else if (var6 >= 0 && (var6 == 0 || this.func_149807_p(p_149674_1_, p_149674_2_, p_149674_3_ - 1, p_149674_4_)))
+        else if (i >= 0 && (i == 0 || this.isBlocked(worldIn, pos.down(), iblockstate)))
         {
-            boolean[] var14 = this.func_149808_o(p_149674_1_, p_149674_2_, p_149674_3_, p_149674_4_);
-            var11 = var6 + var7;
+            Set<EnumFacing> set = this.getPossibleFlowDirections(worldIn, pos);
+            int k1 = i + j;
 
-            if (var6 >= 8)
+            if (i >= 8)
             {
-                var11 = 1;
+                k1 = 1;
             }
 
-            if (var11 >= 8)
+            if (k1 >= 8)
             {
                 return;
             }
 
-            if (var14[0])
+            for (EnumFacing enumfacing1 : set)
             {
-                this.func_149813_h(p_149674_1_, p_149674_2_ - 1, p_149674_3_, p_149674_4_, var11);
-            }
-
-            if (var14[1])
-            {
-                this.func_149813_h(p_149674_1_, p_149674_2_ + 1, p_149674_3_, p_149674_4_, var11);
-            }
-
-            if (var14[2])
-            {
-                this.func_149813_h(p_149674_1_, p_149674_2_, p_149674_3_, p_149674_4_ - 1, var11);
-            }
-
-            if (var14[3])
-            {
-                this.func_149813_h(p_149674_1_, p_149674_2_, p_149674_3_, p_149674_4_ + 1, var11);
+                this.tryFlowInto(worldIn, pos.offset(enumfacing1), worldIn.getBlockState(pos.offset(enumfacing1)), k1);
             }
         }
     }
 
-    private void func_149813_h(World p_149813_1_, int p_149813_2_, int p_149813_3_, int p_149813_4_, int p_149813_5_)
+    private void tryFlowInto(World worldIn, BlockPos pos, IBlockState state, int level)
     {
-        if (this.func_149809_q(p_149813_1_, p_149813_2_, p_149813_3_, p_149813_4_))
+        if (this.canFlowInto(worldIn, pos, state))
         {
-            Block var6 = p_149813_1_.getBlock(p_149813_2_, p_149813_3_, p_149813_4_);
-
-            if (this.blockMaterial == Material.lava)
+            if (state.getBlock() != Blocks.air)
             {
-                this.func_149799_m(p_149813_1_, p_149813_2_, p_149813_3_, p_149813_4_);
-            }
-            else
-            {
-                var6.dropBlockAsItem(p_149813_1_, p_149813_2_, p_149813_3_, p_149813_4_, p_149813_1_.getBlockMetadata(p_149813_2_, p_149813_3_, p_149813_4_), 0);
+                if (this.blockMaterial == Material.lava)
+                {
+                    this.triggerMixEffects(worldIn, pos);
+                }
+                else
+                {
+                    state.getBlock().dropBlockAsItem(worldIn, pos, state, 0);
+                }
             }
 
-            p_149813_1_.setBlock(p_149813_2_, p_149813_3_, p_149813_4_, this, p_149813_5_, 3);
+            worldIn.setBlockState(pos, this.getDefaultState().withProperty(LEVEL, Integer.valueOf(level)), 3);
         }
     }
 
-    private int func_149812_c(World p_149812_1_, int p_149812_2_, int p_149812_3_, int p_149812_4_, int p_149812_5_, int p_149812_6_)
+    private int func_176374_a(World worldIn, BlockPos pos, int distance, EnumFacing calculateFlowCost)
     {
-        int var7 = 1000;
+        int i = 1000;
 
-        for (int var8 = 0; var8 < 4; ++var8)
+        for (EnumFacing enumfacing : EnumFacing.Plane.HORIZONTAL)
         {
-            if ((var8 != 0 || p_149812_6_ != 1) && (var8 != 1 || p_149812_6_ != 0) && (var8 != 2 || p_149812_6_ != 3) && (var8 != 3 || p_149812_6_ != 2))
+            if (enumfacing != calculateFlowCost)
             {
-                int var9 = p_149812_2_;
-                int var11 = p_149812_4_;
+                BlockPos blockpos = pos.offset(enumfacing);
+                IBlockState iblockstate = worldIn.getBlockState(blockpos);
 
-                if (var8 == 0)
+                if (!this.isBlocked(worldIn, blockpos, iblockstate) && (iblockstate.getBlock().getMaterial() != this.blockMaterial || ((Integer)iblockstate.getValue(LEVEL)).intValue() > 0))
                 {
-                    var9 = p_149812_2_ - 1;
-                }
-
-                if (var8 == 1)
-                {
-                    ++var9;
-                }
-
-                if (var8 == 2)
-                {
-                    var11 = p_149812_4_ - 1;
-                }
-
-                if (var8 == 3)
-                {
-                    ++var11;
-                }
-
-                if (!this.func_149807_p(p_149812_1_, var9, p_149812_3_, var11) && (p_149812_1_.getBlock(var9, p_149812_3_, var11).getMaterial() != this.blockMaterial || p_149812_1_.getBlockMetadata(var9, p_149812_3_, var11) != 0))
-                {
-                    if (!this.func_149807_p(p_149812_1_, var9, p_149812_3_ - 1, var11))
+                    if (!this.isBlocked(worldIn, blockpos.down(), iblockstate))
                     {
-                        return p_149812_5_;
+                        return distance;
                     }
 
-                    if (p_149812_5_ < 4)
+                    if (distance < 4)
                     {
-                        int var12 = this.func_149812_c(p_149812_1_, var9, p_149812_3_, var11, p_149812_5_ + 1, var8);
+                        int j = this.func_176374_a(worldIn, blockpos, distance + 1, enumfacing.getOpposite());
 
-                        if (var12 < var7)
+                        if (j < i)
                         {
-                            var7 = var12;
+                            i = j;
                         }
                     }
                 }
             }
         }
 
-        return var7;
+        return i;
     }
 
-    private boolean[] func_149808_o(World p_149808_1_, int p_149808_2_, int p_149808_3_, int p_149808_4_)
+    private Set<EnumFacing> getPossibleFlowDirections(World worldIn, BlockPos pos)
     {
-        int var5;
-        int var6;
+        int i = 1000;
+        Set<EnumFacing> set = EnumSet.<EnumFacing>noneOf(EnumFacing.class);
 
-        for (var5 = 0; var5 < 4; ++var5)
+        for (EnumFacing enumfacing : EnumFacing.Plane.HORIZONTAL)
         {
-            this.field_149816_M[var5] = 1000;
-            var6 = p_149808_2_;
-            int var8 = p_149808_4_;
+            BlockPos blockpos = pos.offset(enumfacing);
+            IBlockState iblockstate = worldIn.getBlockState(blockpos);
 
-            if (var5 == 0)
+            if (!this.isBlocked(worldIn, blockpos, iblockstate) && (iblockstate.getBlock().getMaterial() != this.blockMaterial || ((Integer)iblockstate.getValue(LEVEL)).intValue() > 0))
             {
-                var6 = p_149808_2_ - 1;
-            }
+                int j;
 
-            if (var5 == 1)
-            {
-                ++var6;
-            }
-
-            if (var5 == 2)
-            {
-                var8 = p_149808_4_ - 1;
-            }
-
-            if (var5 == 3)
-            {
-                ++var8;
-            }
-
-            if (!this.func_149807_p(p_149808_1_, var6, p_149808_3_, var8) && (p_149808_1_.getBlock(var6, p_149808_3_, var8).getMaterial() != this.blockMaterial || p_149808_1_.getBlockMetadata(var6, p_149808_3_, var8) != 0))
-            {
-                if (this.func_149807_p(p_149808_1_, var6, p_149808_3_ - 1, var8))
+                if (this.isBlocked(worldIn, blockpos.down(), worldIn.getBlockState(blockpos.down())))
                 {
-                    this.field_149816_M[var5] = this.func_149812_c(p_149808_1_, var6, p_149808_3_, var8, 1, var5);
+                    j = this.func_176374_a(worldIn, blockpos, 1, enumfacing.getOpposite());
                 }
                 else
                 {
-                    this.field_149816_M[var5] = 0;
+                    j = 0;
+                }
+
+                if (j < i)
+                {
+                    set.clear();
+                }
+
+                if (j <= i)
+                {
+                    set.add(enumfacing);
+                    i = j;
                 }
             }
         }
 
-        var5 = this.field_149816_M[0];
-
-        for (var6 = 1; var6 < 4; ++var6)
-        {
-            if (this.field_149816_M[var6] < var5)
-            {
-                var5 = this.field_149816_M[var6];
-            }
-        }
-
-        for (var6 = 0; var6 < 4; ++var6)
-        {
-            this.field_149814_b[var6] = this.field_149816_M[var6] == var5;
-        }
-
-        return this.field_149814_b;
+        return set;
     }
 
-    private boolean func_149807_p(World p_149807_1_, int p_149807_2_, int p_149807_3_, int p_149807_4_)
+    private boolean isBlocked(World worldIn, BlockPos pos, IBlockState state)
     {
-        Block var5 = p_149807_1_.getBlock(p_149807_2_, p_149807_3_, p_149807_4_);
-        return var5 != Blocks.wooden_door && var5 != Blocks.iron_door && var5 != Blocks.standing_sign && var5 != Blocks.ladder && var5 != Blocks.reeds ? (var5.blockMaterial == Material.Portal ? true : var5.blockMaterial.blocksMovement()) : true;
+        Block block = worldIn.getBlockState(pos).getBlock();
+        return !(block instanceof BlockDoor) && block != Blocks.standing_sign && block != Blocks.ladder && block != Blocks.reeds ? (block.blockMaterial == Material.portal ? true : block.blockMaterial.blocksMovement()) : true;
     }
 
-    protected int func_149810_a(World p_149810_1_, int p_149810_2_, int p_149810_3_, int p_149810_4_, int p_149810_5_)
+    protected int checkAdjacentBlock(World worldIn, BlockPos pos, int currentMinLevel)
     {
-        int var6 = this.func_149804_e(p_149810_1_, p_149810_2_, p_149810_3_, p_149810_4_);
+        int i = this.getLevel(worldIn, pos);
 
-        if (var6 < 0)
+        if (i < 0)
         {
-            return p_149810_5_;
+            return currentMinLevel;
         }
         else
         {
-            if (var6 == 0)
+            if (i == 0)
             {
-                ++this.field_149815_a;
+                ++this.adjacentSourceBlocks;
             }
 
-            if (var6 >= 8)
+            if (i >= 8)
             {
-                var6 = 0;
+                i = 0;
             }
 
-            return p_149810_5_ >= 0 && var6 >= p_149810_5_ ? p_149810_5_ : var6;
+            return currentMinLevel >= 0 && i >= currentMinLevel ? currentMinLevel : i;
         }
     }
 
-    private boolean func_149809_q(World p_149809_1_, int p_149809_2_, int p_149809_3_, int p_149809_4_)
+    private boolean canFlowInto(World worldIn, BlockPos pos, IBlockState state)
     {
-        Material var5 = p_149809_1_.getBlock(p_149809_2_, p_149809_3_, p_149809_4_).getMaterial();
-        return var5 == this.blockMaterial ? false : (var5 == Material.lava ? false : !this.func_149807_p(p_149809_1_, p_149809_2_, p_149809_3_, p_149809_4_));
+        Material material = state.getBlock().getMaterial();
+        return material != this.blockMaterial && material != Material.lava && !this.isBlocked(worldIn, pos, state);
     }
 
-    public void onBlockAdded(World p_149726_1_, int p_149726_2_, int p_149726_3_, int p_149726_4_)
+    public void onBlockAdded(World worldIn, BlockPos pos, IBlockState state)
     {
-        super.onBlockAdded(p_149726_1_, p_149726_2_, p_149726_3_, p_149726_4_);
-
-        if (p_149726_1_.getBlock(p_149726_2_, p_149726_3_, p_149726_4_) == this)
+        if (!this.checkForMixing(worldIn, pos, state))
         {
-            p_149726_1_.scheduleBlockUpdate(p_149726_2_, p_149726_3_, p_149726_4_, this, this.func_149738_a(p_149726_1_));
+            worldIn.scheduleUpdate(pos, this, this.tickRate(worldIn));
         }
-    }
-
-    public boolean func_149698_L()
-    {
-        return true;
     }
 }

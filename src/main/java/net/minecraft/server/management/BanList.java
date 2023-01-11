@@ -4,46 +4,44 @@ import com.google.gson.JsonObject;
 import java.io.File;
 import java.net.SocketAddress;
 
-public class BanList extends UserList
+public class BanList extends UserList<String, IPBanEntry>
 {
-    private static final String __OBFID = "CL_00001396";
-
-    public BanList(File p_i1490_1_)
+    public BanList(File bansFile)
     {
-        super(p_i1490_1_);
+        super(bansFile);
     }
 
-    protected UserListEntry func_152682_a(JsonObject p_152682_1_)
+    protected UserListEntry<String> createEntry(JsonObject entryData)
     {
-        return new IPBanEntry(p_152682_1_);
+        return new IPBanEntry(entryData);
     }
 
-    public boolean func_152708_a(SocketAddress p_152708_1_)
+    public boolean isBanned(SocketAddress address)
     {
-        String var2 = this.func_152707_c(p_152708_1_);
-        return this.func_152692_d(var2);
+        String s = this.addressToString(address);
+        return this.hasEntry(s);
     }
 
-    public IPBanEntry func_152709_b(SocketAddress p_152709_1_)
+    public IPBanEntry getBanEntry(SocketAddress address)
     {
-        String var2 = this.func_152707_c(p_152709_1_);
-        return (IPBanEntry)this.func_152683_b(var2);
+        String s = this.addressToString(address);
+        return (IPBanEntry)this.getEntry(s);
     }
 
-    private String func_152707_c(SocketAddress p_152707_1_)
+    private String addressToString(SocketAddress address)
     {
-        String var2 = p_152707_1_.toString();
+        String s = address.toString();
 
-        if (var2.contains("/"))
+        if (s.contains("/"))
         {
-            var2 = var2.substring(var2.indexOf(47) + 1);
+            s = s.substring(s.indexOf(47) + 1);
         }
 
-        if (var2.contains(":"))
+        if (s.contains(":"))
         {
-            var2 = var2.substring(0, var2.indexOf(58));
+            s = s.substring(0, s.indexOf(58));
         }
 
-        return var2;
+        return s;
     }
 }

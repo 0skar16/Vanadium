@@ -1,61 +1,59 @@
 package net.minecraft.network.play.server;
 
 import java.io.IOException;
-import net.minecraft.network.INetHandler;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 import net.minecraft.potion.PotionEffect;
 
-public class S1EPacketRemoveEntityEffect extends Packet
+public class S1EPacketRemoveEntityEffect implements Packet<INetHandlerPlayClient>
 {
-    private int field_149079_a;
-    private int field_149078_b;
-    private static final String __OBFID = "CL_00001321";
+    private int entityId;
+    private int effectId;
 
-    public S1EPacketRemoveEntityEffect() {}
-
-    public S1EPacketRemoveEntityEffect(int p_i45212_1_, PotionEffect p_i45212_2_)
+    public S1EPacketRemoveEntityEffect()
     {
-        this.field_149079_a = p_i45212_1_;
-        this.field_149078_b = p_i45212_2_.getPotionID();
+    }
+
+    public S1EPacketRemoveEntityEffect(int entityIdIn, PotionEffect effect)
+    {
+        this.entityId = entityIdIn;
+        this.effectId = effect.getPotionID();
     }
 
     /**
      * Reads the raw packet data from the data stream.
      */
-    public void readPacketData(PacketBuffer p_148837_1_) throws IOException
+    public void readPacketData(PacketBuffer buf) throws IOException
     {
-        this.field_149079_a = p_148837_1_.readInt();
-        this.field_149078_b = p_148837_1_.readUnsignedByte();
+        this.entityId = buf.readVarIntFromBuffer();
+        this.effectId = buf.readUnsignedByte();
     }
 
     /**
      * Writes the raw packet data to the data stream.
      */
-    public void writePacketData(PacketBuffer p_148840_1_) throws IOException
+    public void writePacketData(PacketBuffer buf) throws IOException
     {
-        p_148840_1_.writeInt(this.field_149079_a);
-        p_148840_1_.writeByte(this.field_149078_b);
+        buf.writeVarIntToBuffer(this.entityId);
+        buf.writeByte(this.effectId);
     }
 
-    public void processPacket(INetHandlerPlayClient p_148833_1_)
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayClient handler)
     {
-        p_148833_1_.handleRemoveEntityEffect(this);
+        handler.handleRemoveEntityEffect(this);
     }
 
-    public int func_149076_c()
+    public int getEntityId()
     {
-        return this.field_149079_a;
+        return this.entityId;
     }
 
-    public int func_149075_d()
+    public int getEffectId()
     {
-        return this.field_149078_b;
-    }
-
-    public void processPacket(INetHandler p_148833_1_)
-    {
-        this.processPacket((INetHandlerPlayClient)p_148833_1_);
+        return this.effectId;
     }
 }

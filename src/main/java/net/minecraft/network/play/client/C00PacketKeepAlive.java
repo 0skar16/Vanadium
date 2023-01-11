@@ -1,60 +1,49 @@
 package net.minecraft.network.play.client;
 
 import java.io.IOException;
-import net.minecraft.network.INetHandler;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayServer;
 
-public class C00PacketKeepAlive extends Packet
+public class C00PacketKeepAlive implements Packet<INetHandlerPlayServer>
 {
-    private int field_149461_a;
-    private static final String __OBFID = "CL_00001359";
+    private int key;
 
-    public C00PacketKeepAlive() {}
-
-    public C00PacketKeepAlive(int p_i45252_1_)
+    public C00PacketKeepAlive()
     {
-        this.field_149461_a = p_i45252_1_;
     }
 
-    public void processPacket(INetHandlerPlayServer p_148833_1_)
+    public C00PacketKeepAlive(int key)
     {
-        p_148833_1_.processKeepAlive(this);
+        this.key = key;
+    }
+
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayServer handler)
+    {
+        handler.processKeepAlive(this);
     }
 
     /**
      * Reads the raw packet data from the data stream.
      */
-    public void readPacketData(PacketBuffer p_148837_1_) throws IOException
+    public void readPacketData(PacketBuffer buf) throws IOException
     {
-        this.field_149461_a = p_148837_1_.readInt();
+        this.key = buf.readVarIntFromBuffer();
     }
 
     /**
      * Writes the raw packet data to the data stream.
      */
-    public void writePacketData(PacketBuffer p_148840_1_) throws IOException
+    public void writePacketData(PacketBuffer buf) throws IOException
     {
-        p_148840_1_.writeInt(this.field_149461_a);
+        buf.writeVarIntToBuffer(this.key);
     }
 
-    /**
-     * If true, the network manager will process the packet immediately when received, otherwise it will queue it for
-     * processing. Currently true for: Disconnect, LoginSuccess, KeepAlive, ServerQuery/Info, Ping/Pong
-     */
-    public boolean hasPriority()
+    public int getKey()
     {
-        return true;
-    }
-
-    public int func_149460_c()
-    {
-        return this.field_149461_a;
-    }
-
-    public void processPacket(INetHandler p_148833_1_)
-    {
-        this.processPacket((INetHandlerPlayServer)p_148833_1_);
+        return this.key;
     }
 }

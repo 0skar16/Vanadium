@@ -2,193 +2,188 @@ package net.minecraft.network.play.server;
 
 import java.io.IOException;
 import net.minecraft.entity.Entity;
-import net.minecraft.network.INetHandler;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 import net.minecraft.util.MathHelper;
 
-public class S0EPacketSpawnObject extends Packet
+public class S0EPacketSpawnObject implements Packet<INetHandlerPlayClient>
 {
-    private int field_149018_a;
-    private int field_149016_b;
-    private int field_149017_c;
-    private int field_149014_d;
-    private int field_149015_e;
-    private int field_149012_f;
-    private int field_149013_g;
-    private int field_149021_h;
-    private int field_149022_i;
-    private int field_149019_j;
+    private int entityId;
+    private int x;
+    private int y;
+    private int z;
+    private int speedX;
+    private int speedY;
+    private int speedZ;
+    private int pitch;
+    private int yaw;
+    private int type;
     private int field_149020_k;
-    private static final String __OBFID = "CL_00001276";
 
-    public S0EPacketSpawnObject() {}
-
-    public S0EPacketSpawnObject(Entity p_i45165_1_, int p_i45165_2_)
+    public S0EPacketSpawnObject()
     {
-        this(p_i45165_1_, p_i45165_2_, 0);
     }
 
-    public S0EPacketSpawnObject(Entity p_i45166_1_, int p_i45166_2_, int p_i45166_3_)
+    public S0EPacketSpawnObject(Entity entityIn, int typeIn)
     {
-        this.field_149018_a = p_i45166_1_.getEntityId();
-        this.field_149016_b = MathHelper.floor_double(p_i45166_1_.posX * 32.0D);
-        this.field_149017_c = MathHelper.floor_double(p_i45166_1_.posY * 32.0D);
-        this.field_149014_d = MathHelper.floor_double(p_i45166_1_.posZ * 32.0D);
-        this.field_149021_h = MathHelper.floor_float(p_i45166_1_.rotationPitch * 256.0F / 360.0F);
-        this.field_149022_i = MathHelper.floor_float(p_i45166_1_.rotationYaw * 256.0F / 360.0F);
-        this.field_149019_j = p_i45166_2_;
+        this(entityIn, typeIn, 0);
+    }
+
+    public S0EPacketSpawnObject(Entity entityIn, int typeIn, int p_i45166_3_)
+    {
+        this.entityId = entityIn.getEntityId();
+        this.x = MathHelper.floor_double(entityIn.posX * 32.0D);
+        this.y = MathHelper.floor_double(entityIn.posY * 32.0D);
+        this.z = MathHelper.floor_double(entityIn.posZ * 32.0D);
+        this.pitch = MathHelper.floor_float(entityIn.rotationPitch * 256.0F / 360.0F);
+        this.yaw = MathHelper.floor_float(entityIn.rotationYaw * 256.0F / 360.0F);
+        this.type = typeIn;
         this.field_149020_k = p_i45166_3_;
 
         if (p_i45166_3_ > 0)
         {
-            double var4 = p_i45166_1_.motionX;
-            double var6 = p_i45166_1_.motionY;
-            double var8 = p_i45166_1_.motionZ;
-            double var10 = 3.9D;
+            double d0 = entityIn.motionX;
+            double d1 = entityIn.motionY;
+            double d2 = entityIn.motionZ;
+            double d3 = 3.9D;
 
-            if (var4 < -var10)
+            if (d0 < -d3)
             {
-                var4 = -var10;
+                d0 = -d3;
             }
 
-            if (var6 < -var10)
+            if (d1 < -d3)
             {
-                var6 = -var10;
+                d1 = -d3;
             }
 
-            if (var8 < -var10)
+            if (d2 < -d3)
             {
-                var8 = -var10;
+                d2 = -d3;
             }
 
-            if (var4 > var10)
+            if (d0 > d3)
             {
-                var4 = var10;
+                d0 = d3;
             }
 
-            if (var6 > var10)
+            if (d1 > d3)
             {
-                var6 = var10;
+                d1 = d3;
             }
 
-            if (var8 > var10)
+            if (d2 > d3)
             {
-                var8 = var10;
+                d2 = d3;
             }
 
-            this.field_149015_e = (int)(var4 * 8000.0D);
-            this.field_149012_f = (int)(var6 * 8000.0D);
-            this.field_149013_g = (int)(var8 * 8000.0D);
+            this.speedX = (int)(d0 * 8000.0D);
+            this.speedY = (int)(d1 * 8000.0D);
+            this.speedZ = (int)(d2 * 8000.0D);
         }
     }
 
     /**
      * Reads the raw packet data from the data stream.
      */
-    public void readPacketData(PacketBuffer p_148837_1_) throws IOException
+    public void readPacketData(PacketBuffer buf) throws IOException
     {
-        this.field_149018_a = p_148837_1_.readVarIntFromBuffer();
-        this.field_149019_j = p_148837_1_.readByte();
-        this.field_149016_b = p_148837_1_.readInt();
-        this.field_149017_c = p_148837_1_.readInt();
-        this.field_149014_d = p_148837_1_.readInt();
-        this.field_149021_h = p_148837_1_.readByte();
-        this.field_149022_i = p_148837_1_.readByte();
-        this.field_149020_k = p_148837_1_.readInt();
+        this.entityId = buf.readVarIntFromBuffer();
+        this.type = buf.readByte();
+        this.x = buf.readInt();
+        this.y = buf.readInt();
+        this.z = buf.readInt();
+        this.pitch = buf.readByte();
+        this.yaw = buf.readByte();
+        this.field_149020_k = buf.readInt();
 
         if (this.field_149020_k > 0)
         {
-            this.field_149015_e = p_148837_1_.readShort();
-            this.field_149012_f = p_148837_1_.readShort();
-            this.field_149013_g = p_148837_1_.readShort();
+            this.speedX = buf.readShort();
+            this.speedY = buf.readShort();
+            this.speedZ = buf.readShort();
         }
     }
 
     /**
      * Writes the raw packet data to the data stream.
      */
-    public void writePacketData(PacketBuffer p_148840_1_) throws IOException
+    public void writePacketData(PacketBuffer buf) throws IOException
     {
-        p_148840_1_.writeVarIntToBuffer(this.field_149018_a);
-        p_148840_1_.writeByte(this.field_149019_j);
-        p_148840_1_.writeInt(this.field_149016_b);
-        p_148840_1_.writeInt(this.field_149017_c);
-        p_148840_1_.writeInt(this.field_149014_d);
-        p_148840_1_.writeByte(this.field_149021_h);
-        p_148840_1_.writeByte(this.field_149022_i);
-        p_148840_1_.writeInt(this.field_149020_k);
+        buf.writeVarIntToBuffer(this.entityId);
+        buf.writeByte(this.type);
+        buf.writeInt(this.x);
+        buf.writeInt(this.y);
+        buf.writeInt(this.z);
+        buf.writeByte(this.pitch);
+        buf.writeByte(this.yaw);
+        buf.writeInt(this.field_149020_k);
 
         if (this.field_149020_k > 0)
         {
-            p_148840_1_.writeShort(this.field_149015_e);
-            p_148840_1_.writeShort(this.field_149012_f);
-            p_148840_1_.writeShort(this.field_149013_g);
+            buf.writeShort(this.speedX);
+            buf.writeShort(this.speedY);
+            buf.writeShort(this.speedZ);
         }
     }
 
-    public void processPacket(INetHandlerPlayClient p_148833_1_)
-    {
-        p_148833_1_.handleSpawnObject(this);
-    }
-
     /**
-     * Returns a string formatted as comma separated [field]=[value] values. Used by Minecraft for logging purposes.
+     * Passes this Packet on to the NetHandler for processing.
      */
-    public String serialize()
+    public void processPacket(INetHandlerPlayClient handler)
     {
-        return String.format("id=%d, type=%d, x=%.2f, y=%.2f, z=%.2f", new Object[] {Integer.valueOf(this.field_149018_a), Integer.valueOf(this.field_149019_j), Float.valueOf((float)this.field_149016_b / 32.0F), Float.valueOf((float)this.field_149017_c / 32.0F), Float.valueOf((float)this.field_149014_d / 32.0F)});
+        handler.handleSpawnObject(this);
     }
 
-    public int func_149001_c()
+    public int getEntityID()
     {
-        return this.field_149018_a;
+        return this.entityId;
     }
 
-    public int func_148997_d()
+    public int getX()
     {
-        return this.field_149016_b;
+        return this.x;
     }
 
-    public int func_148998_e()
+    public int getY()
     {
-        return this.field_149017_c;
+        return this.y;
     }
 
-    public int func_148994_f()
+    public int getZ()
     {
-        return this.field_149014_d;
+        return this.z;
     }
 
-    public int func_149010_g()
+    public int getSpeedX()
     {
-        return this.field_149015_e;
+        return this.speedX;
     }
 
-    public int func_149004_h()
+    public int getSpeedY()
     {
-        return this.field_149012_f;
+        return this.speedY;
     }
 
-    public int func_148999_i()
+    public int getSpeedZ()
     {
-        return this.field_149013_g;
+        return this.speedZ;
     }
 
-    public int func_149008_j()
+    public int getPitch()
     {
-        return this.field_149021_h;
+        return this.pitch;
     }
 
-    public int func_149006_k()
+    public int getYaw()
     {
-        return this.field_149022_i;
+        return this.yaw;
     }
 
-    public int func_148993_l()
+    public int getType()
     {
-        return this.field_149019_j;
+        return this.type;
     }
 
     public int func_149009_m()
@@ -196,43 +191,38 @@ public class S0EPacketSpawnObject extends Packet
         return this.field_149020_k;
     }
 
-    public void func_148996_a(int p_148996_1_)
+    public void setX(int newX)
     {
-        this.field_149016_b = p_148996_1_;
+        this.x = newX;
     }
 
-    public void func_148995_b(int p_148995_1_)
+    public void setY(int newY)
     {
-        this.field_149017_c = p_148995_1_;
+        this.y = newY;
     }
 
-    public void func_149005_c(int p_149005_1_)
+    public void setZ(int newZ)
     {
-        this.field_149014_d = p_149005_1_;
+        this.z = newZ;
     }
 
-    public void func_149003_d(int p_149003_1_)
+    public void setSpeedX(int newSpeedX)
     {
-        this.field_149015_e = p_149003_1_;
+        this.speedX = newSpeedX;
     }
 
-    public void func_149000_e(int p_149000_1_)
+    public void setSpeedY(int newSpeedY)
     {
-        this.field_149012_f = p_149000_1_;
+        this.speedY = newSpeedY;
     }
 
-    public void func_149007_f(int p_149007_1_)
+    public void setSpeedZ(int newSpeedZ)
     {
-        this.field_149013_g = p_149007_1_;
+        this.speedZ = newSpeedZ;
     }
 
     public void func_149002_g(int p_149002_1_)
     {
         this.field_149020_k = p_149002_1_;
-    }
-
-    public void processPacket(INetHandler p_148833_1_)
-    {
-        this.processPacket((INetHandlerPlayClient)p_148833_1_);
     }
 }

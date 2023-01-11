@@ -7,8 +7,6 @@ import net.minecraft.entity.player.EntityPlayer;
 
 public class ItemNameTag extends Item
 {
-    private static final String __OBFID = "CL_00000052";
-
     public ItemNameTag()
     {
         this.setCreativeTab(CreativeTabs.tabTools);
@@ -17,23 +15,23 @@ public class ItemNameTag extends Item
     /**
      * Returns true if the item can be used on the given entity, e.g. shears on sheep.
      */
-    public boolean itemInteractionForEntity(ItemStack p_111207_1_, EntityPlayer p_111207_2_, EntityLivingBase p_111207_3_)
+    public boolean itemInteractionForEntity(ItemStack stack, EntityPlayer playerIn, EntityLivingBase target)
     {
-        if (!p_111207_1_.hasDisplayName())
+        if (!stack.hasDisplayName())
         {
             return false;
         }
-        else if (p_111207_3_ instanceof EntityLiving)
+        else if (target instanceof EntityLiving)
         {
-            EntityLiving var4 = (EntityLiving)p_111207_3_;
-            var4.setCustomNameTag(p_111207_1_.getDisplayName());
-            var4.func_110163_bv();
-            --p_111207_1_.stackSize;
+            EntityLiving entityliving = (EntityLiving)target;
+            entityliving.setCustomNameTag(stack.getDisplayName());
+            entityliving.enablePersistence();
+            --stack.stackSize;
             return true;
         }
         else
         {
-            return super.itemInteractionForEntity(p_111207_1_, p_111207_2_, p_111207_3_);
+            return super.itemInteractionForEntity(stack, playerIn, target);
         }
     }
 }

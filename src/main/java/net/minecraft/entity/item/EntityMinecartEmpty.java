@@ -1,48 +1,69 @@
 package net.minecraft.entity.item;
 
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.world.World;
 
 public class EntityMinecartEmpty extends EntityMinecart
 {
-    private static final String __OBFID = "CL_00001677";
-
-    public EntityMinecartEmpty(World p_i1722_1_)
+    public EntityMinecartEmpty(World worldIn)
     {
-        super(p_i1722_1_);
+        super(worldIn);
     }
 
-    public EntityMinecartEmpty(World p_i1723_1_, double p_i1723_2_, double p_i1723_4_, double p_i1723_6_)
+    public EntityMinecartEmpty(World worldIn, double x, double y, double z)
     {
-        super(p_i1723_1_, p_i1723_2_, p_i1723_4_, p_i1723_6_);
+        super(worldIn, x, y, z);
     }
 
     /**
      * First layer of player interaction
      */
-    public boolean interactFirst(EntityPlayer p_130002_1_)
+    public boolean interactFirst(EntityPlayer playerIn)
     {
-        if (this.riddenByEntity != null && this.riddenByEntity instanceof EntityPlayer && this.riddenByEntity != p_130002_1_)
+        if (this.riddenByEntity != null && this.riddenByEntity instanceof EntityPlayer && this.riddenByEntity != playerIn)
         {
             return true;
         }
-        else if (this.riddenByEntity != null && this.riddenByEntity != p_130002_1_)
+        else if (this.riddenByEntity != null && this.riddenByEntity != playerIn)
         {
             return false;
         }
         else
         {
-            if (!this.worldObj.isClient)
+            if (!this.worldObj.isRemote)
             {
-                p_130002_1_.mountEntity(this);
+                playerIn.mountEntity(this);
             }
 
             return true;
         }
     }
 
-    public int getMinecartType()
+    /**
+     * Called every tick the minecart is on an activator rail. Args: x, y, z, is the rail receiving power
+     */
+    public void onActivatorRailPass(int x, int y, int z, boolean receivingPower)
     {
-        return 0;
+        if (receivingPower)
+        {
+            if (this.riddenByEntity != null)
+            {
+                this.riddenByEntity.mountEntity((Entity)null);
+            }
+
+            if (this.getRollingAmplitude() == 0)
+            {
+                this.setRollingDirection(-this.getRollingDirection());
+                this.setRollingAmplitude(10);
+                this.setDamage(50.0F);
+                this.setBeenAttacked();
+            }
+        }
+    }
+
+    public EntityMinecart.EnumMinecartType getMinecartType()
+    {
+        return EntityMinecart.EnumMinecartType.RIDEABLE;
     }
 }

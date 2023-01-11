@@ -7,23 +7,17 @@ import java.util.List;
 import javax.crypto.Cipher;
 import javax.crypto.ShortBufferException;
 
-public class NettyEncryptingDecoder extends MessageToMessageDecoder
+public class NettyEncryptingDecoder extends MessageToMessageDecoder<ByteBuf>
 {
-    private final NettyEncryptionTranslator field_150509_a;
-    private static final String __OBFID = "CL_00001238";
+    private final NettyEncryptionTranslator decryptionCodec;
 
-    public NettyEncryptingDecoder(Cipher p_i45141_1_)
+    public NettyEncryptingDecoder(Cipher cipher)
     {
-        this.field_150509_a = new NettyEncryptionTranslator(p_i45141_1_);
+        this.decryptionCodec = new NettyEncryptionTranslator(cipher);
     }
 
-    protected void decode(ChannelHandlerContext p_decode_1_, ByteBuf p_decode_2_, List p_decode_3_) throws ShortBufferException
+    protected void decode(ChannelHandlerContext p_decode_1_, ByteBuf p_decode_2_, List<Object> p_decode_3_) throws ShortBufferException, Exception
     {
-        p_decode_3_.add(this.field_150509_a.func_150503_a(p_decode_1_, p_decode_2_));
-    }
-
-    protected void decode(ChannelHandlerContext p_decode_1_, Object p_decode_2_, List p_decode_3_) throws ShortBufferException
-    {
-        this.decode(p_decode_1_, (ByteBuf)p_decode_2_, p_decode_3_);
+        p_decode_3_.add(this.decryptionCodec.decipher(p_decode_1_, p_decode_2_));
     }
 }

@@ -9,8 +9,9 @@ public interface ApiGui {
     }
 
     void draw(Session session);
-    default boolean mousePressed(Session session){
+    default boolean mousePressed(int mouseX, int mouseY, int button){
         return false;
     }
-    default void mouseReleased(Session session){};
+    default void mouseReleased(int mouseX, int mouseY){};
+    default void mouseDrag(int x, int y, int button, long deltat){};
 }

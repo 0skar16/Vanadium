@@ -2,13 +2,17 @@ package net.minecraft.block;
 
 import java.util.List;
 import java.util.Random;
-import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.block.properties.IProperty;
+import net.minecraft.block.properties.PropertyEnum;
+import net.minecraft.block.properties.PropertyInteger;
+import net.minecraft.block.state.BlockState;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.IIcon;
-import net.minecraft.util.MathHelper;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
 import net.minecraft.world.gen.feature.WorldGenBigTree;
 import net.minecraft.world.gen.feature.WorldGenCanopyTree;
@@ -22,220 +26,244 @@ import net.minecraft.world.gen.feature.WorldGenerator;
 
 public class BlockSapling extends BlockBush implements IGrowable
 {
-    public static final String[] field_149882_a = new String[] {"oak", "spruce", "birch", "jungle", "acacia", "roofed_oak"};
-    private static final IIcon[] field_149881_b = new IIcon[field_149882_a.length];
-    private static final String __OBFID = "CL_00000305";
+    public static final PropertyEnum<BlockPlanks.EnumType> TYPE = PropertyEnum.<BlockPlanks.EnumType>create("type", BlockPlanks.EnumType.class);
+    public static final PropertyInteger STAGE = PropertyInteger.create("stage", 0, 1);
 
     protected BlockSapling()
     {
-        float var1 = 0.4F;
-        this.setBlockBounds(0.5F - var1, 0.0F, 0.5F - var1, 0.5F + var1, var1 * 2.0F, 0.5F + var1);
+        this.setDefaultState(this.blockState.getBaseState().withProperty(TYPE, BlockPlanks.EnumType.OAK).withProperty(STAGE, Integer.valueOf(0)));
+        float f = 0.4F;
+        this.setBlockBounds(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, f * 2.0F, 0.5F + f);
         this.setCreativeTab(CreativeTabs.tabDecorations);
     }
 
     /**
-     * Ticks the block if it's been scheduled
+     * Gets the localized name of this block. Used for the statistics page.
      */
-    public void updateTick(World p_149674_1_, int p_149674_2_, int p_149674_3_, int p_149674_4_, Random p_149674_5_)
+    public String getLocalizedName()
     {
-        if (!p_149674_1_.isClient)
-        {
-            super.updateTick(p_149674_1_, p_149674_2_, p_149674_3_, p_149674_4_, p_149674_5_);
+        return StatCollector.translateToLocal(this.getUnlocalizedName() + "." + BlockPlanks.EnumType.OAK.getUnlocalizedName() + ".name");
+    }
 
-            if (p_149674_1_.getBlockLightValue(p_149674_2_, p_149674_3_ + 1, p_149674_4_) >= 9 && p_149674_5_.nextInt(7) == 0)
+    public void updateTick(World worldIn, BlockPos pos, IBlockState state, Random rand)
+    {
+        if (!worldIn.isRemote)
+        {
+            super.updateTick(worldIn, pos, state, rand);
+
+            if (worldIn.getLightFromNeighbors(pos.up()) >= 9 && rand.nextInt(7) == 0)
             {
-                this.func_149879_c(p_149674_1_, p_149674_2_, p_149674_3_, p_149674_4_, p_149674_5_);
+                this.grow(worldIn, pos, state, rand);
             }
         }
     }
 
-    /**
-     * Gets the block's texture. Args: side, meta
-     */
-    public IIcon getIcon(int p_149691_1_, int p_149691_2_)
+    public void grow(World worldIn, BlockPos pos, IBlockState state, Random rand)
     {
-        p_149691_2_ &= 7;
-        return field_149881_b[MathHelper.clamp_int(p_149691_2_, 0, 5)];
-    }
-
-    public void func_149879_c(World p_149879_1_, int p_149879_2_, int p_149879_3_, int p_149879_4_, Random p_149879_5_)
-    {
-        int var6 = p_149879_1_.getBlockMetadata(p_149879_2_, p_149879_3_, p_149879_4_);
-
-        if ((var6 & 8) == 0)
+        if (((Integer)state.getValue(STAGE)).intValue() == 0)
         {
-            p_149879_1_.setBlockMetadataWithNotify(p_149879_2_, p_149879_3_, p_149879_4_, var6 | 8, 4);
+            worldIn.setBlockState(pos, state.cycleProperty(STAGE), 4);
         }
         else
         {
-            this.func_149878_d(p_149879_1_, p_149879_2_, p_149879_3_, p_149879_4_, p_149879_5_);
+            this.generateTree(worldIn, pos, state, rand);
         }
     }
 
-    public void func_149878_d(World p_149878_1_, int p_149878_2_, int p_149878_3_, int p_149878_4_, Random p_149878_5_)
+    public void generateTree(World worldIn, BlockPos pos, IBlockState state, Random rand)
     {
-        int var6 = p_149878_1_.getBlockMetadata(p_149878_2_, p_149878_3_, p_149878_4_) & 7;
-        Object var7 = p_149878_5_.nextInt(10) == 0 ? new WorldGenBigTree(true) : new WorldGenTrees(true);
-        int var8 = 0;
-        int var9 = 0;
-        boolean var10 = false;
+        WorldGenerator worldgenerator = (WorldGenerator)(rand.nextInt(10) == 0 ? new WorldGenBigTree(true) : new WorldGenTrees(true));
+        int i = 0;
+        int j = 0;
+        boolean flag = false;
 
-        switch (var6)
+        switch ((BlockPlanks.EnumType)state.getValue(TYPE))
         {
-            case 0:
-            default:
-                break;
-
-            case 1:
-                label78:
-                for (var8 = 0; var8 >= -1; --var8)
+            case SPRUCE:
+                label114:
+                for (i = 0; i >= -1; --i)
                 {
-                    for (var9 = 0; var9 >= -1; --var9)
+                    for (j = 0; j >= -1; --j)
                     {
-                        if (this.func_149880_a(p_149878_1_, p_149878_2_ + var8, p_149878_3_, p_149878_4_ + var9, 1) && this.func_149880_a(p_149878_1_, p_149878_2_ + var8 + 1, p_149878_3_, p_149878_4_ + var9, 1) && this.func_149880_a(p_149878_1_, p_149878_2_ + var8, p_149878_3_, p_149878_4_ + var9 + 1, 1) && this.func_149880_a(p_149878_1_, p_149878_2_ + var8 + 1, p_149878_3_, p_149878_4_ + var9 + 1, 1))
+                        if (this.func_181624_a(worldIn, pos, i, j, BlockPlanks.EnumType.SPRUCE))
                         {
-                            var7 = new WorldGenMegaPineTree(false, p_149878_5_.nextBoolean());
-                            var10 = true;
-                            break label78;
+                            worldgenerator = new WorldGenMegaPineTree(false, rand.nextBoolean());
+                            flag = true;
+                            break label114;
                         }
                     }
                 }
 
-                if (!var10)
+                if (!flag)
                 {
-                    var9 = 0;
-                    var8 = 0;
-                    var7 = new WorldGenTaiga2(true);
+                    j = 0;
+                    i = 0;
+                    worldgenerator = new WorldGenTaiga2(true);
                 }
 
                 break;
 
-            case 2:
-                var7 = new WorldGenForest(true, false);
+            case BIRCH:
+                worldgenerator = new WorldGenForest(true, false);
                 break;
 
-            case 3:
-                label93:
-                for (var8 = 0; var8 >= -1; --var8)
+            case JUNGLE:
+                IBlockState iblockstate = Blocks.log.getDefaultState().withProperty(BlockOldLog.VARIANT, BlockPlanks.EnumType.JUNGLE);
+                IBlockState iblockstate1 = Blocks.leaves.getDefaultState().withProperty(BlockOldLeaf.VARIANT, BlockPlanks.EnumType.JUNGLE).withProperty(BlockLeaves.CHECK_DECAY, Boolean.valueOf(false));
+                label269:
+
+                for (i = 0; i >= -1; --i)
                 {
-                    for (var9 = 0; var9 >= -1; --var9)
+                    for (j = 0; j >= -1; --j)
                     {
-                        if (this.func_149880_a(p_149878_1_, p_149878_2_ + var8, p_149878_3_, p_149878_4_ + var9, 3) && this.func_149880_a(p_149878_1_, p_149878_2_ + var8 + 1, p_149878_3_, p_149878_4_ + var9, 3) && this.func_149880_a(p_149878_1_, p_149878_2_ + var8, p_149878_3_, p_149878_4_ + var9 + 1, 3) && this.func_149880_a(p_149878_1_, p_149878_2_ + var8 + 1, p_149878_3_, p_149878_4_ + var9 + 1, 3))
+                        if (this.func_181624_a(worldIn, pos, i, j, BlockPlanks.EnumType.JUNGLE))
                         {
-                            var7 = new WorldGenMegaJungle(true, 10, 20, 3, 3);
-                            var10 = true;
-                            break label93;
+                            worldgenerator = new WorldGenMegaJungle(true, 10, 20, iblockstate, iblockstate1);
+                            flag = true;
+                            break label269;
                         }
                     }
                 }
 
-                if (!var10)
+                if (!flag)
                 {
-                    var9 = 0;
-                    var8 = 0;
-                    var7 = new WorldGenTrees(true, 4 + p_149878_5_.nextInt(7), 3, 3, false);
+                    j = 0;
+                    i = 0;
+                    worldgenerator = new WorldGenTrees(true, 4 + rand.nextInt(7), iblockstate, iblockstate1, false);
                 }
 
                 break;
 
-            case 4:
-                var7 = new WorldGenSavannaTree(true);
+            case ACACIA:
+                worldgenerator = new WorldGenSavannaTree(true);
                 break;
 
-            case 5:
-                label108:
-                for (var8 = 0; var8 >= -1; --var8)
+            case DARK_OAK:
+                label390:
+                for (i = 0; i >= -1; --i)
                 {
-                    for (var9 = 0; var9 >= -1; --var9)
+                    for (j = 0; j >= -1; --j)
                     {
-                        if (this.func_149880_a(p_149878_1_, p_149878_2_ + var8, p_149878_3_, p_149878_4_ + var9, 5) && this.func_149880_a(p_149878_1_, p_149878_2_ + var8 + 1, p_149878_3_, p_149878_4_ + var9, 5) && this.func_149880_a(p_149878_1_, p_149878_2_ + var8, p_149878_3_, p_149878_4_ + var9 + 1, 5) && this.func_149880_a(p_149878_1_, p_149878_2_ + var8 + 1, p_149878_3_, p_149878_4_ + var9 + 1, 5))
+                        if (this.func_181624_a(worldIn, pos, i, j, BlockPlanks.EnumType.DARK_OAK))
                         {
-                            var7 = new WorldGenCanopyTree(true);
-                            var10 = true;
-                            break label108;
+                            worldgenerator = new WorldGenCanopyTree(true);
+                            flag = true;
+                            break label390;
                         }
                     }
                 }
 
-                if (!var10)
+                if (!flag)
                 {
                     return;
                 }
+
+            case OAK:
         }
 
-        Block var11 = Blocks.air;
+        IBlockState iblockstate2 = Blocks.air.getDefaultState();
 
-        if (var10)
+        if (flag)
         {
-            p_149878_1_.setBlock(p_149878_2_ + var8, p_149878_3_, p_149878_4_ + var9, var11, 0, 4);
-            p_149878_1_.setBlock(p_149878_2_ + var8 + 1, p_149878_3_, p_149878_4_ + var9, var11, 0, 4);
-            p_149878_1_.setBlock(p_149878_2_ + var8, p_149878_3_, p_149878_4_ + var9 + 1, var11, 0, 4);
-            p_149878_1_.setBlock(p_149878_2_ + var8 + 1, p_149878_3_, p_149878_4_ + var9 + 1, var11, 0, 4);
+            worldIn.setBlockState(pos.add(i, 0, j), iblockstate2, 4);
+            worldIn.setBlockState(pos.add(i + 1, 0, j), iblockstate2, 4);
+            worldIn.setBlockState(pos.add(i, 0, j + 1), iblockstate2, 4);
+            worldIn.setBlockState(pos.add(i + 1, 0, j + 1), iblockstate2, 4);
         }
         else
         {
-            p_149878_1_.setBlock(p_149878_2_, p_149878_3_, p_149878_4_, var11, 0, 4);
+            worldIn.setBlockState(pos, iblockstate2, 4);
         }
 
-        if (!((WorldGenerator)var7).generate(p_149878_1_, p_149878_5_, p_149878_2_ + var8, p_149878_3_, p_149878_4_ + var9))
+        if (!worldgenerator.generate(worldIn, rand, pos.add(i, 0, j)))
         {
-            if (var10)
+            if (flag)
             {
-                p_149878_1_.setBlock(p_149878_2_ + var8, p_149878_3_, p_149878_4_ + var9, this, var6, 4);
-                p_149878_1_.setBlock(p_149878_2_ + var8 + 1, p_149878_3_, p_149878_4_ + var9, this, var6, 4);
-                p_149878_1_.setBlock(p_149878_2_ + var8, p_149878_3_, p_149878_4_ + var9 + 1, this, var6, 4);
-                p_149878_1_.setBlock(p_149878_2_ + var8 + 1, p_149878_3_, p_149878_4_ + var9 + 1, this, var6, 4);
+                worldIn.setBlockState(pos.add(i, 0, j), state, 4);
+                worldIn.setBlockState(pos.add(i + 1, 0, j), state, 4);
+                worldIn.setBlockState(pos.add(i, 0, j + 1), state, 4);
+                worldIn.setBlockState(pos.add(i + 1, 0, j + 1), state, 4);
             }
             else
             {
-                p_149878_1_.setBlock(p_149878_2_, p_149878_3_, p_149878_4_, this, var6, 4);
+                worldIn.setBlockState(pos, state, 4);
             }
         }
     }
 
-    public boolean func_149880_a(World p_149880_1_, int p_149880_2_, int p_149880_3_, int p_149880_4_, int p_149880_5_)
+    private boolean func_181624_a(World p_181624_1_, BlockPos p_181624_2_, int p_181624_3_, int p_181624_4_, BlockPlanks.EnumType p_181624_5_)
     {
-        return p_149880_1_.getBlock(p_149880_2_, p_149880_3_, p_149880_4_) == this && (p_149880_1_.getBlockMetadata(p_149880_2_, p_149880_3_, p_149880_4_) & 7) == p_149880_5_;
+        return this.isTypeAt(p_181624_1_, p_181624_2_.add(p_181624_3_, 0, p_181624_4_), p_181624_5_) && this.isTypeAt(p_181624_1_, p_181624_2_.add(p_181624_3_ + 1, 0, p_181624_4_), p_181624_5_) && this.isTypeAt(p_181624_1_, p_181624_2_.add(p_181624_3_, 0, p_181624_4_ + 1), p_181624_5_) && this.isTypeAt(p_181624_1_, p_181624_2_.add(p_181624_3_ + 1, 0, p_181624_4_ + 1), p_181624_5_);
     }
 
     /**
-     * Determines the damage on the item the block drops. Used in cloth and wood.
+     * Check whether the given BlockPos has a Sapling of the given type
      */
-    public int damageDropped(int p_149692_1_)
+    public boolean isTypeAt(World worldIn, BlockPos pos, BlockPlanks.EnumType type)
     {
-        return MathHelper.clamp_int(p_149692_1_ & 7, 0, 5);
+        IBlockState iblockstate = worldIn.getBlockState(pos);
+        return iblockstate.getBlock() == this && iblockstate.getValue(TYPE) == type;
     }
 
-    public void getSubBlocks(Item p_149666_1_, CreativeTabs p_149666_2_, List p_149666_3_)
+    /**
+     * Gets the metadata of the item this Block can drop. This method is called when the block gets destroyed. It
+     * returns the metadata of the dropped item based on the old metadata of the block.
+     */
+    public int damageDropped(IBlockState state)
     {
-        p_149666_3_.add(new ItemStack(p_149666_1_, 1, 0));
-        p_149666_3_.add(new ItemStack(p_149666_1_, 1, 1));
-        p_149666_3_.add(new ItemStack(p_149666_1_, 1, 2));
-        p_149666_3_.add(new ItemStack(p_149666_1_, 1, 3));
-        p_149666_3_.add(new ItemStack(p_149666_1_, 1, 4));
-        p_149666_3_.add(new ItemStack(p_149666_1_, 1, 5));
+        return ((BlockPlanks.EnumType)state.getValue(TYPE)).getMetadata();
     }
 
-    public void registerBlockIcons(IIconRegister p_149651_1_)
+    /**
+     * returns a list of blocks with the same ID, but different meta (eg: wood returns 4 blocks)
+     */
+    public void getSubBlocks(Item itemIn, CreativeTabs tab, List<ItemStack> list)
     {
-        for (int var2 = 0; var2 < field_149881_b.length; ++var2)
+        for (BlockPlanks.EnumType blockplanks$enumtype : BlockPlanks.EnumType.values())
         {
-            field_149881_b[var2] = p_149651_1_.registerIcon(this.getTextureName() + "_" + field_149882_a[var2]);
+            list.add(new ItemStack(itemIn, 1, blockplanks$enumtype.getMetadata()));
         }
     }
 
-    public boolean func_149851_a(World p_149851_1_, int p_149851_2_, int p_149851_3_, int p_149851_4_, boolean p_149851_5_)
+    /**
+     * Whether this IGrowable can grow
+     */
+    public boolean canGrow(World worldIn, BlockPos pos, IBlockState state, boolean isClient)
     {
         return true;
     }
 
-    public boolean func_149852_a(World p_149852_1_, Random p_149852_2_, int p_149852_3_, int p_149852_4_, int p_149852_5_)
+    public boolean canUseBonemeal(World worldIn, Random rand, BlockPos pos, IBlockState state)
     {
-        return (double)p_149852_1_.rand.nextFloat() < 0.45D;
+        return (double)worldIn.rand.nextFloat() < 0.45D;
     }
 
-    public void func_149853_b(World p_149853_1_, Random p_149853_2_, int p_149853_3_, int p_149853_4_, int p_149853_5_)
+    public void grow(World worldIn, Random rand, BlockPos pos, IBlockState state)
     {
-        this.func_149879_c(p_149853_1_, p_149853_3_, p_149853_4_, p_149853_5_, p_149853_2_);
+        this.grow(worldIn, pos, state, rand);
+    }
+
+    /**
+     * Convert the given metadata into a BlockState for this Block
+     */
+    public IBlockState getStateFromMeta(int meta)
+    {
+        return this.getDefaultState().withProperty(TYPE, BlockPlanks.EnumType.byMetadata(meta & 7)).withProperty(STAGE, Integer.valueOf((meta & 8) >> 3));
+    }
+
+    /**
+     * Convert the BlockState into the correct metadata value
+     */
+    public int getMetaFromState(IBlockState state)
+    {
+        int i = 0;
+        i = i | ((BlockPlanks.EnumType)state.getValue(TYPE)).getMetadata();
+        i = i | ((Integer)state.getValue(STAGE)).intValue() << 3;
+        return i;
+    }
+
+    protected BlockState createBlockState()
+    {
+        return new BlockState(this, new IProperty[] {TYPE, STAGE});
     }
 }

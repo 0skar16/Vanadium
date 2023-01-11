@@ -2,23 +2,24 @@ package net.minecraft.command;
 
 import java.util.List;
 import java.util.Map;
+import net.minecraft.util.BlockPos;
 
 public interface ICommandManager
 {
-    int executeCommand(ICommandSender p_71556_1_, String p_71556_2_);
-
     /**
-     * Performs a "begins with" string match on each token in par2. Only returns commands that par1 can use.
+     * Attempt to execute a command. This method should return the number of times that the command was executed. If the
+     * command does not exist or if the player does not have permission, 0 will be returned. A number greater than 1 can
+     * be returned if a player selector is used.
+     *  
+     * @param sender The person who executed the command. This could be an EntityPlayer, RCon Source, Command Block,
+     * etc.
+     * @param rawCommand The raw arguments that were passed. This includes the command name.
      */
-    List getPossibleCommands(ICommandSender p_71558_1_, String p_71558_2_);
+    int executeCommand(ICommandSender sender, String rawCommand);
 
-    /**
-     * returns all commands that the commandSender can use
-     */
-    List getPossibleCommands(ICommandSender p_71557_1_);
+    List<String> getTabCompletionOptions(ICommandSender sender, String input, BlockPos pos);
 
-    /**
-     * returns a map of string to commads. All commands are returned, not just ones which someone has permission to use.
-     */
-    Map getCommands();
+    List<ICommand> getPossibleCommands(ICommandSender sender);
+
+    Map<String, ICommand> getCommands();
 }

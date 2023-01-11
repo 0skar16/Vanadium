@@ -1,7 +1,7 @@
 package net.minecraft.entity.ai;
 
 import net.minecraft.entity.EntityCreature;
-import net.minecraft.util.ChunkCoordinates;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.Vec3;
 
 public class EntityAIMoveTowardsRestriction extends EntityAIBase
@@ -11,12 +11,11 @@ public class EntityAIMoveTowardsRestriction extends EntityAIBase
     private double movePosY;
     private double movePosZ;
     private double movementSpeed;
-    private static final String __OBFID = "CL_00001598";
 
-    public EntityAIMoveTowardsRestriction(EntityCreature p_i2347_1_, double p_i2347_2_)
+    public EntityAIMoveTowardsRestriction(EntityCreature creatureIn, double speedIn)
     {
-        this.theEntity = p_i2347_1_;
-        this.movementSpeed = p_i2347_2_;
+        this.theEntity = creatureIn;
+        this.movementSpeed = speedIn;
         this.setMutexBits(1);
     }
 
@@ -31,18 +30,18 @@ public class EntityAIMoveTowardsRestriction extends EntityAIBase
         }
         else
         {
-            ChunkCoordinates var1 = this.theEntity.getHomePosition();
-            Vec3 var2 = RandomPositionGenerator.findRandomTargetBlockTowards(this.theEntity, 16, 7, Vec3.createVectorHelper((double)var1.posX, (double)var1.posY, (double)var1.posZ));
+            BlockPos blockpos = this.theEntity.getHomePosition();
+            Vec3 vec3 = RandomPositionGenerator.findRandomTargetBlockTowards(this.theEntity, 16, 7, new Vec3((double)blockpos.getX(), (double)blockpos.getY(), (double)blockpos.getZ()));
 
-            if (var2 == null)
+            if (vec3 == null)
             {
                 return false;
             }
             else
             {
-                this.movePosX = var2.xCoord;
-                this.movePosY = var2.yCoord;
-                this.movePosZ = var2.zCoord;
+                this.movePosX = vec3.xCoord;
+                this.movePosY = vec3.yCoord;
+                this.movePosZ = vec3.zCoord;
                 return true;
             }
         }

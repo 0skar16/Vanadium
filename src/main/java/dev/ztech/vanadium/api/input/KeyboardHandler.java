@@ -19,7 +19,7 @@ public class KeyboardHandler {
     private void onTickTest(CTickEvent e){
         for (int i = 0; i < Keyboard.getKeyCount(); i++) {
             boolean key = Keyboard.isKeyDown(i);
-            if((key && !keymap.containsKey(i)) || keymap.get(i).booleanValue() != key){
+            if((key && !keymap.containsKey(i)) || keymap.get(i) != key){
                 keymap.put(i, key);
                 new KeyEvent(i, key).call();
             }

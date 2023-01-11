@@ -1,16 +1,18 @@
 package net.minecraft.client.particle;
 
-import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.WorldRenderer;
+import net.minecraft.entity.Entity;
+import net.minecraft.util.EnumParticleTypes;
+import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 
 public class EntityLavaFX extends EntityFX
 {
     private float lavaParticleScale;
-    private static final String __OBFID = "CL_00000912";
 
-    public EntityLavaFX(World p_i1215_1_, double p_i1215_2_, double p_i1215_4_, double p_i1215_6_)
+    protected EntityLavaFX(World worldIn, double xCoordIn, double yCoordIn, double zCoordIn)
     {
-        super(p_i1215_1_, p_i1215_2_, p_i1215_4_, p_i1215_6_, 0.0D, 0.0D, 0.0D);
+        super(worldIn, xCoordIn, yCoordIn, zCoordIn, 0.0D, 0.0D, 0.0D);
         this.motionX *= 0.800000011920929D;
         this.motionY *= 0.800000011920929D;
         this.motionZ *= 0.800000011920929D;
@@ -23,39 +25,32 @@ public class EntityLavaFX extends EntityFX
         this.setParticleTextureIndex(49);
     }
 
-    public int getBrightnessForRender(float p_70070_1_)
+    public int getBrightnessForRender(float partialTicks)
     {
-        float var2 = ((float)this.particleAge + p_70070_1_) / (float)this.particleMaxAge;
-
-        if (var2 < 0.0F)
-        {
-            var2 = 0.0F;
-        }
-
-        if (var2 > 1.0F)
-        {
-            var2 = 1.0F;
-        }
-
-        int var3 = super.getBrightnessForRender(p_70070_1_);
-        short var4 = 240;
-        int var5 = var3 >> 16 & 255;
-        return var4 | var5 << 16;
+        float f = ((float)this.particleAge + partialTicks) / (float)this.particleMaxAge;
+        f = MathHelper.clamp_float(f, 0.0F, 1.0F);
+        int i = super.getBrightnessForRender(partialTicks);
+        int j = 240;
+        int k = i >> 16 & 255;
+        return j | k << 16;
     }
 
     /**
      * Gets how bright this entity is.
      */
-    public float getBrightness(float p_70013_1_)
+    public float getBrightness(float partialTicks)
     {
         return 1.0F;
     }
 
-    public void renderParticle(Tessellator p_70539_1_, float p_70539_2_, float p_70539_3_, float p_70539_4_, float p_70539_5_, float p_70539_6_, float p_70539_7_)
+    /**
+     * Renders the particle
+     */
+    public void renderParticle(WorldRenderer worldRendererIn, Entity entityIn, float partialTicks, float rotationX, float rotationZ, float rotationYZ, float rotationXY, float rotationXZ)
     {
-        float var8 = ((float)this.particleAge + p_70539_2_) / (float)this.particleMaxAge;
-        this.particleScale = this.lavaParticleScale * (1.0F - var8 * var8);
-        super.renderParticle(p_70539_1_, p_70539_2_, p_70539_3_, p_70539_4_, p_70539_5_, p_70539_6_, p_70539_7_);
+        float f = ((float)this.particleAge + partialTicks) / (float)this.particleMaxAge;
+        this.particleScale = this.lavaParticleScale * (1.0F - f * f);
+        super.renderParticle(worldRendererIn, entityIn, partialTicks, rotationX, rotationZ, rotationYZ, rotationXY, rotationXZ);
     }
 
     /**
@@ -72,11 +67,11 @@ public class EntityLavaFX extends EntityFX
             this.setDead();
         }
 
-        float var1 = (float)this.particleAge / (float)this.particleMaxAge;
+        float f = (float)this.particleAge / (float)this.particleMaxAge;
 
-        if (this.rand.nextFloat() > var1)
+        if (this.rand.nextFloat() > f)
         {
-            this.worldObj.spawnParticle("smoke", this.posX, this.posY, this.posZ, this.motionX, this.motionY, this.motionZ);
+            this.worldObj.spawnParticle(EnumParticleTypes.SMOKE_NORMAL, this.posX, this.posY, this.posZ, this.motionX, this.motionY, this.motionZ, new int[0]);
         }
 
         this.motionY -= 0.03D;
@@ -89,6 +84,14 @@ public class EntityLavaFX extends EntityFX
         {
             this.motionX *= 0.699999988079071D;
             this.motionZ *= 0.699999988079071D;
+        }
+    }
+
+    public static class Factory implements IParticleFactory
+    {
+        public EntityFX getEntityFX(int particleID, World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double xSpeedIn, double ySpeedIn, double zSpeedIn, int... p_178902_15_)
+        {
+            return new EntityLavaFX(worldIn, xCoordIn, yCoordIn, zCoordIn);
         }
     }
 }

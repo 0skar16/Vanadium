@@ -1,12 +1,16 @@
 package net.minecraft.block;
 
+import java.util.IdentityHashMap;
+import java.util.Map;
 import net.minecraft.block.material.Material;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
 
 public class BlockAir extends Block
 {
-    private static final String __OBFID = "CL_00000190";
+    private static Map mapOriginalOpacity = new IdentityHashMap();
 
     protected BlockAir()
     {
@@ -14,38 +18,62 @@ public class BlockAir extends Block
     }
 
     /**
-     * The type of render function that is called for this block
+     * The type of render function called. 3 for standard block models, 2 for TESR's, 1 for liquids, -1 is no render
      */
     public int getRenderType()
     {
         return -1;
     }
 
-    /**
-     * Returns a bounding box from the pool of bounding boxes (this means this box can change after the pool has been
-     * cleared to be reused)
-     */
-    public AxisAlignedBB getCollisionBoundingBoxFromPool(World p_149668_1_, int p_149668_2_, int p_149668_3_, int p_149668_4_)
+    public AxisAlignedBB getCollisionBoundingBox(World worldIn, BlockPos pos, IBlockState state)
     {
         return null;
     }
 
+    /**
+     * Used to determine ambient occlusion and culling when rebuilding chunks for render
+     */
     public boolean isOpaqueCube()
     {
         return false;
     }
 
-    /**
-     * Returns whether this block is collideable based on the arguments passed in \n@param par1 block metaData \n@param
-     * par2 whether the player right-clicked while holding a boat
-     */
-    public boolean canCollideCheck(int p_149678_1_, boolean p_149678_2_)
+    public boolean canCollideCheck(IBlockState state, boolean hitIfLiquid)
     {
         return false;
     }
 
     /**
-     * Drops the block items with a specified chance of dropping the specified items
+     * Spawns this Block's drops into the World as EntityItems.
      */
-    public void dropBlockAsItemWithChance(World p_149690_1_, int p_149690_2_, int p_149690_3_, int p_149690_4_, int p_149690_5_, float p_149690_6_, int p_149690_7_) {}
+    public void dropBlockAsItemWithChance(World worldIn, BlockPos pos, IBlockState state, float chance, int fortune)
+    {
+    }
+
+    /**
+     * Whether this Block can be replaced directly by other blocks (true for e.g. tall grass)
+     */
+    public boolean isReplaceable(World worldIn, BlockPos pos)
+    {
+        return true;
+    }
+
+    public static void setLightOpacity(Block p_setLightOpacity_0_, int p_setLightOpacity_1_)
+    {
+        if (!mapOriginalOpacity.containsKey(p_setLightOpacity_0_))
+        {
+            mapOriginalOpacity.put(p_setLightOpacity_0_, Integer.valueOf(p_setLightOpacity_0_.lightOpacity));
+        }
+
+        p_setLightOpacity_0_.lightOpacity = p_setLightOpacity_1_;
+    }
+
+    public static void restoreLightOpacity(Block p_restoreLightOpacity_0_)
+    {
+        if (mapOriginalOpacity.containsKey(p_restoreLightOpacity_0_))
+        {
+            int i = ((Integer)mapOriginalOpacity.get(p_restoreLightOpacity_0_)).intValue();
+            setLightOpacity(p_restoreLightOpacity_0_, i);
+        }
+    }
 }

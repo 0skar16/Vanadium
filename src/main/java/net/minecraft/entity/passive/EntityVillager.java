@@ -1,9 +1,5 @@
 package net.minecraft.entity.passive;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 import java.util.Random;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentData;
@@ -18,6 +14,7 @@ import net.minecraft.entity.INpc;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.EntityAIAvoidEntity;
 import net.minecraft.entity.ai.EntityAIFollowGolem;
+import net.minecraft.entity.ai.EntityAIHarvestFarmland;
 import net.minecraft.entity.ai.EntityAILookAtTradePlayer;
 import net.minecraft.entity.ai.EntityAIMoveIndoors;
 import net.minecraft.entity.ai.EntityAIMoveTowardsRestriction;
@@ -26,27 +23,42 @@ import net.minecraft.entity.ai.EntityAIPlay;
 import net.minecraft.entity.ai.EntityAIRestrictOpenDoor;
 import net.minecraft.entity.ai.EntityAISwimming;
 import net.minecraft.entity.ai.EntityAITradePlayer;
+import net.minecraft.entity.ai.EntityAIVillagerInteract;
 import net.minecraft.entity.ai.EntityAIVillagerMate;
 import net.minecraft.entity.ai.EntityAIWander;
 import net.minecraft.entity.ai.EntityAIWatchClosest;
 import net.minecraft.entity.ai.EntityAIWatchClosest2;
+import net.minecraft.entity.effect.EntityLightningBolt;
+import net.minecraft.entity.item.EntityItem;
+import net.minecraft.entity.item.EntityXPOrb;
+import net.minecraft.entity.monster.EntityWitch;
 import net.minecraft.entity.monster.EntityZombie;
 import net.minecraft.entity.monster.IMob;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
+import net.minecraft.inventory.InventoryBasic;
+import net.minecraft.item.EnumDyeColor;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
+import net.minecraft.pathfinding.PathNavigateGround;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
-import net.minecraft.util.ChunkCoordinates;
+import net.minecraft.stats.StatList;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.ChatComponentText;
+import net.minecraft.util.ChatComponentTranslation;
 import net.minecraft.util.DamageSource;
+import net.minecraft.util.EnumParticleTypes;
+import net.minecraft.util.IChatComponent;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.Tuple;
 import net.minecraft.village.MerchantRecipe;
 import net.minecraft.village.MerchantRecipeList;
 import net.minecraft.village.Village;
+import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.World;
 
 public class EntityVillager extends EntityAgeable implements IMerchant, INpc
@@ -65,32 +77,37 @@ public class EntityVillager extends EntityAgeable implements IMerchant, INpc
 
     /** addDefaultEquipmentAndRecipies is called if this is true */
     private boolean needsInitilization;
+    private boolean isWillingToMate;
     private int wealth;
 
     /** Last player to trade with this villager, used for aggressivity. */
     private String lastBuyingPlayer;
+    private int careerId;
+
+    /** This is the EntityVillager's career level value */
+    private int careerLevel;
     private boolean isLookingForHome;
-    private float field_82191_bN;
+    private boolean areAdditionalTasksSet;
+    private InventoryBasic villagerInventory;
 
-    /** Selling list of Villagers items. */
-    private static final Map villagersSellingList = new HashMap();
+    /**
+     * A multi-dimensional array mapping the various professions, careers and career levels that a Villager may offer
+     */
+    private static final EntityVillager.ITradeList[][][][] DEFAULT_TRADE_LIST_MAP = new EntityVillager.ITradeList[][][][] {{{{new EntityVillager.EmeraldForItems(Items.wheat, new EntityVillager.PriceInfo(18, 22)), new EntityVillager.EmeraldForItems(Items.potato, new EntityVillager.PriceInfo(15, 19)), new EntityVillager.EmeraldForItems(Items.carrot, new EntityVillager.PriceInfo(15, 19)), new EntityVillager.ListItemForEmeralds(Items.bread, new EntityVillager.PriceInfo(-4, -2))}, {new EntityVillager.EmeraldForItems(Item.getItemFromBlock(Blocks.pumpkin), new EntityVillager.PriceInfo(8, 13)), new EntityVillager.ListItemForEmeralds(Items.pumpkin_pie, new EntityVillager.PriceInfo(-3, -2))}, {new EntityVillager.EmeraldForItems(Item.getItemFromBlock(Blocks.melon_block), new EntityVillager.PriceInfo(7, 12)), new EntityVillager.ListItemForEmeralds(Items.apple, new EntityVillager.PriceInfo(-5, -7))}, {new EntityVillager.ListItemForEmeralds(Items.cookie, new EntityVillager.PriceInfo(-6, -10)), new EntityVillager.ListItemForEmeralds(Items.cake, new EntityVillager.PriceInfo(1, 1))}}, {{new EntityVillager.EmeraldForItems(Items.string, new EntityVillager.PriceInfo(15, 20)), new EntityVillager.EmeraldForItems(Items.coal, new EntityVillager.PriceInfo(16, 24)), new EntityVillager.ItemAndEmeraldToItem(Items.fish, new EntityVillager.PriceInfo(6, 6), Items.cooked_fish, new EntityVillager.PriceInfo(6, 6))}, {new EntityVillager.ListEnchantedItemForEmeralds(Items.fishing_rod, new EntityVillager.PriceInfo(7, 8))}}, {{new EntityVillager.EmeraldForItems(Item.getItemFromBlock(Blocks.wool), new EntityVillager.PriceInfo(16, 22)), new EntityVillager.ListItemForEmeralds(Items.shears, new EntityVillager.PriceInfo(3, 4))}, {new EntityVillager.ListItemForEmeralds(new ItemStack(Item.getItemFromBlock(Blocks.wool), 1, 0), new EntityVillager.PriceInfo(1, 2)), new EntityVillager.ListItemForEmeralds(new ItemStack(Item.getItemFromBlock(Blocks.wool), 1, 1), new EntityVillager.PriceInfo(1, 2)), new EntityVillager.ListItemForEmeralds(new ItemStack(Item.getItemFromBlock(Blocks.wool), 1, 2), new EntityVillager.PriceInfo(1, 2)), new EntityVillager.ListItemForEmeralds(new ItemStack(Item.getItemFromBlock(Blocks.wool), 1, 3), new EntityVillager.PriceInfo(1, 2)), new EntityVillager.ListItemForEmeralds(new ItemStack(Item.getItemFromBlock(Blocks.wool), 1, 4), new EntityVillager.PriceInfo(1, 2)), new EntityVillager.ListItemForEmeralds(new ItemStack(Item.getItemFromBlock(Blocks.wool), 1, 5), new EntityVillager.PriceInfo(1, 2)), new EntityVillager.ListItemForEmeralds(new ItemStack(Item.getItemFromBlock(Blocks.wool), 1, 6), new EntityVillager.PriceInfo(1, 2)), new EntityVillager.ListItemForEmeralds(new ItemStack(Item.getItemFromBlock(Blocks.wool), 1, 7), new EntityVillager.PriceInfo(1, 2)), new EntityVillager.ListItemForEmeralds(new ItemStack(Item.getItemFromBlock(Blocks.wool), 1, 8), new EntityVillager.PriceInfo(1, 2)), new EntityVillager.ListItemForEmeralds(new ItemStack(Item.getItemFromBlock(Blocks.wool), 1, 9), new EntityVillager.PriceInfo(1, 2)), new EntityVillager.ListItemForEmeralds(new ItemStack(Item.getItemFromBlock(Blocks.wool), 1, 10), new EntityVillager.PriceInfo(1, 2)), new EntityVillager.ListItemForEmeralds(new ItemStack(Item.getItemFromBlock(Blocks.wool), 1, 11), new EntityVillager.PriceInfo(1, 2)), new EntityVillager.ListItemForEmeralds(new ItemStack(Item.getItemFromBlock(Blocks.wool), 1, 12), new EntityVillager.PriceInfo(1, 2)), new EntityVillager.ListItemForEmeralds(new ItemStack(Item.getItemFromBlock(Blocks.wool), 1, 13), new EntityVillager.PriceInfo(1, 2)), new EntityVillager.ListItemForEmeralds(new ItemStack(Item.getItemFromBlock(Blocks.wool), 1, 14), new EntityVillager.PriceInfo(1, 2)), new EntityVillager.ListItemForEmeralds(new ItemStack(Item.getItemFromBlock(Blocks.wool), 1, 15), new EntityVillager.PriceInfo(1, 2))}}, {{new EntityVillager.EmeraldForItems(Items.string, new EntityVillager.PriceInfo(15, 20)), new EntityVillager.ListItemForEmeralds(Items.arrow, new EntityVillager.PriceInfo(-12, -8))}, {new EntityVillager.ListItemForEmeralds(Items.bow, new EntityVillager.PriceInfo(2, 3)), new EntityVillager.ItemAndEmeraldToItem(Item.getItemFromBlock(Blocks.gravel), new EntityVillager.PriceInfo(10, 10), Items.flint, new EntityVillager.PriceInfo(6, 10))}}}, {{{new EntityVillager.EmeraldForItems(Items.paper, new EntityVillager.PriceInfo(24, 36)), new EntityVillager.ListEnchantedBookForEmeralds()}, {new EntityVillager.EmeraldForItems(Items.book, new EntityVillager.PriceInfo(8, 10)), new EntityVillager.ListItemForEmeralds(Items.compass, new EntityVillager.PriceInfo(10, 12)), new EntityVillager.ListItemForEmeralds(Item.getItemFromBlock(Blocks.bookshelf), new EntityVillager.PriceInfo(3, 4))}, {new EntityVillager.EmeraldForItems(Items.written_book, new EntityVillager.PriceInfo(2, 2)), new EntityVillager.ListItemForEmeralds(Items.clock, new EntityVillager.PriceInfo(10, 12)), new EntityVillager.ListItemForEmeralds(Item.getItemFromBlock(Blocks.glass), new EntityVillager.PriceInfo(-5, -3))}, {new EntityVillager.ListEnchantedBookForEmeralds()}, {new EntityVillager.ListEnchantedBookForEmeralds()}, {new EntityVillager.ListItemForEmeralds(Items.name_tag, new EntityVillager.PriceInfo(20, 22))}}}, {{{new EntityVillager.EmeraldForItems(Items.rotten_flesh, new EntityVillager.PriceInfo(36, 40)), new EntityVillager.EmeraldForItems(Items.gold_ingot, new EntityVillager.PriceInfo(8, 10))}, {new EntityVillager.ListItemForEmeralds(Items.redstone, new EntityVillager.PriceInfo(-4, -1)), new EntityVillager.ListItemForEmeralds(new ItemStack(Items.dye, 1, EnumDyeColor.BLUE.getDyeDamage()), new EntityVillager.PriceInfo(-2, -1))}, {new EntityVillager.ListItemForEmeralds(Items.ender_eye, new EntityVillager.PriceInfo(7, 11)), new EntityVillager.ListItemForEmeralds(Item.getItemFromBlock(Blocks.glowstone), new EntityVillager.PriceInfo(-3, -1))}, {new EntityVillager.ListItemForEmeralds(Items.experience_bottle, new EntityVillager.PriceInfo(3, 11))}}}, {{{new EntityVillager.EmeraldForItems(Items.coal, new EntityVillager.PriceInfo(16, 24)), new EntityVillager.ListItemForEmeralds(Items.iron_helmet, new EntityVillager.PriceInfo(4, 6))}, {new EntityVillager.EmeraldForItems(Items.iron_ingot, new EntityVillager.PriceInfo(7, 9)), new EntityVillager.ListItemForEmeralds(Items.iron_chestplate, new EntityVillager.PriceInfo(10, 14))}, {new EntityVillager.EmeraldForItems(Items.diamond, new EntityVillager.PriceInfo(3, 4)), new EntityVillager.ListEnchantedItemForEmeralds(Items.diamond_chestplate, new EntityVillager.PriceInfo(16, 19))}, {new EntityVillager.ListItemForEmeralds(Items.chainmail_boots, new EntityVillager.PriceInfo(5, 7)), new EntityVillager.ListItemForEmeralds(Items.chainmail_leggings, new EntityVillager.PriceInfo(9, 11)), new EntityVillager.ListItemForEmeralds(Items.chainmail_helmet, new EntityVillager.PriceInfo(5, 7)), new EntityVillager.ListItemForEmeralds(Items.chainmail_chestplate, new EntityVillager.PriceInfo(11, 15))}}, {{new EntityVillager.EmeraldForItems(Items.coal, new EntityVillager.PriceInfo(16, 24)), new EntityVillager.ListItemForEmeralds(Items.iron_axe, new EntityVillager.PriceInfo(6, 8))}, {new EntityVillager.EmeraldForItems(Items.iron_ingot, new EntityVillager.PriceInfo(7, 9)), new EntityVillager.ListEnchantedItemForEmeralds(Items.iron_sword, new EntityVillager.PriceInfo(9, 10))}, {new EntityVillager.EmeraldForItems(Items.diamond, new EntityVillager.PriceInfo(3, 4)), new EntityVillager.ListEnchantedItemForEmeralds(Items.diamond_sword, new EntityVillager.PriceInfo(12, 15)), new EntityVillager.ListEnchantedItemForEmeralds(Items.diamond_axe, new EntityVillager.PriceInfo(9, 12))}}, {{new EntityVillager.EmeraldForItems(Items.coal, new EntityVillager.PriceInfo(16, 24)), new EntityVillager.ListEnchantedItemForEmeralds(Items.iron_shovel, new EntityVillager.PriceInfo(5, 7))}, {new EntityVillager.EmeraldForItems(Items.iron_ingot, new EntityVillager.PriceInfo(7, 9)), new EntityVillager.ListEnchantedItemForEmeralds(Items.iron_pickaxe, new EntityVillager.PriceInfo(9, 11))}, {new EntityVillager.EmeraldForItems(Items.diamond, new EntityVillager.PriceInfo(3, 4)), new EntityVillager.ListEnchantedItemForEmeralds(Items.diamond_pickaxe, new EntityVillager.PriceInfo(12, 15))}}}, {{{new EntityVillager.EmeraldForItems(Items.porkchop, new EntityVillager.PriceInfo(14, 18)), new EntityVillager.EmeraldForItems(Items.chicken, new EntityVillager.PriceInfo(14, 18))}, {new EntityVillager.EmeraldForItems(Items.coal, new EntityVillager.PriceInfo(16, 24)), new EntityVillager.ListItemForEmeralds(Items.cooked_porkchop, new EntityVillager.PriceInfo(-7, -5)), new EntityVillager.ListItemForEmeralds(Items.cooked_chicken, new EntityVillager.PriceInfo(-8, -6))}}, {{new EntityVillager.EmeraldForItems(Items.leather, new EntityVillager.PriceInfo(9, 12)), new EntityVillager.ListItemForEmeralds(Items.leather_leggings, new EntityVillager.PriceInfo(2, 4))}, {new EntityVillager.ListEnchantedItemForEmeralds(Items.leather_chestplate, new EntityVillager.PriceInfo(7, 12))}, {new EntityVillager.ListItemForEmeralds(Items.saddle, new EntityVillager.PriceInfo(8, 10))}}}};
 
-    /** Selling list of Blacksmith items. */
-    private static final Map blacksmithSellingList = new HashMap();
-    private static final String __OBFID = "CL_00001707";
-
-    public EntityVillager(World p_i1747_1_)
+    public EntityVillager(World worldIn)
     {
-        this(p_i1747_1_, 0);
+        this(worldIn, 0);
     }
 
-    public EntityVillager(World p_i1748_1_, int p_i1748_2_)
+    public EntityVillager(World worldIn, int professionId)
     {
-        super(p_i1748_1_);
-        this.setProfession(p_i1748_2_);
+        super(worldIn);
+        this.villagerInventory = new InventoryBasic("Items", false, 8);
+        this.setProfession(professionId);
         this.setSize(0.6F, 1.8F);
-        this.getNavigator().setBreakDoors(true);
-        this.getNavigator().setAvoidsWater(true);
+        ((PathNavigateGround)this.getNavigator()).setBreakDoors(true);
+        ((PathNavigateGround)this.getNavigator()).setAvoidsWater(true);
         this.tasks.addTask(0, new EntityAISwimming(this));
         this.tasks.addTask(1, new EntityAIAvoidEntity(this, EntityZombie.class, 8.0F, 0.6D, 0.6D));
         this.tasks.addTask(1, new EntityAITradePlayer(this));
@@ -101,11 +118,42 @@ public class EntityVillager extends EntityAgeable implements IMerchant, INpc
         this.tasks.addTask(5, new EntityAIMoveTowardsRestriction(this, 0.6D));
         this.tasks.addTask(6, new EntityAIVillagerMate(this));
         this.tasks.addTask(7, new EntityAIFollowGolem(this));
-        this.tasks.addTask(8, new EntityAIPlay(this, 0.32D));
         this.tasks.addTask(9, new EntityAIWatchClosest2(this, EntityPlayer.class, 3.0F, 1.0F));
-        this.tasks.addTask(9, new EntityAIWatchClosest2(this, EntityVillager.class, 5.0F, 0.02F));
+        this.tasks.addTask(9, new EntityAIVillagerInteract(this));
         this.tasks.addTask(9, new EntityAIWander(this, 0.6D));
         this.tasks.addTask(10, new EntityAIWatchClosest(this, EntityLiving.class, 8.0F));
+        this.setCanPickUpLoot(true);
+    }
+
+    private void setAdditionalAItasks()
+    {
+        if (!this.areAdditionalTasksSet)
+        {
+            this.areAdditionalTasksSet = true;
+
+            if (this.isChild())
+            {
+                this.tasks.addTask(8, new EntityAIPlay(this, 0.32D));
+            }
+            else if (this.getProfession() == 0)
+            {
+                this.tasks.addTask(6, new EntityAIHarvestFarmland(this, 0.6D));
+            }
+        }
+    }
+
+    /**
+     * This is called when Entity's growing age timer reaches 0 (negative values are considered as a child, positive as
+     * an adult)
+     */
+    protected void onGrowingAdult()
+    {
+        if (this.getProfession() == 0)
+        {
+            this.tasks.addTask(8, new EntityAIHarvestFarmland(this, 0.6D));
+        }
+
+        super.onGrowingAdult();
     }
 
     protected void applyEntityAttributes()
@@ -114,24 +162,14 @@ public class EntityVillager extends EntityAgeable implements IMerchant, INpc
         this.getEntityAttribute(SharedMonsterAttributes.movementSpeed).setBaseValue(0.5D);
     }
 
-    /**
-     * Returns true if the newer Entity AI code should be run
-     */
-    public boolean isAIEnabled()
-    {
-        return true;
-    }
-
-    /**
-     * main AI tick function, replaces updateEntityActionState
-     */
-    protected void updateAITick()
+    protected void updateAITasks()
     {
         if (--this.randomTickDivider <= 0)
         {
-            this.worldObj.villageCollectionObj.addVillagerPosition(MathHelper.floor_double(this.posX), MathHelper.floor_double(this.posY), MathHelper.floor_double(this.posZ));
+            BlockPos blockpos = new BlockPos(this);
+            this.worldObj.getVillageCollection().addToVillagerPositionList(blockpos);
             this.randomTickDivider = 70 + this.rand.nextInt(50);
-            this.villageObj = this.worldObj.villageCollectionObj.findNearestVillage(MathHelper.floor_double(this.posX), MathHelper.floor_double(this.posY), MathHelper.floor_double(this.posZ), 32);
+            this.villageObj = this.worldObj.getVillageCollection().getNearestVillage(blockpos, 32);
 
             if (this.villageObj == null)
             {
@@ -139,8 +177,8 @@ public class EntityVillager extends EntityAgeable implements IMerchant, INpc
             }
             else
             {
-                ChunkCoordinates var1 = this.villageObj.getCenter();
-                this.setHomeArea(var1.posX, var1.posY, var1.posZ, (int)((float)this.villageObj.getVillageRadius() * 0.6F));
+                BlockPos blockpos1 = this.villageObj.getCenter();
+                this.setHomePosAndDistance(blockpos1, (int)((float)this.villageObj.getVillageRadius() * 1.0F));
 
                 if (this.isLookingForHome)
                 {
@@ -158,22 +196,15 @@ public class EntityVillager extends EntityAgeable implements IMerchant, INpc
             {
                 if (this.needsInitilization)
                 {
-                    if (this.buyingList.size() > 1)
+                    for (MerchantRecipe merchantrecipe : this.buyingList)
                     {
-                        Iterator var3 = this.buyingList.iterator();
-
-                        while (var3.hasNext())
+                        if (merchantrecipe.isRecipeDisabled())
                         {
-                            MerchantRecipe var2 = (MerchantRecipe)var3.next();
-
-                            if (var2.isRecipeDisabled())
-                            {
-                                var2.func_82783_a(this.rand.nextInt(6) + this.rand.nextInt(6) + 2);
-                            }
+                            merchantrecipe.increaseMaxTradeUses(this.rand.nextInt(6) + this.rand.nextInt(6) + 2);
                         }
                     }
 
-                    this.addDefaultEquipmentAndRecipies(1);
+                    this.populateBuyingList();
                     this.needsInitilization = false;
 
                     if (this.villageObj != null && this.lastBuyingPlayer != null)
@@ -187,30 +218,31 @@ public class EntityVillager extends EntityAgeable implements IMerchant, INpc
             }
         }
 
-        super.updateAITick();
+        super.updateAITasks();
     }
 
     /**
      * Called when a player interacts with a mob. e.g. gets milk from a cow, gets into the saddle on a pig.
      */
-    public boolean interact(EntityPlayer p_70085_1_)
+    public boolean interact(EntityPlayer player)
     {
-        ItemStack var2 = p_70085_1_.inventory.getCurrentItem();
-        boolean var3 = var2 != null && var2.getItem() == Items.spawn_egg;
+        ItemStack itemstack = player.inventory.getCurrentItem();
+        boolean flag = itemstack != null && itemstack.getItem() == Items.spawn_egg;
 
-        if (!var3 && this.isEntityAlive() && !this.isTrading() && !this.isChild())
+        if (!flag && this.isEntityAlive() && !this.isTrading() && !this.isChild())
         {
-            if (!this.worldObj.isClient)
+            if (!this.worldObj.isRemote && (this.buyingList == null || this.buyingList.size() > 0))
             {
-                this.setCustomer(p_70085_1_);
-                p_70085_1_.displayGUIMerchant(this, this.getCustomNameTag());
+                this.setCustomer(player);
+                player.displayVillagerTradeGui(this);
             }
 
+            player.triggerAchievement(StatList.timesTalkedToVillagerStat);
             return true;
         }
         else
         {
-            return super.interact(p_70085_1_);
+            return super.interact(player);
         }
     }
 
@@ -223,32 +255,67 @@ public class EntityVillager extends EntityAgeable implements IMerchant, INpc
     /**
      * (abstract) Protected helper method to write subclass entity data to NBT.
      */
-    public void writeEntityToNBT(NBTTagCompound p_70014_1_)
+    public void writeEntityToNBT(NBTTagCompound tagCompound)
     {
-        super.writeEntityToNBT(p_70014_1_);
-        p_70014_1_.setInteger("Profession", this.getProfession());
-        p_70014_1_.setInteger("Riches", this.wealth);
+        super.writeEntityToNBT(tagCompound);
+        tagCompound.setInteger("Profession", this.getProfession());
+        tagCompound.setInteger("Riches", this.wealth);
+        tagCompound.setInteger("Career", this.careerId);
+        tagCompound.setInteger("CareerLevel", this.careerLevel);
+        tagCompound.setBoolean("Willing", this.isWillingToMate);
 
         if (this.buyingList != null)
         {
-            p_70014_1_.setTag("Offers", this.buyingList.getRecipiesAsTags());
+            tagCompound.setTag("Offers", this.buyingList.getRecipiesAsTags());
         }
+
+        NBTTagList nbttaglist = new NBTTagList();
+
+        for (int i = 0; i < this.villagerInventory.getSizeInventory(); ++i)
+        {
+            ItemStack itemstack = this.villagerInventory.getStackInSlot(i);
+
+            if (itemstack != null)
+            {
+                nbttaglist.appendTag(itemstack.writeToNBT(new NBTTagCompound()));
+            }
+        }
+
+        tagCompound.setTag("Inventory", nbttaglist);
     }
 
     /**
      * (abstract) Protected helper method to read subclass entity data from NBT.
      */
-    public void readEntityFromNBT(NBTTagCompound p_70037_1_)
+    public void readEntityFromNBT(NBTTagCompound tagCompund)
     {
-        super.readEntityFromNBT(p_70037_1_);
-        this.setProfession(p_70037_1_.getInteger("Profession"));
-        this.wealth = p_70037_1_.getInteger("Riches");
+        super.readEntityFromNBT(tagCompund);
+        this.setProfession(tagCompund.getInteger("Profession"));
+        this.wealth = tagCompund.getInteger("Riches");
+        this.careerId = tagCompund.getInteger("Career");
+        this.careerLevel = tagCompund.getInteger("CareerLevel");
+        this.isWillingToMate = tagCompund.getBoolean("Willing");
 
-        if (p_70037_1_.func_150297_b("Offers", 10))
+        if (tagCompund.hasKey("Offers", 10))
         {
-            NBTTagCompound var2 = p_70037_1_.getCompoundTag("Offers");
-            this.buyingList = new MerchantRecipeList(var2);
+            NBTTagCompound nbttagcompound = tagCompund.getCompoundTag("Offers");
+            this.buyingList = new MerchantRecipeList(nbttagcompound);
         }
+
+        NBTTagList nbttaglist = tagCompund.getTagList("Inventory", 10);
+
+        for (int i = 0; i < nbttaglist.tagCount(); ++i)
+        {
+            ItemStack itemstack = ItemStack.loadItemStackFromNBT(nbttaglist.getCompoundTagAt(i));
+
+            if (itemstack != null)
+            {
+                this.villagerInventory.func_174894_a(itemstack);
+            }
+        }
+
+        this.setCanPickUpLoot(true);
+        this.setAdditionalAItasks();
     }
 
     /**
@@ -283,14 +350,14 @@ public class EntityVillager extends EntityAgeable implements IMerchant, INpc
         return "mob.villager.death";
     }
 
-    public void setProfession(int p_70938_1_)
+    public void setProfession(int professionId)
     {
-        this.dataWatcher.updateObject(16, Integer.valueOf(p_70938_1_));
+        this.dataWatcher.updateObject(16, Integer.valueOf(professionId));
     }
 
     public int getProfession()
     {
-        return this.dataWatcher.getWatchableObjectInt(16);
+        return Math.max(this.dataWatcher.getWatchableObjectInt(16) % 5, 0);
     }
 
     public boolean isMating()
@@ -298,14 +365,14 @@ public class EntityVillager extends EntityAgeable implements IMerchant, INpc
         return this.isMating;
     }
 
-    public void setMating(boolean p_70947_1_)
+    public void setMating(boolean mating)
     {
-        this.isMating = p_70947_1_;
+        this.isMating = mating;
     }
 
-    public void setPlaying(boolean p_70939_1_)
+    public void setPlaying(boolean playing)
     {
-        this.isPlaying = p_70939_1_;
+        this.isPlaying = playing;
     }
 
     public boolean isPlaying()
@@ -313,24 +380,24 @@ public class EntityVillager extends EntityAgeable implements IMerchant, INpc
         return this.isPlaying;
     }
 
-    public void setRevengeTarget(EntityLivingBase p_70604_1_)
+    public void setRevengeTarget(EntityLivingBase livingBase)
     {
-        super.setRevengeTarget(p_70604_1_);
+        super.setRevengeTarget(livingBase);
 
-        if (this.villageObj != null && p_70604_1_ != null)
+        if (this.villageObj != null && livingBase != null)
         {
-            this.villageObj.addOrRenewAgressor(p_70604_1_);
+            this.villageObj.addOrRenewAgressor(livingBase);
 
-            if (p_70604_1_ instanceof EntityPlayer)
+            if (livingBase instanceof EntityPlayer)
             {
-                byte var2 = -1;
+                int i = -1;
 
                 if (this.isChild())
                 {
-                    var2 = -3;
+                    i = -3;
                 }
 
-                this.villageObj.setReputationForPlayer(p_70604_1_.getCommandSenderName(), var2);
+                this.villageObj.setReputationForPlayer(livingBase.getName(), i);
 
                 if (this.isEntityAlive())
                 {
@@ -343,35 +410,35 @@ public class EntityVillager extends EntityAgeable implements IMerchant, INpc
     /**
      * Called when the mob's health reaches 0.
      */
-    public void onDeath(DamageSource p_70645_1_)
+    public void onDeath(DamageSource cause)
     {
         if (this.villageObj != null)
         {
-            Entity var2 = p_70645_1_.getEntity();
+            Entity entity = cause.getEntity();
 
-            if (var2 != null)
+            if (entity != null)
             {
-                if (var2 instanceof EntityPlayer)
+                if (entity instanceof EntityPlayer)
                 {
-                    this.villageObj.setReputationForPlayer(var2.getCommandSenderName(), -2);
+                    this.villageObj.setReputationForPlayer(entity.getName(), -2);
                 }
-                else if (var2 instanceof IMob)
+                else if (entity instanceof IMob)
                 {
                     this.villageObj.endMatingSeason();
                 }
             }
-            else if (var2 == null)
+            else
             {
-                EntityPlayer var3 = this.worldObj.getClosestPlayerToEntity(this, 16.0D);
+                EntityPlayer entityplayer = this.worldObj.getClosestPlayerToEntity(this, 16.0D);
 
-                if (var3 != null)
+                if (entityplayer != null)
                 {
                     this.villageObj.endMatingSeason();
                 }
             }
         }
 
-        super.onDeath(p_70645_1_);
+        super.onDeath(cause);
     }
 
     public void setCustomer(EntityPlayer p_70932_1_)
@@ -389,40 +456,97 @@ public class EntityVillager extends EntityAgeable implements IMerchant, INpc
         return this.buyingPlayer != null;
     }
 
-    public void useRecipe(MerchantRecipe p_70933_1_)
+    /**
+     * Returns current or updated value of {@link #isWillingToMate}
+     */
+    public boolean getIsWillingToMate(boolean updateFirst)
     {
-        p_70933_1_.incrementToolUses();
+        if (!this.isWillingToMate && updateFirst && this.func_175553_cp())
+        {
+            boolean flag = false;
+
+            for (int i = 0; i < this.villagerInventory.getSizeInventory(); ++i)
+            {
+                ItemStack itemstack = this.villagerInventory.getStackInSlot(i);
+
+                if (itemstack != null)
+                {
+                    if (itemstack.getItem() == Items.bread && itemstack.stackSize >= 3)
+                    {
+                        flag = true;
+                        this.villagerInventory.decrStackSize(i, 3);
+                    }
+                    else if ((itemstack.getItem() == Items.potato || itemstack.getItem() == Items.carrot) && itemstack.stackSize >= 12)
+                    {
+                        flag = true;
+                        this.villagerInventory.decrStackSize(i, 12);
+                    }
+                }
+
+                if (flag)
+                {
+                    this.worldObj.setEntityState(this, (byte)18);
+                    this.isWillingToMate = true;
+                    break;
+                }
+            }
+        }
+
+        return this.isWillingToMate;
+    }
+
+    public void setIsWillingToMate(boolean willingToTrade)
+    {
+        this.isWillingToMate = willingToTrade;
+    }
+
+    public void useRecipe(MerchantRecipe recipe)
+    {
+        recipe.incrementToolUses();
         this.livingSoundTime = -this.getTalkInterval();
         this.playSound("mob.villager.yes", this.getSoundVolume(), this.getSoundPitch());
+        int i = 3 + this.rand.nextInt(4);
 
-        if (p_70933_1_.hasSameIDsAs((MerchantRecipe)this.buyingList.get(this.buyingList.size() - 1)))
+        if (recipe.getToolUses() == 1 || this.rand.nextInt(5) == 0)
         {
             this.timeUntilReset = 40;
             this.needsInitilization = true;
+            this.isWillingToMate = true;
 
             if (this.buyingPlayer != null)
             {
-                this.lastBuyingPlayer = this.buyingPlayer.getCommandSenderName();
+                this.lastBuyingPlayer = this.buyingPlayer.getName();
             }
             else
             {
                 this.lastBuyingPlayer = null;
             }
+
+            i += 5;
         }
 
-        if (p_70933_1_.getItemToBuy().getItem() == Items.emerald)
+        if (recipe.getItemToBuy().getItem() == Items.emerald)
         {
-            this.wealth += p_70933_1_.getItemToBuy().stackSize;
+            this.wealth += recipe.getItemToBuy().stackSize;
+        }
+
+        if (recipe.getRewardsExp())
+        {
+            this.worldObj.spawnEntityInWorld(new EntityXPOrb(this.worldObj, this.posX, this.posY + 0.5D, this.posZ, i));
         }
     }
 
-    public void func_110297_a_(ItemStack p_110297_1_)
+    /**
+     * Notifies the merchant of a possible merchantrecipe being fulfilled or not. Usually, this is just a sound byte
+     * being played depending if the suggested itemstack is not null.
+     */
+    public void verifySellingItem(ItemStack stack)
     {
-        if (!this.worldObj.isClient && this.livingSoundTime > -this.getTalkInterval() + 20)
+        if (!this.worldObj.isRemote && this.livingSoundTime > -this.getTalkInterval() + 20)
         {
             this.livingSoundTime = -this.getTalkInterval();
 
-            if (p_110297_1_ != null)
+            if (stack != null)
             {
                 this.playSound("mob.villager.yes", this.getSoundVolume(), this.getSoundPitch());
             }
@@ -437,260 +561,197 @@ public class EntityVillager extends EntityAgeable implements IMerchant, INpc
     {
         if (this.buyingList == null)
         {
-            this.addDefaultEquipmentAndRecipies(1);
+            this.populateBuyingList();
         }
 
         return this.buyingList;
     }
 
-    /**
-     * Adjusts the probability of obtaining a given recipe being offered by a villager
-     */
-    private float adjustProbability(float p_82188_1_)
+    private void populateBuyingList()
     {
-        float var2 = p_82188_1_ + this.field_82191_bN;
-        return var2 > 0.9F ? 0.9F - (var2 - 0.9F) : var2;
-    }
+        EntityVillager.ITradeList[][][] aentityvillager$itradelist = DEFAULT_TRADE_LIST_MAP[this.getProfession()];
 
-    /**
-     * based on the villagers profession add items, equipment, and recipies adds par1 random items to the list of things
-     * that the villager wants to buy. (at most 1 of each wanted type is added)
-     */
-    private void addDefaultEquipmentAndRecipies(int p_70950_1_)
-    {
-        if (this.buyingList != null)
+        if (this.careerId != 0 && this.careerLevel != 0)
         {
-            this.field_82191_bN = MathHelper.sqrt_float((float)this.buyingList.size()) * 0.2F;
+            ++this.careerLevel;
         }
         else
         {
-            this.field_82191_bN = 0.0F;
+            this.careerId = this.rand.nextInt(aentityvillager$itradelist.length) + 1;
+            this.careerLevel = 1;
         }
-
-        MerchantRecipeList var2;
-        var2 = new MerchantRecipeList();
-        int var6;
-        label50:
-
-        switch (this.getProfession())
-        {
-            case 0:
-                func_146091_a(var2, Items.wheat, this.rand, this.adjustProbability(0.9F));
-                func_146091_a(var2, Item.getItemFromBlock(Blocks.wool), this.rand, this.adjustProbability(0.5F));
-                func_146091_a(var2, Items.chicken, this.rand, this.adjustProbability(0.5F));
-                func_146091_a(var2, Items.cooked_fished, this.rand, this.adjustProbability(0.4F));
-                func_146089_b(var2, Items.bread, this.rand, this.adjustProbability(0.9F));
-                func_146089_b(var2, Items.melon, this.rand, this.adjustProbability(0.3F));
-                func_146089_b(var2, Items.apple, this.rand, this.adjustProbability(0.3F));
-                func_146089_b(var2, Items.cookie, this.rand, this.adjustProbability(0.3F));
-                func_146089_b(var2, Items.shears, this.rand, this.adjustProbability(0.3F));
-                func_146089_b(var2, Items.flint_and_steel, this.rand, this.adjustProbability(0.3F));
-                func_146089_b(var2, Items.cooked_chicken, this.rand, this.adjustProbability(0.3F));
-                func_146089_b(var2, Items.arrow, this.rand, this.adjustProbability(0.5F));
-
-                if (this.rand.nextFloat() < this.adjustProbability(0.5F))
-                {
-                    var2.add(new MerchantRecipe(new ItemStack(Blocks.gravel, 10), new ItemStack(Items.emerald), new ItemStack(Items.flint, 4 + this.rand.nextInt(2), 0)));
-                }
-
-                break;
-
-            case 1:
-                func_146091_a(var2, Items.paper, this.rand, this.adjustProbability(0.8F));
-                func_146091_a(var2, Items.book, this.rand, this.adjustProbability(0.8F));
-                func_146091_a(var2, Items.written_book, this.rand, this.adjustProbability(0.3F));
-                func_146089_b(var2, Item.getItemFromBlock(Blocks.bookshelf), this.rand, this.adjustProbability(0.8F));
-                func_146089_b(var2, Item.getItemFromBlock(Blocks.glass), this.rand, this.adjustProbability(0.2F));
-                func_146089_b(var2, Items.compass, this.rand, this.adjustProbability(0.2F));
-                func_146089_b(var2, Items.clock, this.rand, this.adjustProbability(0.2F));
-
-                if (this.rand.nextFloat() < this.adjustProbability(0.07F))
-                {
-                    Enchantment var8 = Enchantment.enchantmentsBookList[this.rand.nextInt(Enchantment.enchantmentsBookList.length)];
-                    int var10 = MathHelper.getRandomIntegerInRange(this.rand, var8.getMinLevel(), var8.getMaxLevel());
-                    ItemStack var11 = Items.enchanted_book.getEnchantedItemStack(new EnchantmentData(var8, var10));
-                    var6 = 2 + this.rand.nextInt(5 + var10 * 10) + 3 * var10;
-                    var2.add(new MerchantRecipe(new ItemStack(Items.book), new ItemStack(Items.emerald, var6), var11));
-                }
-
-                break;
-
-            case 2:
-                func_146089_b(var2, Items.ender_eye, this.rand, this.adjustProbability(0.3F));
-                func_146089_b(var2, Items.experience_bottle, this.rand, this.adjustProbability(0.2F));
-                func_146089_b(var2, Items.redstone, this.rand, this.adjustProbability(0.4F));
-                func_146089_b(var2, Item.getItemFromBlock(Blocks.glowstone), this.rand, this.adjustProbability(0.3F));
-                Item[] var3 = new Item[] {Items.iron_sword, Items.diamond_sword, Items.iron_chestplate, Items.diamond_chestplate, Items.iron_axe, Items.diamond_axe, Items.iron_pickaxe, Items.diamond_pickaxe};
-                Item[] var4 = var3;
-                int var5 = var3.length;
-                var6 = 0;
-
-                while (true)
-                {
-                    if (var6 >= var5)
-                    {
-                        break label50;
-                    }
-
-                    Item var7 = var4[var6];
-
-                    if (this.rand.nextFloat() < this.adjustProbability(0.05F))
-                    {
-                        var2.add(new MerchantRecipe(new ItemStack(var7, 1, 0), new ItemStack(Items.emerald, 2 + this.rand.nextInt(3), 0), EnchantmentHelper.addRandomEnchantment(this.rand, new ItemStack(var7, 1, 0), 5 + this.rand.nextInt(15))));
-                    }
-
-                    ++var6;
-                }
-
-            case 3:
-                func_146091_a(var2, Items.coal, this.rand, this.adjustProbability(0.7F));
-                func_146091_a(var2, Items.iron_ingot, this.rand, this.adjustProbability(0.5F));
-                func_146091_a(var2, Items.gold_ingot, this.rand, this.adjustProbability(0.5F));
-                func_146091_a(var2, Items.diamond, this.rand, this.adjustProbability(0.5F));
-                func_146089_b(var2, Items.iron_sword, this.rand, this.adjustProbability(0.5F));
-                func_146089_b(var2, Items.diamond_sword, this.rand, this.adjustProbability(0.5F));
-                func_146089_b(var2, Items.iron_axe, this.rand, this.adjustProbability(0.3F));
-                func_146089_b(var2, Items.diamond_axe, this.rand, this.adjustProbability(0.3F));
-                func_146089_b(var2, Items.iron_pickaxe, this.rand, this.adjustProbability(0.5F));
-                func_146089_b(var2, Items.diamond_pickaxe, this.rand, this.adjustProbability(0.5F));
-                func_146089_b(var2, Items.iron_shovel, this.rand, this.adjustProbability(0.2F));
-                func_146089_b(var2, Items.diamond_shovel, this.rand, this.adjustProbability(0.2F));
-                func_146089_b(var2, Items.iron_hoe, this.rand, this.adjustProbability(0.2F));
-                func_146089_b(var2, Items.diamond_hoe, this.rand, this.adjustProbability(0.2F));
-                func_146089_b(var2, Items.iron_boots, this.rand, this.adjustProbability(0.2F));
-                func_146089_b(var2, Items.diamond_boots, this.rand, this.adjustProbability(0.2F));
-                func_146089_b(var2, Items.iron_helmet, this.rand, this.adjustProbability(0.2F));
-                func_146089_b(var2, Items.diamond_helmet, this.rand, this.adjustProbability(0.2F));
-                func_146089_b(var2, Items.iron_chestplate, this.rand, this.adjustProbability(0.2F));
-                func_146089_b(var2, Items.diamond_chestplate, this.rand, this.adjustProbability(0.2F));
-                func_146089_b(var2, Items.iron_leggings, this.rand, this.adjustProbability(0.2F));
-                func_146089_b(var2, Items.diamond_leggings, this.rand, this.adjustProbability(0.2F));
-                func_146089_b(var2, Items.chainmail_boots, this.rand, this.adjustProbability(0.1F));
-                func_146089_b(var2, Items.chainmail_helmet, this.rand, this.adjustProbability(0.1F));
-                func_146089_b(var2, Items.chainmail_chestplate, this.rand, this.adjustProbability(0.1F));
-                func_146089_b(var2, Items.chainmail_leggings, this.rand, this.adjustProbability(0.1F));
-                break;
-
-            case 4:
-                func_146091_a(var2, Items.coal, this.rand, this.adjustProbability(0.7F));
-                func_146091_a(var2, Items.porkchop, this.rand, this.adjustProbability(0.5F));
-                func_146091_a(var2, Items.beef, this.rand, this.adjustProbability(0.5F));
-                func_146089_b(var2, Items.saddle, this.rand, this.adjustProbability(0.1F));
-                func_146089_b(var2, Items.leather_chestplate, this.rand, this.adjustProbability(0.3F));
-                func_146089_b(var2, Items.leather_boots, this.rand, this.adjustProbability(0.3F));
-                func_146089_b(var2, Items.leather_helmet, this.rand, this.adjustProbability(0.3F));
-                func_146089_b(var2, Items.leather_leggings, this.rand, this.adjustProbability(0.3F));
-                func_146089_b(var2, Items.cooked_porkchop, this.rand, this.adjustProbability(0.3F));
-                func_146089_b(var2, Items.cooked_beef, this.rand, this.adjustProbability(0.3F));
-        }
-
-        if (var2.isEmpty())
-        {
-            func_146091_a(var2, Items.gold_ingot, this.rand, 1.0F);
-        }
-
-        Collections.shuffle(var2);
 
         if (this.buyingList == null)
         {
             this.buyingList = new MerchantRecipeList();
         }
 
-        for (int var9 = 0; var9 < p_70950_1_ && var9 < var2.size(); ++var9)
+        int i = this.careerId - 1;
+        int j = this.careerLevel - 1;
+        EntityVillager.ITradeList[][] aentityvillager$itradelist1 = aentityvillager$itradelist[i];
+
+        if (j >= 0 && j < aentityvillager$itradelist1.length)
         {
-            this.buyingList.addToListWithCheck((MerchantRecipe)var2.get(var9));
-        }
-    }
+            EntityVillager.ITradeList[] aentityvillager$itradelist2 = aentityvillager$itradelist1[j];
 
-    public void setRecipes(MerchantRecipeList p_70930_1_) {}
-
-    private static void func_146091_a(MerchantRecipeList p_146091_0_, Item p_146091_1_, Random p_146091_2_, float p_146091_3_)
-    {
-        if (p_146091_2_.nextFloat() < p_146091_3_)
-        {
-            p_146091_0_.add(new MerchantRecipe(func_146088_a(p_146091_1_, p_146091_2_), Items.emerald));
-        }
-    }
-
-    private static ItemStack func_146088_a(Item p_146088_0_, Random p_146088_1_)
-    {
-        return new ItemStack(p_146088_0_, func_146092_b(p_146088_0_, p_146088_1_), 0);
-    }
-
-    private static int func_146092_b(Item p_146092_0_, Random p_146092_1_)
-    {
-        Tuple var2 = (Tuple)villagersSellingList.get(p_146092_0_);
-        return var2 == null ? 1 : (((Integer)var2.getFirst()).intValue() >= ((Integer)var2.getSecond()).intValue() ? ((Integer)var2.getFirst()).intValue() : ((Integer)var2.getFirst()).intValue() + p_146092_1_.nextInt(((Integer)var2.getSecond()).intValue() - ((Integer)var2.getFirst()).intValue()));
-    }
-
-    private static void func_146089_b(MerchantRecipeList p_146089_0_, Item p_146089_1_, Random p_146089_2_, float p_146089_3_)
-    {
-        if (p_146089_2_.nextFloat() < p_146089_3_)
-        {
-            int var4 = func_146090_c(p_146089_1_, p_146089_2_);
-            ItemStack var5;
-            ItemStack var6;
-
-            if (var4 < 0)
+            for (EntityVillager.ITradeList entityvillager$itradelist : aentityvillager$itradelist2)
             {
-                var5 = new ItemStack(Items.emerald, 1, 0);
-                var6 = new ItemStack(p_146089_1_, -var4, 0);
+                entityvillager$itradelist.modifyMerchantRecipeList(this.buyingList, this.rand);
             }
-            else
-            {
-                var5 = new ItemStack(Items.emerald, var4, 0);
-                var6 = new ItemStack(p_146089_1_, 1, 0);
-            }
-
-            p_146089_0_.add(new MerchantRecipe(var5, var6));
         }
     }
 
-    private static int func_146090_c(Item p_146090_0_, Random p_146090_1_)
+    public void setRecipes(MerchantRecipeList recipeList)
     {
-        Tuple var2 = (Tuple)blacksmithSellingList.get(p_146090_0_);
-        return var2 == null ? 1 : (((Integer)var2.getFirst()).intValue() >= ((Integer)var2.getSecond()).intValue() ? ((Integer)var2.getFirst()).intValue() : ((Integer)var2.getFirst()).intValue() + p_146090_1_.nextInt(((Integer)var2.getSecond()).intValue() - ((Integer)var2.getFirst()).intValue()));
     }
 
-    public void handleHealthUpdate(byte p_70103_1_)
+    /**
+     * Get the formatted ChatComponent that will be used for the sender's username in chat
+     */
+    public IChatComponent getDisplayName()
     {
-        if (p_70103_1_ == 12)
+        String s = this.getCustomNameTag();
+
+        if (s != null && s.length() > 0)
         {
-            this.generateRandomParticles("heart");
-        }
-        else if (p_70103_1_ == 13)
-        {
-            this.generateRandomParticles("angryVillager");
-        }
-        else if (p_70103_1_ == 14)
-        {
-            this.generateRandomParticles("happyVillager");
+            ChatComponentText chatcomponenttext = new ChatComponentText(s);
+            chatcomponenttext.getChatStyle().setChatHoverEvent(this.getHoverEvent());
+            chatcomponenttext.getChatStyle().setInsertion(this.getUniqueID().toString());
+            return chatcomponenttext;
         }
         else
         {
-            super.handleHealthUpdate(p_70103_1_);
+            if (this.buyingList == null)
+            {
+                this.populateBuyingList();
+            }
+
+            String s1 = null;
+
+            switch (this.getProfession())
+            {
+                case 0:
+                    if (this.careerId == 1)
+                    {
+                        s1 = "farmer";
+                    }
+                    else if (this.careerId == 2)
+                    {
+                        s1 = "fisherman";
+                    }
+                    else if (this.careerId == 3)
+                    {
+                        s1 = "shepherd";
+                    }
+                    else if (this.careerId == 4)
+                    {
+                        s1 = "fletcher";
+                    }
+
+                    break;
+
+                case 1:
+                    s1 = "librarian";
+                    break;
+
+                case 2:
+                    s1 = "cleric";
+                    break;
+
+                case 3:
+                    if (this.careerId == 1)
+                    {
+                        s1 = "armor";
+                    }
+                    else if (this.careerId == 2)
+                    {
+                        s1 = "weapon";
+                    }
+                    else if (this.careerId == 3)
+                    {
+                        s1 = "tool";
+                    }
+
+                    break;
+
+                case 4:
+                    if (this.careerId == 1)
+                    {
+                        s1 = "butcher";
+                    }
+                    else if (this.careerId == 2)
+                    {
+                        s1 = "leather";
+                    }
+            }
+
+            if (s1 != null)
+            {
+                ChatComponentTranslation chatcomponenttranslation = new ChatComponentTranslation("entity.Villager." + s1, new Object[0]);
+                chatcomponenttranslation.getChatStyle().setChatHoverEvent(this.getHoverEvent());
+                chatcomponenttranslation.getChatStyle().setInsertion(this.getUniqueID().toString());
+                return chatcomponenttranslation;
+            }
+            else
+            {
+                return super.getDisplayName();
+            }
+        }
+    }
+
+    public float getEyeHeight()
+    {
+        float f = 1.62F;
+
+        if (this.isChild())
+        {
+            f = (float)((double)f - 0.81D);
+        }
+
+        return f;
+    }
+
+    public void handleStatusUpdate(byte id)
+    {
+        if (id == 12)
+        {
+            this.spawnParticles(EnumParticleTypes.HEART);
+        }
+        else if (id == 13)
+        {
+            this.spawnParticles(EnumParticleTypes.VILLAGER_ANGRY);
+        }
+        else if (id == 14)
+        {
+            this.spawnParticles(EnumParticleTypes.VILLAGER_HAPPY);
+        }
+        else
+        {
+            super.handleStatusUpdate(id);
+        }
+    }
+
+    private void spawnParticles(EnumParticleTypes particleType)
+    {
+        for (int i = 0; i < 5; ++i)
+        {
+            double d0 = this.rand.nextGaussian() * 0.02D;
+            double d1 = this.rand.nextGaussian() * 0.02D;
+            double d2 = this.rand.nextGaussian() * 0.02D;
+            this.worldObj.spawnParticle(particleType, this.posX + (double)(this.rand.nextFloat() * this.width * 2.0F) - (double)this.width, this.posY + 1.0D + (double)(this.rand.nextFloat() * this.height), this.posZ + (double)(this.rand.nextFloat() * this.width * 2.0F) - (double)this.width, d0, d1, d2, new int[0]);
         }
     }
 
     /**
-     * par1 is the particleName
+     * Called only once on an entity when first time spawned, via egg, mob spawner, natural spawning etc, but not called
+     * when entity is reloaded from nbt. Mainly used for initializing attributes and inventory
      */
-    private void generateRandomParticles(String p_70942_1_)
+    public IEntityLivingData onInitialSpawn(DifficultyInstance difficulty, IEntityLivingData livingdata)
     {
-        for (int var2 = 0; var2 < 5; ++var2)
-        {
-            double var3 = this.rand.nextGaussian() * 0.02D;
-            double var5 = this.rand.nextGaussian() * 0.02D;
-            double var7 = this.rand.nextGaussian() * 0.02D;
-            this.worldObj.spawnParticle(p_70942_1_, this.posX + (double)(this.rand.nextFloat() * this.width * 2.0F) - (double)this.width, this.posY + 1.0D + (double)(this.rand.nextFloat() * this.height), this.posZ + (double)(this.rand.nextFloat() * this.width * 2.0F) - (double)this.width, var3, var5, var7);
-        }
-    }
-
-    public IEntityLivingData onSpawnWithEgg(IEntityLivingData p_110161_1_)
-    {
-        p_110161_1_ = super.onSpawnWithEgg(p_110161_1_);
+        livingdata = super.onInitialSpawn(difficulty, livingdata);
         this.setProfession(this.worldObj.rand.nextInt(5));
-        return p_110161_1_;
+        this.setAdditionalAItasks();
+        return livingdata;
     }
 
     public void setLookingForHome()
@@ -698,11 +759,11 @@ public class EntityVillager extends EntityAgeable implements IMerchant, INpc
         this.isLookingForHome = true;
     }
 
-    public EntityVillager createChild(EntityAgeable p_90011_1_)
+    public EntityVillager createChild(EntityAgeable ageable)
     {
-        EntityVillager var2 = new EntityVillager(this.worldObj);
-        var2.onSpawnWithEgg((IEntityLivingData)null);
-        return var2;
+        EntityVillager entityvillager = new EntityVillager(this.worldObj);
+        entityvillager.onInitialSpawn(this.worldObj.getDifficultyForLocation(new BlockPos(entityvillager)), (IEntityLivingData)null);
+        return entityvillager;
     }
 
     public boolean allowLeashing()
@@ -710,71 +771,314 @@ public class EntityVillager extends EntityAgeable implements IMerchant, INpc
         return false;
     }
 
-    static
+    /**
+     * Called when a lightning bolt hits the entity.
+     */
+    public void onStruckByLightning(EntityLightningBolt lightningBolt)
     {
-        villagersSellingList.put(Items.coal, new Tuple(Integer.valueOf(16), Integer.valueOf(24)));
-        villagersSellingList.put(Items.iron_ingot, new Tuple(Integer.valueOf(8), Integer.valueOf(10)));
-        villagersSellingList.put(Items.gold_ingot, new Tuple(Integer.valueOf(8), Integer.valueOf(10)));
-        villagersSellingList.put(Items.diamond, new Tuple(Integer.valueOf(4), Integer.valueOf(6)));
-        villagersSellingList.put(Items.paper, new Tuple(Integer.valueOf(24), Integer.valueOf(36)));
-        villagersSellingList.put(Items.book, new Tuple(Integer.valueOf(11), Integer.valueOf(13)));
-        villagersSellingList.put(Items.written_book, new Tuple(Integer.valueOf(1), Integer.valueOf(1)));
-        villagersSellingList.put(Items.ender_pearl, new Tuple(Integer.valueOf(3), Integer.valueOf(4)));
-        villagersSellingList.put(Items.ender_eye, new Tuple(Integer.valueOf(2), Integer.valueOf(3)));
-        villagersSellingList.put(Items.porkchop, new Tuple(Integer.valueOf(14), Integer.valueOf(18)));
-        villagersSellingList.put(Items.beef, new Tuple(Integer.valueOf(14), Integer.valueOf(18)));
-        villagersSellingList.put(Items.chicken, new Tuple(Integer.valueOf(14), Integer.valueOf(18)));
-        villagersSellingList.put(Items.cooked_fished, new Tuple(Integer.valueOf(9), Integer.valueOf(13)));
-        villagersSellingList.put(Items.wheat_seeds, new Tuple(Integer.valueOf(34), Integer.valueOf(48)));
-        villagersSellingList.put(Items.melon_seeds, new Tuple(Integer.valueOf(30), Integer.valueOf(38)));
-        villagersSellingList.put(Items.pumpkin_seeds, new Tuple(Integer.valueOf(30), Integer.valueOf(38)));
-        villagersSellingList.put(Items.wheat, new Tuple(Integer.valueOf(18), Integer.valueOf(22)));
-        villagersSellingList.put(Item.getItemFromBlock(Blocks.wool), new Tuple(Integer.valueOf(14), Integer.valueOf(22)));
-        villagersSellingList.put(Items.rotten_flesh, new Tuple(Integer.valueOf(36), Integer.valueOf(64)));
-        blacksmithSellingList.put(Items.flint_and_steel, new Tuple(Integer.valueOf(3), Integer.valueOf(4)));
-        blacksmithSellingList.put(Items.shears, new Tuple(Integer.valueOf(3), Integer.valueOf(4)));
-        blacksmithSellingList.put(Items.iron_sword, new Tuple(Integer.valueOf(7), Integer.valueOf(11)));
-        blacksmithSellingList.put(Items.diamond_sword, new Tuple(Integer.valueOf(12), Integer.valueOf(14)));
-        blacksmithSellingList.put(Items.iron_axe, new Tuple(Integer.valueOf(6), Integer.valueOf(8)));
-        blacksmithSellingList.put(Items.diamond_axe, new Tuple(Integer.valueOf(9), Integer.valueOf(12)));
-        blacksmithSellingList.put(Items.iron_pickaxe, new Tuple(Integer.valueOf(7), Integer.valueOf(9)));
-        blacksmithSellingList.put(Items.diamond_pickaxe, new Tuple(Integer.valueOf(10), Integer.valueOf(12)));
-        blacksmithSellingList.put(Items.iron_shovel, new Tuple(Integer.valueOf(4), Integer.valueOf(6)));
-        blacksmithSellingList.put(Items.diamond_shovel, new Tuple(Integer.valueOf(7), Integer.valueOf(8)));
-        blacksmithSellingList.put(Items.iron_hoe, new Tuple(Integer.valueOf(4), Integer.valueOf(6)));
-        blacksmithSellingList.put(Items.diamond_hoe, new Tuple(Integer.valueOf(7), Integer.valueOf(8)));
-        blacksmithSellingList.put(Items.iron_boots, new Tuple(Integer.valueOf(4), Integer.valueOf(6)));
-        blacksmithSellingList.put(Items.diamond_boots, new Tuple(Integer.valueOf(7), Integer.valueOf(8)));
-        blacksmithSellingList.put(Items.iron_helmet, new Tuple(Integer.valueOf(4), Integer.valueOf(6)));
-        blacksmithSellingList.put(Items.diamond_helmet, new Tuple(Integer.valueOf(7), Integer.valueOf(8)));
-        blacksmithSellingList.put(Items.iron_chestplate, new Tuple(Integer.valueOf(10), Integer.valueOf(14)));
-        blacksmithSellingList.put(Items.diamond_chestplate, new Tuple(Integer.valueOf(16), Integer.valueOf(19)));
-        blacksmithSellingList.put(Items.iron_leggings, new Tuple(Integer.valueOf(8), Integer.valueOf(10)));
-        blacksmithSellingList.put(Items.diamond_leggings, new Tuple(Integer.valueOf(11), Integer.valueOf(14)));
-        blacksmithSellingList.put(Items.chainmail_boots, new Tuple(Integer.valueOf(5), Integer.valueOf(7)));
-        blacksmithSellingList.put(Items.chainmail_helmet, new Tuple(Integer.valueOf(5), Integer.valueOf(7)));
-        blacksmithSellingList.put(Items.chainmail_chestplate, new Tuple(Integer.valueOf(11), Integer.valueOf(15)));
-        blacksmithSellingList.put(Items.chainmail_leggings, new Tuple(Integer.valueOf(9), Integer.valueOf(11)));
-        blacksmithSellingList.put(Items.bread, new Tuple(Integer.valueOf(-4), Integer.valueOf(-2)));
-        blacksmithSellingList.put(Items.melon, new Tuple(Integer.valueOf(-8), Integer.valueOf(-4)));
-        blacksmithSellingList.put(Items.apple, new Tuple(Integer.valueOf(-8), Integer.valueOf(-4)));
-        blacksmithSellingList.put(Items.cookie, new Tuple(Integer.valueOf(-10), Integer.valueOf(-7)));
-        blacksmithSellingList.put(Item.getItemFromBlock(Blocks.glass), new Tuple(Integer.valueOf(-5), Integer.valueOf(-3)));
-        blacksmithSellingList.put(Item.getItemFromBlock(Blocks.bookshelf), new Tuple(Integer.valueOf(3), Integer.valueOf(4)));
-        blacksmithSellingList.put(Items.leather_chestplate, new Tuple(Integer.valueOf(4), Integer.valueOf(5)));
-        blacksmithSellingList.put(Items.leather_boots, new Tuple(Integer.valueOf(2), Integer.valueOf(4)));
-        blacksmithSellingList.put(Items.leather_helmet, new Tuple(Integer.valueOf(2), Integer.valueOf(4)));
-        blacksmithSellingList.put(Items.leather_leggings, new Tuple(Integer.valueOf(2), Integer.valueOf(4)));
-        blacksmithSellingList.put(Items.saddle, new Tuple(Integer.valueOf(6), Integer.valueOf(8)));
-        blacksmithSellingList.put(Items.experience_bottle, new Tuple(Integer.valueOf(-4), Integer.valueOf(-1)));
-        blacksmithSellingList.put(Items.redstone, new Tuple(Integer.valueOf(-4), Integer.valueOf(-1)));
-        blacksmithSellingList.put(Items.compass, new Tuple(Integer.valueOf(10), Integer.valueOf(12)));
-        blacksmithSellingList.put(Items.clock, new Tuple(Integer.valueOf(10), Integer.valueOf(12)));
-        blacksmithSellingList.put(Item.getItemFromBlock(Blocks.glowstone), new Tuple(Integer.valueOf(-3), Integer.valueOf(-1)));
-        blacksmithSellingList.put(Items.cooked_porkchop, new Tuple(Integer.valueOf(-7), Integer.valueOf(-5)));
-        blacksmithSellingList.put(Items.cooked_beef, new Tuple(Integer.valueOf(-7), Integer.valueOf(-5)));
-        blacksmithSellingList.put(Items.cooked_chicken, new Tuple(Integer.valueOf(-8), Integer.valueOf(-6)));
-        blacksmithSellingList.put(Items.ender_eye, new Tuple(Integer.valueOf(7), Integer.valueOf(11)));
-        blacksmithSellingList.put(Items.arrow, new Tuple(Integer.valueOf(-12), Integer.valueOf(-8)));
+        if (!this.worldObj.isRemote && !this.isDead)
+        {
+            EntityWitch entitywitch = new EntityWitch(this.worldObj);
+            entitywitch.setLocationAndAngles(this.posX, this.posY, this.posZ, this.rotationYaw, this.rotationPitch);
+            entitywitch.onInitialSpawn(this.worldObj.getDifficultyForLocation(new BlockPos(entitywitch)), (IEntityLivingData)null);
+            entitywitch.setNoAI(this.isAIDisabled());
+
+            if (this.hasCustomName())
+            {
+                entitywitch.setCustomNameTag(this.getCustomNameTag());
+                entitywitch.setAlwaysRenderNameTag(this.getAlwaysRenderNameTag());
+            }
+
+            this.worldObj.spawnEntityInWorld(entitywitch);
+            this.setDead();
+        }
+    }
+
+    public InventoryBasic getVillagerInventory()
+    {
+        return this.villagerInventory;
+    }
+
+    /**
+     * Tests if this entity should pickup a weapon or an armor. Entity drops current weapon or armor if the new one is
+     * better.
+     */
+    protected void updateEquipmentIfNeeded(EntityItem itemEntity)
+    {
+        ItemStack itemstack = itemEntity.getEntityItem();
+        Item item = itemstack.getItem();
+
+        if (this.canVillagerPickupItem(item))
+        {
+            ItemStack itemstack1 = this.villagerInventory.func_174894_a(itemstack);
+
+            if (itemstack1 == null)
+            {
+                itemEntity.setDead();
+            }
+            else
+            {
+                itemstack.stackSize = itemstack1.stackSize;
+            }
+        }
+    }
+
+    private boolean canVillagerPickupItem(Item itemIn)
+    {
+        return itemIn == Items.bread || itemIn == Items.potato || itemIn == Items.carrot || itemIn == Items.wheat || itemIn == Items.wheat_seeds;
+    }
+
+    public boolean func_175553_cp()
+    {
+        return this.hasEnoughItems(1);
+    }
+
+    /**
+     * Used by {@link net.minecraft.entity.ai.EntityAIVillagerInteract EntityAIVillagerInteract} to check if the
+     * villager can give some items from an inventory to another villager.
+     */
+    public boolean canAbondonItems()
+    {
+        return this.hasEnoughItems(2);
+    }
+
+    public boolean func_175557_cr()
+    {
+        boolean flag = this.getProfession() == 0;
+        return flag ? !this.hasEnoughItems(5) : !this.hasEnoughItems(1);
+    }
+
+    /**
+     * Returns true if villager has enough items in inventory
+     */
+    private boolean hasEnoughItems(int multiplier)
+    {
+        boolean flag = this.getProfession() == 0;
+
+        for (int i = 0; i < this.villagerInventory.getSizeInventory(); ++i)
+        {
+            ItemStack itemstack = this.villagerInventory.getStackInSlot(i);
+
+            if (itemstack != null)
+            {
+                if (itemstack.getItem() == Items.bread && itemstack.stackSize >= 3 * multiplier || itemstack.getItem() == Items.potato && itemstack.stackSize >= 12 * multiplier || itemstack.getItem() == Items.carrot && itemstack.stackSize >= 12 * multiplier)
+                {
+                    return true;
+                }
+
+                if (flag && itemstack.getItem() == Items.wheat && itemstack.stackSize >= 9 * multiplier)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Returns true if villager has seeds, potatoes or carrots in inventory
+     */
+    public boolean isFarmItemInInventory()
+    {
+        for (int i = 0; i < this.villagerInventory.getSizeInventory(); ++i)
+        {
+            ItemStack itemstack = this.villagerInventory.getStackInSlot(i);
+
+            if (itemstack != null && (itemstack.getItem() == Items.wheat_seeds || itemstack.getItem() == Items.potato || itemstack.getItem() == Items.carrot))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public boolean replaceItemInInventory(int inventorySlot, ItemStack itemStackIn)
+    {
+        if (super.replaceItemInInventory(inventorySlot, itemStackIn))
+        {
+            return true;
+        }
+        else
+        {
+            int i = inventorySlot - 300;
+
+            if (i >= 0 && i < this.villagerInventory.getSizeInventory())
+            {
+                this.villagerInventory.setInventorySlotContents(i, itemStackIn);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+    }
+
+    static class EmeraldForItems implements EntityVillager.ITradeList
+    {
+        public Item sellItem;
+        public EntityVillager.PriceInfo price;
+
+        public EmeraldForItems(Item itemIn, EntityVillager.PriceInfo priceIn)
+        {
+            this.sellItem = itemIn;
+            this.price = priceIn;
+        }
+
+        public void modifyMerchantRecipeList(MerchantRecipeList recipeList, Random random)
+        {
+            int i = 1;
+
+            if (this.price != null)
+            {
+                i = this.price.getPrice(random);
+            }
+
+            recipeList.add(new MerchantRecipe(new ItemStack(this.sellItem, i, 0), Items.emerald));
+        }
+    }
+
+    interface ITradeList
+    {
+        void modifyMerchantRecipeList(MerchantRecipeList recipeList, Random random);
+    }
+
+    static class ItemAndEmeraldToItem implements EntityVillager.ITradeList
+    {
+        public ItemStack buyingItemStack;
+        public EntityVillager.PriceInfo buyingPriceInfo;
+        public ItemStack sellingItemstack;
+        public EntityVillager.PriceInfo field_179408_d;
+
+        public ItemAndEmeraldToItem(Item p_i45813_1_, EntityVillager.PriceInfo p_i45813_2_, Item p_i45813_3_, EntityVillager.PriceInfo p_i45813_4_)
+        {
+            this.buyingItemStack = new ItemStack(p_i45813_1_);
+            this.buyingPriceInfo = p_i45813_2_;
+            this.sellingItemstack = new ItemStack(p_i45813_3_);
+            this.field_179408_d = p_i45813_4_;
+        }
+
+        public void modifyMerchantRecipeList(MerchantRecipeList recipeList, Random random)
+        {
+            int i = 1;
+
+            if (this.buyingPriceInfo != null)
+            {
+                i = this.buyingPriceInfo.getPrice(random);
+            }
+
+            int j = 1;
+
+            if (this.field_179408_d != null)
+            {
+                j = this.field_179408_d.getPrice(random);
+            }
+
+            recipeList.add(new MerchantRecipe(new ItemStack(this.buyingItemStack.getItem(), i, this.buyingItemStack.getMetadata()), new ItemStack(Items.emerald), new ItemStack(this.sellingItemstack.getItem(), j, this.sellingItemstack.getMetadata())));
+        }
+    }
+
+    static class ListEnchantedBookForEmeralds implements EntityVillager.ITradeList
+    {
+        public void modifyMerchantRecipeList(MerchantRecipeList recipeList, Random random)
+        {
+            Enchantment enchantment = Enchantment.enchantmentsBookList[random.nextInt(Enchantment.enchantmentsBookList.length)];
+            int i = MathHelper.getRandomIntegerInRange(random, enchantment.getMinLevel(), enchantment.getMaxLevel());
+            ItemStack itemstack = Items.enchanted_book.getEnchantedItemStack(new EnchantmentData(enchantment, i));
+            int j = 2 + random.nextInt(5 + i * 10) + 3 * i;
+
+            if (j > 64)
+            {
+                j = 64;
+            }
+
+            recipeList.add(new MerchantRecipe(new ItemStack(Items.book), new ItemStack(Items.emerald, j), itemstack));
+        }
+    }
+
+    static class ListEnchantedItemForEmeralds implements EntityVillager.ITradeList
+    {
+        public ItemStack enchantedItemStack;
+        public EntityVillager.PriceInfo priceInfo;
+
+        public ListEnchantedItemForEmeralds(Item p_i45814_1_, EntityVillager.PriceInfo p_i45814_2_)
+        {
+            this.enchantedItemStack = new ItemStack(p_i45814_1_);
+            this.priceInfo = p_i45814_2_;
+        }
+
+        public void modifyMerchantRecipeList(MerchantRecipeList recipeList, Random random)
+        {
+            int i = 1;
+
+            if (this.priceInfo != null)
+            {
+                i = this.priceInfo.getPrice(random);
+            }
+
+            ItemStack itemstack = new ItemStack(Items.emerald, i, 0);
+            ItemStack itemstack1 = new ItemStack(this.enchantedItemStack.getItem(), 1, this.enchantedItemStack.getMetadata());
+            itemstack1 = EnchantmentHelper.addRandomEnchantment(random, itemstack1, 5 + random.nextInt(15));
+            recipeList.add(new MerchantRecipe(itemstack, itemstack1));
+        }
+    }
+
+    static class ListItemForEmeralds implements EntityVillager.ITradeList
+    {
+        public ItemStack itemToBuy;
+        public EntityVillager.PriceInfo priceInfo;
+
+        public ListItemForEmeralds(Item par1Item, EntityVillager.PriceInfo priceInfo)
+        {
+            this.itemToBuy = new ItemStack(par1Item);
+            this.priceInfo = priceInfo;
+        }
+
+        public ListItemForEmeralds(ItemStack stack, EntityVillager.PriceInfo priceInfo)
+        {
+            this.itemToBuy = stack;
+            this.priceInfo = priceInfo;
+        }
+
+        public void modifyMerchantRecipeList(MerchantRecipeList recipeList, Random random)
+        {
+            int i = 1;
+
+            if (this.priceInfo != null)
+            {
+                i = this.priceInfo.getPrice(random);
+            }
+
+            ItemStack itemstack;
+            ItemStack itemstack1;
+
+            if (i < 0)
+            {
+                itemstack = new ItemStack(Items.emerald, 1, 0);
+                itemstack1 = new ItemStack(this.itemToBuy.getItem(), -i, this.itemToBuy.getMetadata());
+            }
+            else
+            {
+                itemstack = new ItemStack(Items.emerald, i, 0);
+                itemstack1 = new ItemStack(this.itemToBuy.getItem(), 1, this.itemToBuy.getMetadata());
+            }
+
+            recipeList.add(new MerchantRecipe(itemstack, itemstack1));
+        }
+    }
+
+    static class PriceInfo extends Tuple<Integer, Integer>
+    {
+        public PriceInfo(int p_i45810_1_, int p_i45810_2_)
+        {
+            super(Integer.valueOf(p_i45810_1_), Integer.valueOf(p_i45810_2_));
+        }
+
+        public int getPrice(Random rand)
+        {
+            return ((Integer)this.getFirst()).intValue() >= ((Integer)this.getSecond()).intValue() ? ((Integer)this.getFirst()).intValue() : ((Integer)this.getFirst()).intValue() + rand.nextInt(((Integer)this.getSecond()).intValue() - ((Integer)this.getFirst()).intValue() + 1);
+        }
     }
 }

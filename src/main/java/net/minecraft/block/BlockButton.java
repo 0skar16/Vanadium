@@ -3,245 +3,202 @@ package net.minecraft.block;
 import java.util.List;
 import java.util.Random;
 import net.minecraft.block.material.Material;
-import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.block.properties.IProperty;
+import net.minecraft.block.properties.PropertyBool;
+import net.minecraft.block.properties.PropertyDirection;
+import net.minecraft.block.state.BlockState;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.projectile.EntityArrow;
 import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 
 public abstract class BlockButton extends Block
 {
-    private final boolean field_150047_a;
-    private static final String __OBFID = "CL_00000209";
+    public static final PropertyDirection FACING = PropertyDirection.create("facing");
+    public static final PropertyBool POWERED = PropertyBool.create("powered");
+    private final boolean wooden;
 
-    protected BlockButton(boolean p_i45396_1_)
+    protected BlockButton(boolean wooden)
     {
         super(Material.circuits);
+        this.setDefaultState(this.blockState.getBaseState().withProperty(FACING, EnumFacing.NORTH).withProperty(POWERED, Boolean.valueOf(false)));
         this.setTickRandomly(true);
         this.setCreativeTab(CreativeTabs.tabRedstone);
-        this.field_150047_a = p_i45396_1_;
+        this.wooden = wooden;
     }
 
-    /**
-     * Returns a bounding box from the pool of bounding boxes (this means this box can change after the pool has been
-     * cleared to be reused)
-     */
-    public AxisAlignedBB getCollisionBoundingBoxFromPool(World p_149668_1_, int p_149668_2_, int p_149668_3_, int p_149668_4_)
+    public AxisAlignedBB getCollisionBoundingBox(World worldIn, BlockPos pos, IBlockState state)
     {
         return null;
     }
 
-    public int func_149738_a(World p_149738_1_)
+    /**
+     * How many world ticks before ticking
+     */
+    public int tickRate(World worldIn)
     {
-        return this.field_150047_a ? 30 : 20;
+        return this.wooden ? 30 : 20;
     }
 
+    /**
+     * Used to determine ambient occlusion and culling when rebuilding chunks for render
+     */
     public boolean isOpaqueCube()
     {
         return false;
     }
 
-    public boolean renderAsNormalBlock()
+    public boolean isFullCube()
     {
         return false;
     }
 
     /**
-     * checks to see if you can place this block can be placed on that side of a block: BlockLever overrides
+     * Check whether this Block can be placed on the given side
      */
-    public boolean canPlaceBlockOnSide(World p_149707_1_, int p_149707_2_, int p_149707_3_, int p_149707_4_, int p_149707_5_)
+    public boolean canPlaceBlockOnSide(World worldIn, BlockPos pos, EnumFacing side)
     {
-        return p_149707_5_ == 2 && p_149707_1_.getBlock(p_149707_2_, p_149707_3_, p_149707_4_ + 1).isNormalCube() ? true : (p_149707_5_ == 3 && p_149707_1_.getBlock(p_149707_2_, p_149707_3_, p_149707_4_ - 1).isNormalCube() ? true : (p_149707_5_ == 4 && p_149707_1_.getBlock(p_149707_2_ + 1, p_149707_3_, p_149707_4_).isNormalCube() ? true : p_149707_5_ == 5 && p_149707_1_.getBlock(p_149707_2_ - 1, p_149707_3_, p_149707_4_).isNormalCube()));
+        return func_181088_a(worldIn, pos, side.getOpposite());
     }
 
-    public boolean canPlaceBlockAt(World p_149742_1_, int p_149742_2_, int p_149742_3_, int p_149742_4_)
+    public boolean canPlaceBlockAt(World worldIn, BlockPos pos)
     {
-        return p_149742_1_.getBlock(p_149742_2_ - 1, p_149742_3_, p_149742_4_).isNormalCube() ? true : (p_149742_1_.getBlock(p_149742_2_ + 1, p_149742_3_, p_149742_4_).isNormalCube() ? true : (p_149742_1_.getBlock(p_149742_2_, p_149742_3_, p_149742_4_ - 1).isNormalCube() ? true : p_149742_1_.getBlock(p_149742_2_, p_149742_3_, p_149742_4_ + 1).isNormalCube()));
+        for (EnumFacing enumfacing : EnumFacing.values())
+        {
+            if (func_181088_a(worldIn, pos, enumfacing))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
-    public int onBlockPlaced(World p_149660_1_, int p_149660_2_, int p_149660_3_, int p_149660_4_, int p_149660_5_, float p_149660_6_, float p_149660_7_, float p_149660_8_, int p_149660_9_)
+    protected static boolean func_181088_a(World p_181088_0_, BlockPos p_181088_1_, EnumFacing p_181088_2_)
     {
-        int var10 = p_149660_1_.getBlockMetadata(p_149660_2_, p_149660_3_, p_149660_4_);
-        int var11 = var10 & 8;
-        var10 &= 7;
+        BlockPos blockpos = p_181088_1_.offset(p_181088_2_);
+        return p_181088_2_ == EnumFacing.DOWN ? World.doesBlockHaveSolidTopSurface(p_181088_0_, blockpos) : p_181088_0_.getBlockState(blockpos).getBlock().isNormalCube();
+    }
 
-        if (p_149660_5_ == 2 && p_149660_1_.getBlock(p_149660_2_, p_149660_3_, p_149660_4_ + 1).isNormalCube())
+    /**
+     * Called by ItemBlocks just before a block is actually set in the world, to allow for adjustments to the
+     * IBlockstate
+     */
+    public IBlockState onBlockPlaced(World worldIn, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta, EntityLivingBase placer)
+    {
+        return func_181088_a(worldIn, pos, facing.getOpposite()) ? this.getDefaultState().withProperty(FACING, facing).withProperty(POWERED, Boolean.valueOf(false)) : this.getDefaultState().withProperty(FACING, EnumFacing.DOWN).withProperty(POWERED, Boolean.valueOf(false));
+    }
+
+    /**
+     * Called when a neighboring block changes.
+     */
+    public void onNeighborBlockChange(World worldIn, BlockPos pos, IBlockState state, Block neighborBlock)
+    {
+        if (this.checkForDrop(worldIn, pos, state) && !func_181088_a(worldIn, pos, ((EnumFacing)state.getValue(FACING)).getOpposite()))
         {
-            var10 = 4;
+            this.dropBlockAsItem(worldIn, pos, state, 0);
+            worldIn.setBlockToAir(pos);
         }
-        else if (p_149660_5_ == 3 && p_149660_1_.getBlock(p_149660_2_, p_149660_3_, p_149660_4_ - 1).isNormalCube())
+    }
+
+    private boolean checkForDrop(World worldIn, BlockPos pos, IBlockState state)
+    {
+        if (this.canPlaceBlockAt(worldIn, pos))
         {
-            var10 = 3;
-        }
-        else if (p_149660_5_ == 4 && p_149660_1_.getBlock(p_149660_2_ + 1, p_149660_3_, p_149660_4_).isNormalCube())
-        {
-            var10 = 2;
-        }
-        else if (p_149660_5_ == 5 && p_149660_1_.getBlock(p_149660_2_ - 1, p_149660_3_, p_149660_4_).isNormalCube())
-        {
-            var10 = 1;
+            return true;
         }
         else
         {
-            var10 = this.func_150045_e(p_149660_1_, p_149660_2_, p_149660_3_, p_149660_4_);
-        }
-
-        return var10 + var11;
-    }
-
-    private int func_150045_e(World p_150045_1_, int p_150045_2_, int p_150045_3_, int p_150045_4_)
-    {
-        return p_150045_1_.getBlock(p_150045_2_ - 1, p_150045_3_, p_150045_4_).isNormalCube() ? 1 : (p_150045_1_.getBlock(p_150045_2_ + 1, p_150045_3_, p_150045_4_).isNormalCube() ? 2 : (p_150045_1_.getBlock(p_150045_2_, p_150045_3_, p_150045_4_ - 1).isNormalCube() ? 3 : (p_150045_1_.getBlock(p_150045_2_, p_150045_3_, p_150045_4_ + 1).isNormalCube() ? 4 : 1)));
-    }
-
-    public void onNeighborBlockChange(World p_149695_1_, int p_149695_2_, int p_149695_3_, int p_149695_4_, Block p_149695_5_)
-    {
-        if (this.func_150044_m(p_149695_1_, p_149695_2_, p_149695_3_, p_149695_4_))
-        {
-            int var6 = p_149695_1_.getBlockMetadata(p_149695_2_, p_149695_3_, p_149695_4_) & 7;
-            boolean var7 = false;
-
-            if (!p_149695_1_.getBlock(p_149695_2_ - 1, p_149695_3_, p_149695_4_).isNormalCube() && var6 == 1)
-            {
-                var7 = true;
-            }
-
-            if (!p_149695_1_.getBlock(p_149695_2_ + 1, p_149695_3_, p_149695_4_).isNormalCube() && var6 == 2)
-            {
-                var7 = true;
-            }
-
-            if (!p_149695_1_.getBlock(p_149695_2_, p_149695_3_, p_149695_4_ - 1).isNormalCube() && var6 == 3)
-            {
-                var7 = true;
-            }
-
-            if (!p_149695_1_.getBlock(p_149695_2_, p_149695_3_, p_149695_4_ + 1).isNormalCube() && var6 == 4)
-            {
-                var7 = true;
-            }
-
-            if (var7)
-            {
-                this.dropBlockAsItem(p_149695_1_, p_149695_2_, p_149695_3_, p_149695_4_, p_149695_1_.getBlockMetadata(p_149695_2_, p_149695_3_, p_149695_4_), 0);
-                p_149695_1_.setBlockToAir(p_149695_2_, p_149695_3_, p_149695_4_);
-            }
-        }
-    }
-
-    private boolean func_150044_m(World p_150044_1_, int p_150044_2_, int p_150044_3_, int p_150044_4_)
-    {
-        if (!this.canPlaceBlockAt(p_150044_1_, p_150044_2_, p_150044_3_, p_150044_4_))
-        {
-            this.dropBlockAsItem(p_150044_1_, p_150044_2_, p_150044_3_, p_150044_4_, p_150044_1_.getBlockMetadata(p_150044_2_, p_150044_3_, p_150044_4_), 0);
-            p_150044_1_.setBlockToAir(p_150044_2_, p_150044_3_, p_150044_4_);
+            this.dropBlockAsItem(worldIn, pos, state, 0);
+            worldIn.setBlockToAir(pos);
             return false;
         }
-        else
+    }
+
+    public void setBlockBoundsBasedOnState(IBlockAccess worldIn, BlockPos pos)
+    {
+        this.updateBlockBounds(worldIn.getBlockState(pos));
+    }
+
+    private void updateBlockBounds(IBlockState state)
+    {
+        EnumFacing enumfacing = (EnumFacing)state.getValue(FACING);
+        boolean flag = ((Boolean)state.getValue(POWERED)).booleanValue();
+        float f = 0.25F;
+        float f1 = 0.375F;
+        float f2 = (float)(flag ? 1 : 2) / 16.0F;
+        float f3 = 0.125F;
+        float f4 = 0.1875F;
+
+        switch (enumfacing)
         {
-            return true;
+            case EAST:
+                this.setBlockBounds(0.0F, 0.375F, 0.3125F, f2, 0.625F, 0.6875F);
+                break;
+
+            case WEST:
+                this.setBlockBounds(1.0F - f2, 0.375F, 0.3125F, 1.0F, 0.625F, 0.6875F);
+                break;
+
+            case SOUTH:
+                this.setBlockBounds(0.3125F, 0.375F, 0.0F, 0.6875F, 0.625F, f2);
+                break;
+
+            case NORTH:
+                this.setBlockBounds(0.3125F, 0.375F, 1.0F - f2, 0.6875F, 0.625F, 1.0F);
+                break;
+
+            case UP:
+                this.setBlockBounds(0.3125F, 0.0F, 0.375F, 0.6875F, 0.0F + f2, 0.625F);
+                break;
+
+            case DOWN:
+                this.setBlockBounds(0.3125F, 1.0F - f2, 0.375F, 0.6875F, 1.0F, 0.625F);
         }
     }
 
-    public void setBlockBoundsBasedOnState(IBlockAccess p_149719_1_, int p_149719_2_, int p_149719_3_, int p_149719_4_)
+    public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumFacing side, float hitX, float hitY, float hitZ)
     {
-        int var5 = p_149719_1_.getBlockMetadata(p_149719_2_, p_149719_3_, p_149719_4_);
-        this.func_150043_b(var5);
-    }
-
-    private void func_150043_b(int p_150043_1_)
-    {
-        int var2 = p_150043_1_ & 7;
-        boolean var3 = (p_150043_1_ & 8) > 0;
-        float var4 = 0.375F;
-        float var5 = 0.625F;
-        float var6 = 0.1875F;
-        float var7 = 0.125F;
-
-        if (var3)
-        {
-            var7 = 0.0625F;
-        }
-
-        if (var2 == 1)
-        {
-            this.setBlockBounds(0.0F, var4, 0.5F - var6, var7, var5, 0.5F + var6);
-        }
-        else if (var2 == 2)
-        {
-            this.setBlockBounds(1.0F - var7, var4, 0.5F - var6, 1.0F, var5, 0.5F + var6);
-        }
-        else if (var2 == 3)
-        {
-            this.setBlockBounds(0.5F - var6, var4, 0.0F, 0.5F + var6, var5, var7);
-        }
-        else if (var2 == 4)
-        {
-            this.setBlockBounds(0.5F - var6, var4, 1.0F - var7, 0.5F + var6, var5, 1.0F);
-        }
-    }
-
-    /**
-     * Called when a player hits the block. Args: world, x, y, z, player
-     */
-    public void onBlockClicked(World p_149699_1_, int p_149699_2_, int p_149699_3_, int p_149699_4_, EntityPlayer p_149699_5_) {}
-
-    /**
-     * Called upon block activation (right click on the block.)
-     */
-    public boolean onBlockActivated(World p_149727_1_, int p_149727_2_, int p_149727_3_, int p_149727_4_, EntityPlayer p_149727_5_, int p_149727_6_, float p_149727_7_, float p_149727_8_, float p_149727_9_)
-    {
-        int var10 = p_149727_1_.getBlockMetadata(p_149727_2_, p_149727_3_, p_149727_4_);
-        int var11 = var10 & 7;
-        int var12 = 8 - (var10 & 8);
-
-        if (var12 == 0)
+        if (((Boolean)state.getValue(POWERED)).booleanValue())
         {
             return true;
         }
         else
         {
-            p_149727_1_.setBlockMetadataWithNotify(p_149727_2_, p_149727_3_, p_149727_4_, var11 + var12, 3);
-            p_149727_1_.markBlockRangeForRenderUpdate(p_149727_2_, p_149727_3_, p_149727_4_, p_149727_2_, p_149727_3_, p_149727_4_);
-            p_149727_1_.playSoundEffect((double)p_149727_2_ + 0.5D, (double)p_149727_3_ + 0.5D, (double)p_149727_4_ + 0.5D, "random.click", 0.3F, 0.6F);
-            this.func_150042_a(p_149727_1_, p_149727_2_, p_149727_3_, p_149727_4_, var11);
-            p_149727_1_.scheduleBlockUpdate(p_149727_2_, p_149727_3_, p_149727_4_, this, this.func_149738_a(p_149727_1_));
+            worldIn.setBlockState(pos, state.withProperty(POWERED, Boolean.valueOf(true)), 3);
+            worldIn.markBlockRangeForRenderUpdate(pos, pos);
+            worldIn.playSoundEffect((double)pos.getX() + 0.5D, (double)pos.getY() + 0.5D, (double)pos.getZ() + 0.5D, "random.click", 0.3F, 0.6F);
+            this.notifyNeighbors(worldIn, pos, (EnumFacing)state.getValue(FACING));
+            worldIn.scheduleUpdate(pos, this, this.tickRate(worldIn));
             return true;
         }
     }
 
-    public void breakBlock(World p_149749_1_, int p_149749_2_, int p_149749_3_, int p_149749_4_, Block p_149749_5_, int p_149749_6_)
+    public void breakBlock(World worldIn, BlockPos pos, IBlockState state)
     {
-        if ((p_149749_6_ & 8) > 0)
+        if (((Boolean)state.getValue(POWERED)).booleanValue())
         {
-            int var7 = p_149749_6_ & 7;
-            this.func_150042_a(p_149749_1_, p_149749_2_, p_149749_3_, p_149749_4_, var7);
+            this.notifyNeighbors(worldIn, pos, (EnumFacing)state.getValue(FACING));
         }
 
-        super.breakBlock(p_149749_1_, p_149749_2_, p_149749_3_, p_149749_4_, p_149749_5_, p_149749_6_);
+        super.breakBlock(worldIn, pos, state);
     }
 
-    public int isProvidingWeakPower(IBlockAccess p_149709_1_, int p_149709_2_, int p_149709_3_, int p_149709_4_, int p_149709_5_)
+    public int getWeakPower(IBlockAccess worldIn, BlockPos pos, IBlockState state, EnumFacing side)
     {
-        return (p_149709_1_.getBlockMetadata(p_149709_2_, p_149709_3_, p_149709_4_) & 8) > 0 ? 15 : 0;
+        return ((Boolean)state.getValue(POWERED)).booleanValue() ? 15 : 0;
     }
 
-    public int isProvidingStrongPower(IBlockAccess p_149748_1_, int p_149748_2_, int p_149748_3_, int p_149748_4_, int p_149748_5_)
+    public int getStrongPower(IBlockAccess worldIn, BlockPos pos, IBlockState state, EnumFacing side)
     {
-        int var6 = p_149748_1_.getBlockMetadata(p_149748_2_, p_149748_3_, p_149748_4_);
-
-        if ((var6 & 8) == 0)
-        {
-            return 0;
-        }
-        else
-        {
-            int var7 = var6 & 7;
-            return var7 == 5 && p_149748_5_ == 1 ? 15 : (var7 == 4 && p_149748_5_ == 2 ? 15 : (var7 == 3 && p_149748_5_ == 3 ? 15 : (var7 == 2 && p_149748_5_ == 4 ? 15 : (var7 == 1 && p_149748_5_ == 5 ? 15 : 0))));
-        }
+        return !((Boolean)state.getValue(POWERED)).booleanValue() ? 0 : (state.getValue(FACING) == side ? 15 : 0);
     }
 
     /**
@@ -253,27 +210,28 @@ public abstract class BlockButton extends Block
     }
 
     /**
-     * Ticks the block if it's been scheduled
+     * Called randomly when setTickRandomly is set to true (used by e.g. crops to grow, etc.)
      */
-    public void updateTick(World p_149674_1_, int p_149674_2_, int p_149674_3_, int p_149674_4_, Random p_149674_5_)
+    public void randomTick(World worldIn, BlockPos pos, IBlockState state, Random random)
     {
-        if (!p_149674_1_.isClient)
-        {
-            int var6 = p_149674_1_.getBlockMetadata(p_149674_2_, p_149674_3_, p_149674_4_);
+    }
 
-            if ((var6 & 8) != 0)
+    public void updateTick(World worldIn, BlockPos pos, IBlockState state, Random rand)
+    {
+        if (!worldIn.isRemote)
+        {
+            if (((Boolean)state.getValue(POWERED)).booleanValue())
             {
-                if (this.field_150047_a)
+                if (this.wooden)
                 {
-                    this.func_150046_n(p_149674_1_, p_149674_2_, p_149674_3_, p_149674_4_);
+                    this.checkForArrows(worldIn, pos, state);
                 }
                 else
                 {
-                    p_149674_1_.setBlockMetadataWithNotify(p_149674_2_, p_149674_3_, p_149674_4_, var6 & 7, 3);
-                    int var7 = var6 & 7;
-                    this.func_150042_a(p_149674_1_, p_149674_2_, p_149674_3_, p_149674_4_, var7);
-                    p_149674_1_.playSoundEffect((double)p_149674_2_ + 0.5D, (double)p_149674_3_ + 0.5D, (double)p_149674_4_ + 0.5D, "random.click", 0.3F, 0.5F);
-                    p_149674_1_.markBlockRangeForRenderUpdate(p_149674_2_, p_149674_3_, p_149674_4_, p_149674_2_, p_149674_3_, p_149674_4_);
+                    worldIn.setBlockState(pos, state.withProperty(POWERED, Boolean.valueOf(false)));
+                    this.notifyNeighbors(worldIn, pos, (EnumFacing)state.getValue(FACING));
+                    worldIn.playSoundEffect((double)pos.getX() + 0.5D, (double)pos.getY() + 0.5D, (double)pos.getZ() + 0.5D, "random.click", 0.3F, 0.5F);
+                    worldIn.markBlockRangeForRenderUpdate(pos, pos);
                 }
             }
         }
@@ -284,82 +242,145 @@ public abstract class BlockButton extends Block
      */
     public void setBlockBoundsForItemRender()
     {
-        float var1 = 0.1875F;
-        float var2 = 0.125F;
-        float var3 = 0.125F;
-        this.setBlockBounds(0.5F - var1, 0.5F - var2, 0.5F - var3, 0.5F + var1, 0.5F + var2, 0.5F + var3);
+        float f = 0.1875F;
+        float f1 = 0.125F;
+        float f2 = 0.125F;
+        this.setBlockBounds(0.5F - f, 0.5F - f1, 0.5F - f2, 0.5F + f, 0.5F + f1, 0.5F + f2);
     }
 
-    public void onEntityCollidedWithBlock(World p_149670_1_, int p_149670_2_, int p_149670_3_, int p_149670_4_, Entity p_149670_5_)
+    /**
+     * Called When an Entity Collided with the Block
+     */
+    public void onEntityCollidedWithBlock(World worldIn, BlockPos pos, IBlockState state, Entity entityIn)
     {
-        if (!p_149670_1_.isClient)
+        if (!worldIn.isRemote)
         {
-            if (this.field_150047_a)
+            if (this.wooden)
             {
-                if ((p_149670_1_.getBlockMetadata(p_149670_2_, p_149670_3_, p_149670_4_) & 8) == 0)
+                if (!((Boolean)state.getValue(POWERED)).booleanValue())
                 {
-                    this.func_150046_n(p_149670_1_, p_149670_2_, p_149670_3_, p_149670_4_);
+                    this.checkForArrows(worldIn, pos, state);
                 }
             }
         }
     }
 
-    private void func_150046_n(World p_150046_1_, int p_150046_2_, int p_150046_3_, int p_150046_4_)
+    private void checkForArrows(World worldIn, BlockPos pos, IBlockState state)
     {
-        int var5 = p_150046_1_.getBlockMetadata(p_150046_2_, p_150046_3_, p_150046_4_);
-        int var6 = var5 & 7;
-        boolean var7 = (var5 & 8) != 0;
-        this.func_150043_b(var5);
-        List var9 = p_150046_1_.getEntitiesWithinAABB(EntityArrow.class, AxisAlignedBB.getBoundingBox((double)p_150046_2_ + this.field_149759_B, (double)p_150046_3_ + this.field_149760_C, (double)p_150046_4_ + this.field_149754_D, (double)p_150046_2_ + this.field_149755_E, (double)p_150046_3_ + this.field_149756_F, (double)p_150046_4_ + this.field_149757_G));
-        boolean var8 = !var9.isEmpty();
+        this.updateBlockBounds(state);
+        List <? extends Entity > list = worldIn.<Entity>getEntitiesWithinAABB(EntityArrow.class, new AxisAlignedBB((double)pos.getX() + this.minX, (double)pos.getY() + this.minY, (double)pos.getZ() + this.minZ, (double)pos.getX() + this.maxX, (double)pos.getY() + this.maxY, (double)pos.getZ() + this.maxZ));
+        boolean flag = !list.isEmpty();
+        boolean flag1 = ((Boolean)state.getValue(POWERED)).booleanValue();
 
-        if (var8 && !var7)
+        if (flag && !flag1)
         {
-            p_150046_1_.setBlockMetadataWithNotify(p_150046_2_, p_150046_3_, p_150046_4_, var6 | 8, 3);
-            this.func_150042_a(p_150046_1_, p_150046_2_, p_150046_3_, p_150046_4_, var6);
-            p_150046_1_.markBlockRangeForRenderUpdate(p_150046_2_, p_150046_3_, p_150046_4_, p_150046_2_, p_150046_3_, p_150046_4_);
-            p_150046_1_.playSoundEffect((double)p_150046_2_ + 0.5D, (double)p_150046_3_ + 0.5D, (double)p_150046_4_ + 0.5D, "random.click", 0.3F, 0.6F);
+            worldIn.setBlockState(pos, state.withProperty(POWERED, Boolean.valueOf(true)));
+            this.notifyNeighbors(worldIn, pos, (EnumFacing)state.getValue(FACING));
+            worldIn.markBlockRangeForRenderUpdate(pos, pos);
+            worldIn.playSoundEffect((double)pos.getX() + 0.5D, (double)pos.getY() + 0.5D, (double)pos.getZ() + 0.5D, "random.click", 0.3F, 0.6F);
         }
 
-        if (!var8 && var7)
+        if (!flag && flag1)
         {
-            p_150046_1_.setBlockMetadataWithNotify(p_150046_2_, p_150046_3_, p_150046_4_, var6, 3);
-            this.func_150042_a(p_150046_1_, p_150046_2_, p_150046_3_, p_150046_4_, var6);
-            p_150046_1_.markBlockRangeForRenderUpdate(p_150046_2_, p_150046_3_, p_150046_4_, p_150046_2_, p_150046_3_, p_150046_4_);
-            p_150046_1_.playSoundEffect((double)p_150046_2_ + 0.5D, (double)p_150046_3_ + 0.5D, (double)p_150046_4_ + 0.5D, "random.click", 0.3F, 0.5F);
+            worldIn.setBlockState(pos, state.withProperty(POWERED, Boolean.valueOf(false)));
+            this.notifyNeighbors(worldIn, pos, (EnumFacing)state.getValue(FACING));
+            worldIn.markBlockRangeForRenderUpdate(pos, pos);
+            worldIn.playSoundEffect((double)pos.getX() + 0.5D, (double)pos.getY() + 0.5D, (double)pos.getZ() + 0.5D, "random.click", 0.3F, 0.5F);
         }
 
-        if (var8)
+        if (flag)
         {
-            p_150046_1_.scheduleBlockUpdate(p_150046_2_, p_150046_3_, p_150046_4_, this, this.func_149738_a(p_150046_1_));
+            worldIn.scheduleUpdate(pos, this, this.tickRate(worldIn));
         }
     }
 
-    private void func_150042_a(World p_150042_1_, int p_150042_2_, int p_150042_3_, int p_150042_4_, int p_150042_5_)
+    private void notifyNeighbors(World worldIn, BlockPos pos, EnumFacing facing)
     {
-        p_150042_1_.notifyBlocksOfNeighborChange(p_150042_2_, p_150042_3_, p_150042_4_, this);
-
-        if (p_150042_5_ == 1)
-        {
-            p_150042_1_.notifyBlocksOfNeighborChange(p_150042_2_ - 1, p_150042_3_, p_150042_4_, this);
-        }
-        else if (p_150042_5_ == 2)
-        {
-            p_150042_1_.notifyBlocksOfNeighborChange(p_150042_2_ + 1, p_150042_3_, p_150042_4_, this);
-        }
-        else if (p_150042_5_ == 3)
-        {
-            p_150042_1_.notifyBlocksOfNeighborChange(p_150042_2_, p_150042_3_, p_150042_4_ - 1, this);
-        }
-        else if (p_150042_5_ == 4)
-        {
-            p_150042_1_.notifyBlocksOfNeighborChange(p_150042_2_, p_150042_3_, p_150042_4_ + 1, this);
-        }
-        else
-        {
-            p_150042_1_.notifyBlocksOfNeighborChange(p_150042_2_, p_150042_3_ - 1, p_150042_4_, this);
-        }
+        worldIn.notifyNeighborsOfStateChange(pos, this);
+        worldIn.notifyNeighborsOfStateChange(pos.offset(facing.getOpposite()), this);
     }
 
-    public void registerBlockIcons(IIconRegister p_149651_1_) {}
+    /**
+     * Convert the given metadata into a BlockState for this Block
+     */
+    public IBlockState getStateFromMeta(int meta)
+    {
+        EnumFacing enumfacing;
+
+        switch (meta & 7)
+        {
+            case 0:
+                enumfacing = EnumFacing.DOWN;
+                break;
+
+            case 1:
+                enumfacing = EnumFacing.EAST;
+                break;
+
+            case 2:
+                enumfacing = EnumFacing.WEST;
+                break;
+
+            case 3:
+                enumfacing = EnumFacing.SOUTH;
+                break;
+
+            case 4:
+                enumfacing = EnumFacing.NORTH;
+                break;
+
+            case 5:
+            default:
+                enumfacing = EnumFacing.UP;
+        }
+
+        return this.getDefaultState().withProperty(FACING, enumfacing).withProperty(POWERED, Boolean.valueOf((meta & 8) > 0));
+    }
+
+    /**
+     * Convert the BlockState into the correct metadata value
+     */
+    public int getMetaFromState(IBlockState state)
+    {
+        int i;
+
+        switch ((EnumFacing)state.getValue(FACING))
+        {
+            case EAST:
+                i = 1;
+                break;
+
+            case WEST:
+                i = 2;
+                break;
+
+            case SOUTH:
+                i = 3;
+                break;
+
+            case NORTH:
+                i = 4;
+                break;
+
+            case UP:
+            default:
+                i = 5;
+                break;
+
+            case DOWN:
+                i = 0;
+        }
+
+        if (((Boolean)state.getValue(POWERED)).booleanValue())
+        {
+            i |= 8;
+        }
+
+        return i;
+    }
+
+    protected BlockState createBlockState()
+    {
+        return new BlockState(this, new IProperty[] {FACING, POWERED});
+    }
 }

@@ -4,68 +4,63 @@ import java.util.Random;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.init.Blocks;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 
 public class WorldGenIceSpike extends WorldGenerator
 {
-    private static final String __OBFID = "CL_00000417";
-
-    public boolean generate(World p_76484_1_, Random p_76484_2_, int p_76484_3_, int p_76484_4_, int p_76484_5_)
+    public boolean generate(World worldIn, Random rand, BlockPos position)
     {
-        while (p_76484_1_.isAirBlock(p_76484_3_, p_76484_4_, p_76484_5_) && p_76484_4_ > 2)
+        while (worldIn.isAirBlock(position) && position.getY() > 2)
         {
-            --p_76484_4_;
+            position = position.down();
         }
 
-        if (p_76484_1_.getBlock(p_76484_3_, p_76484_4_, p_76484_5_) != Blocks.snow)
+        if (worldIn.getBlockState(position).getBlock() != Blocks.snow)
         {
             return false;
         }
         else
         {
-            p_76484_4_ += p_76484_2_.nextInt(4);
-            int var6 = p_76484_2_.nextInt(4) + 7;
-            int var7 = var6 / 4 + p_76484_2_.nextInt(2);
+            position = position.up(rand.nextInt(4));
+            int i = rand.nextInt(4) + 7;
+            int j = i / 4 + rand.nextInt(2);
 
-            if (var7 > 1 && p_76484_2_.nextInt(60) == 0)
+            if (j > 1 && rand.nextInt(60) == 0)
             {
-                p_76484_4_ += 10 + p_76484_2_.nextInt(30);
+                position = position.up(10 + rand.nextInt(30));
             }
 
-            int var8;
-            int var10;
-            int var11;
-
-            for (var8 = 0; var8 < var6; ++var8)
+            for (int k = 0; k < i; ++k)
             {
-                float var9 = (1.0F - (float)var8 / (float)var6) * (float)var7;
-                var10 = MathHelper.ceiling_float_int(var9);
+                float f = (1.0F - (float)k / (float)i) * (float)j;
+                int l = MathHelper.ceiling_float_int(f);
 
-                for (var11 = -var10; var11 <= var10; ++var11)
+                for (int i1 = -l; i1 <= l; ++i1)
                 {
-                    float var12 = (float)MathHelper.abs_int(var11) - 0.25F;
+                    float f1 = (float)MathHelper.abs_int(i1) - 0.25F;
 
-                    for (int var13 = -var10; var13 <= var10; ++var13)
+                    for (int j1 = -l; j1 <= l; ++j1)
                     {
-                        float var14 = (float)MathHelper.abs_int(var13) - 0.25F;
+                        float f2 = (float)MathHelper.abs_int(j1) - 0.25F;
 
-                        if ((var11 == 0 && var13 == 0 || var12 * var12 + var14 * var14 <= var9 * var9) && (var11 != -var10 && var11 != var10 && var13 != -var10 && var13 != var10 || p_76484_2_.nextFloat() <= 0.75F))
+                        if ((i1 == 0 && j1 == 0 || f1 * f1 + f2 * f2 <= f * f) && (i1 != -l && i1 != l && j1 != -l && j1 != l || rand.nextFloat() <= 0.75F))
                         {
-                            Block var15 = p_76484_1_.getBlock(p_76484_3_ + var11, p_76484_4_ + var8, p_76484_5_ + var13);
+                            Block block = worldIn.getBlockState(position.add(i1, k, j1)).getBlock();
 
-                            if (var15.getMaterial() == Material.air || var15 == Blocks.dirt || var15 == Blocks.snow || var15 == Blocks.ice)
+                            if (block.getMaterial() == Material.air || block == Blocks.dirt || block == Blocks.snow || block == Blocks.ice)
                             {
-                                this.func_150515_a(p_76484_1_, p_76484_3_ + var11, p_76484_4_ + var8, p_76484_5_ + var13, Blocks.packed_ice);
+                                this.setBlockAndNotifyAdequately(worldIn, position.add(i1, k, j1), Blocks.packed_ice.getDefaultState());
                             }
 
-                            if (var8 != 0 && var10 > 1)
+                            if (k != 0 && l > 1)
                             {
-                                var15 = p_76484_1_.getBlock(p_76484_3_ + var11, p_76484_4_ - var8, p_76484_5_ + var13);
+                                block = worldIn.getBlockState(position.add(i1, -k, j1)).getBlock();
 
-                                if (var15.getMaterial() == Material.air || var15 == Blocks.dirt || var15 == Blocks.snow || var15 == Blocks.ice)
+                                if (block.getMaterial() == Material.air || block == Blocks.dirt || block == Blocks.snow || block == Blocks.ice)
                                 {
-                                    this.func_150515_a(p_76484_1_, p_76484_3_ + var11, p_76484_4_ - var8, p_76484_5_ + var13, Blocks.packed_ice);
+                                    this.setBlockAndNotifyAdequately(worldIn, position.add(i1, -k, j1), Blocks.packed_ice.getDefaultState());
                                 }
                             }
                         }
@@ -73,55 +68,47 @@ public class WorldGenIceSpike extends WorldGenerator
                 }
             }
 
-            var8 = var7 - 1;
+            int k1 = j - 1;
 
-            if (var8 < 0)
+            if (k1 < 0)
             {
-                var8 = 0;
+                k1 = 0;
             }
-            else if (var8 > 1)
+            else if (k1 > 1)
             {
-                var8 = 1;
+                k1 = 1;
             }
 
-            for (int var16 = -var8; var16 <= var8; ++var16)
+            for (int l1 = -k1; l1 <= k1; ++l1)
             {
-                var10 = -var8;
-
-                while (var10 <= var8)
+                for (int i2 = -k1; i2 <= k1; ++i2)
                 {
-                    var11 = p_76484_4_ - 1;
-                    int var17 = 50;
+                    BlockPos blockpos = position.add(l1, -1, i2);
+                    int j2 = 50;
 
-                    if (Math.abs(var16) == 1 && Math.abs(var10) == 1)
+                    if (Math.abs(l1) == 1 && Math.abs(i2) == 1)
                     {
-                        var17 = p_76484_2_.nextInt(5);
+                        j2 = rand.nextInt(5);
                     }
 
-                    while (true)
+                    while (blockpos.getY() > 50)
                     {
-                        if (var11 > 50)
+                        Block block1 = worldIn.getBlockState(blockpos).getBlock();
+
+                        if (block1.getMaterial() != Material.air && block1 != Blocks.dirt && block1 != Blocks.snow && block1 != Blocks.ice && block1 != Blocks.packed_ice)
                         {
-                            Block var18 = p_76484_1_.getBlock(p_76484_3_ + var16, var11, p_76484_5_ + var10);
-
-                            if (var18.getMaterial() == Material.air || var18 == Blocks.dirt || var18 == Blocks.snow || var18 == Blocks.ice || var18 == Blocks.packed_ice)
-                            {
-                                this.func_150515_a(p_76484_1_, p_76484_3_ + var16, var11, p_76484_5_ + var10, Blocks.packed_ice);
-                                --var11;
-                                --var17;
-
-                                if (var17 <= 0)
-                                {
-                                    var11 -= p_76484_2_.nextInt(5) + 1;
-                                    var17 = p_76484_2_.nextInt(5);
-                                }
-
-                                continue;
-                            }
+                            break;
                         }
 
-                        ++var10;
-                        break;
+                        this.setBlockAndNotifyAdequately(worldIn, blockpos, Blocks.packed_ice.getDefaultState());
+                        blockpos = blockpos.down();
+                        --j2;
+
+                        if (j2 <= 0)
+                        {
+                            blockpos = blockpos.down(rand.nextInt(5) + 1);
+                            j2 = rand.nextInt(5);
+                        }
                     }
                 }
             }

@@ -1,95 +1,98 @@
 package net.minecraft.block;
 
 import java.util.Random;
+import net.minecraft.block.material.MapColor;
 import net.minecraft.block.material.Material;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.EnumWorldBlockLayer;
 import net.minecraft.world.World;
 
 public class BlockBush extends Block
 {
-    private static final String __OBFID = "CL_00000208";
-
-    protected BlockBush(Material p_i45395_1_)
-    {
-        super(p_i45395_1_);
-        this.setTickRandomly(true);
-        float var2 = 0.2F;
-        this.setBlockBounds(0.5F - var2, 0.0F, 0.5F - var2, 0.5F + var2, var2 * 3.0F, 0.5F + var2);
-        this.setCreativeTab(CreativeTabs.tabDecorations);
-    }
-
     protected BlockBush()
     {
         this(Material.plants);
     }
 
-    public boolean canPlaceBlockAt(World p_149742_1_, int p_149742_2_, int p_149742_3_, int p_149742_4_)
+    protected BlockBush(Material materialIn)
     {
-        return super.canPlaceBlockAt(p_149742_1_, p_149742_2_, p_149742_3_, p_149742_4_) && this.func_149854_a(p_149742_1_.getBlock(p_149742_2_, p_149742_3_ - 1, p_149742_4_));
+        this(materialIn, materialIn.getMaterialMapColor());
     }
 
-    protected boolean func_149854_a(Block p_149854_1_)
+    protected BlockBush(Material p_i46452_1_, MapColor p_i46452_2_)
     {
-        return p_149854_1_ == Blocks.grass || p_149854_1_ == Blocks.dirt || p_149854_1_ == Blocks.farmland;
+        super(p_i46452_1_, p_i46452_2_);
+        this.setTickRandomly(true);
+        float f = 0.2F;
+        this.setBlockBounds(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, f * 3.0F, 0.5F + f);
+        this.setCreativeTab(CreativeTabs.tabDecorations);
     }
 
-    public void onNeighborBlockChange(World p_149695_1_, int p_149695_2_, int p_149695_3_, int p_149695_4_, Block p_149695_5_)
+    public boolean canPlaceBlockAt(World worldIn, BlockPos pos)
     {
-        super.onNeighborBlockChange(p_149695_1_, p_149695_2_, p_149695_3_, p_149695_4_, p_149695_5_);
-        this.func_149855_e(p_149695_1_, p_149695_2_, p_149695_3_, p_149695_4_);
+        return super.canPlaceBlockAt(worldIn, pos) && this.canPlaceBlockOn(worldIn.getBlockState(pos.down()).getBlock());
     }
 
     /**
-     * Ticks the block if it's been scheduled
+     * is the block grass, dirt or farmland
      */
-    public void updateTick(World p_149674_1_, int p_149674_2_, int p_149674_3_, int p_149674_4_, Random p_149674_5_)
+    protected boolean canPlaceBlockOn(Block ground)
     {
-        this.func_149855_e(p_149674_1_, p_149674_2_, p_149674_3_, p_149674_4_);
+        return ground == Blocks.grass || ground == Blocks.dirt || ground == Blocks.farmland;
     }
 
-    protected void func_149855_e(World p_149855_1_, int p_149855_2_, int p_149855_3_, int p_149855_4_)
+    /**
+     * Called when a neighboring block changes.
+     */
+    public void onNeighborBlockChange(World worldIn, BlockPos pos, IBlockState state, Block neighborBlock)
     {
-        if (!this.canBlockStay(p_149855_1_, p_149855_2_, p_149855_3_, p_149855_4_))
+        super.onNeighborBlockChange(worldIn, pos, state, neighborBlock);
+        this.checkAndDropBlock(worldIn, pos, state);
+    }
+
+    public void updateTick(World worldIn, BlockPos pos, IBlockState state, Random rand)
+    {
+        this.checkAndDropBlock(worldIn, pos, state);
+    }
+
+    protected void checkAndDropBlock(World worldIn, BlockPos pos, IBlockState state)
+    {
+        if (!this.canBlockStay(worldIn, pos, state))
         {
-            this.dropBlockAsItem(p_149855_1_, p_149855_2_, p_149855_3_, p_149855_4_, p_149855_1_.getBlockMetadata(p_149855_2_, p_149855_3_, p_149855_4_), 0);
-            p_149855_1_.setBlock(p_149855_2_, p_149855_3_, p_149855_4_, getBlockById(0), 0, 2);
+            this.dropBlockAsItem(worldIn, pos, state, 0);
+            worldIn.setBlockState(pos, Blocks.air.getDefaultState(), 3);
         }
     }
 
-    /**
-     * Can this block stay at this position.  Similar to canPlaceBlockAt except gets checked often with plants.
-     */
-    public boolean canBlockStay(World p_149718_1_, int p_149718_2_, int p_149718_3_, int p_149718_4_)
+    public boolean canBlockStay(World worldIn, BlockPos pos, IBlockState state)
     {
-        return this.func_149854_a(p_149718_1_.getBlock(p_149718_2_, p_149718_3_ - 1, p_149718_4_));
+        return this.canPlaceBlockOn(worldIn.getBlockState(pos.down()).getBlock());
     }
 
-    /**
-     * Returns a bounding box from the pool of bounding boxes (this means this box can change after the pool has been
-     * cleared to be reused)
-     */
-    public AxisAlignedBB getCollisionBoundingBoxFromPool(World p_149668_1_, int p_149668_2_, int p_149668_3_, int p_149668_4_)
+    public AxisAlignedBB getCollisionBoundingBox(World worldIn, BlockPos pos, IBlockState state)
     {
         return null;
     }
 
+    /**
+     * Used to determine ambient occlusion and culling when rebuilding chunks for render
+     */
     public boolean isOpaqueCube()
     {
         return false;
     }
 
-    public boolean renderAsNormalBlock()
+    public boolean isFullCube()
     {
         return false;
     }
 
-    /**
-     * The type of render function that is called for this block
-     */
-    public int getRenderType()
+    public EnumWorldBlockLayer getBlockLayer()
     {
-        return 1;
+        return EnumWorldBlockLayer.CUTOUT;
     }
 }

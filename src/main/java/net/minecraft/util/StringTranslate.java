@@ -6,7 +6,6 @@ import com.google.common.collect.Maps;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.IllegalFormatException;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.regex.Pattern;
 import org.apache.commons.io.Charsets;
@@ -26,34 +25,30 @@ public class StringTranslate
 
     /** Is the private singleton instance of StringTranslate. */
     private static StringTranslate instance = new StringTranslate();
-    private final Map languageList = Maps.newHashMap();
+    private final Map<String, String> languageList = Maps.<String, String>newHashMap();
 
     /**
      * The time, in milliseconds since epoch, that this instance was last updated
      */
     private long lastUpdateTimeInMilliseconds;
-    private static final String __OBFID = "CL_00001212";
 
     public StringTranslate()
     {
         try
         {
-            InputStream var1 = StringTranslate.class.getResourceAsStream("/assets/minecraft/lang/en_US.lang");
-            Iterator var2 = IOUtils.readLines(var1, Charsets.UTF_8).iterator();
+            InputStream inputstream = StringTranslate.class.getResourceAsStream("/assets/minecraft/lang/en_US.lang");
 
-            while (var2.hasNext())
+            for (String s : IOUtils.readLines(inputstream, Charsets.UTF_8))
             {
-                String var3 = (String)var2.next();
-
-                if (!var3.isEmpty() && var3.charAt(0) != 35)
+                if (!s.isEmpty() && s.charAt(0) != 35)
                 {
-                    String[] var4 = (String[])Iterables.toArray(equalSignSplitter.split(var3), String.class);
+                    String[] astring = (String[])Iterables.toArray(equalSignSplitter.split(s), String.class);
 
-                    if (var4 != null && var4.length == 2)
+                    if (astring != null && astring.length == 2)
                     {
-                        String var5 = var4[0];
-                        String var6 = numericVariablePattern.matcher(var4[1]).replaceAll("%$1s");
-                        this.languageList.put(var5, var6);
+                        String s1 = astring[0];
+                        String s2 = numericVariablePattern.matcher(astring[1]).replaceAll("%$1s");
+                        this.languageList.put(s1, s2);
                     }
                 }
             }
@@ -77,7 +72,7 @@ public class StringTranslate
     /**
      * Replaces all the current instance's translations with the ones that are passed in.
      */
-    public static synchronized void replaceWith(Map p_135063_0_)
+    public static synchronized void replaceWith(Map<String, String> p_135063_0_)
     {
         instance.languageList.clear();
         instance.languageList.putAll(p_135063_0_);
@@ -87,40 +82,43 @@ public class StringTranslate
     /**
      * Translate a key to current language.
      */
-    public synchronized String translateKey(String p_74805_1_)
+    public synchronized String translateKey(String key)
     {
-        return this.tryTranslateKey(p_74805_1_);
+        return this.tryTranslateKey(key);
     }
 
     /**
      * Translate a key to current language applying String.format()
      */
-    public synchronized String translateKeyFormat(String p_74803_1_, Object ... p_74803_2_)
+    public synchronized String translateKeyFormat(String key, Object... format)
     {
-        String var3 = this.tryTranslateKey(p_74803_1_);
+        String s = this.tryTranslateKey(key);
 
         try
         {
-            return String.format(var3, p_74803_2_);
+            return String.format(s, format);
         }
         catch (IllegalFormatException var5)
         {
-            return "Format error: " + var3;
+            return "Format error: " + s;
         }
     }
 
     /**
      * Tries to look up a translation for the given key; spits back the key if no result was found.
      */
-    private String tryTranslateKey(String p_135064_1_)
+    private String tryTranslateKey(String key)
     {
-        String var2 = (String)this.languageList.get(p_135064_1_);
-        return var2 == null ? p_135064_1_ : var2;
+        String s = (String)this.languageList.get(key);
+        return s == null ? key : s;
     }
 
-    public synchronized boolean containsTranslateKey(String p_94520_1_)
+    /**
+     * Returns true if the passed key is in the translation table.
+     */
+    public synchronized boolean isKeyTranslated(String key)
     {
-        return this.languageList.containsKey(p_94520_1_);
+        return this.languageList.containsKey(key);
     }
 
     /**

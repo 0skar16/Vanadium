@@ -1,51 +1,49 @@
 package net.minecraft.network.play.server;
 
 import java.io.IOException;
-import net.minecraft.network.INetHandler;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 
-public class S09PacketHeldItemChange extends Packet
+public class S09PacketHeldItemChange implements Packet<INetHandlerPlayClient>
 {
-    private int field_149387_a;
-    private static final String __OBFID = "CL_00001324";
+    private int heldItemHotbarIndex;
 
-    public S09PacketHeldItemChange() {}
-
-    public S09PacketHeldItemChange(int p_i45215_1_)
+    public S09PacketHeldItemChange()
     {
-        this.field_149387_a = p_i45215_1_;
+    }
+
+    public S09PacketHeldItemChange(int hotbarIndexIn)
+    {
+        this.heldItemHotbarIndex = hotbarIndexIn;
     }
 
     /**
      * Reads the raw packet data from the data stream.
      */
-    public void readPacketData(PacketBuffer p_148837_1_) throws IOException
+    public void readPacketData(PacketBuffer buf) throws IOException
     {
-        this.field_149387_a = p_148837_1_.readByte();
+        this.heldItemHotbarIndex = buf.readByte();
     }
 
     /**
      * Writes the raw packet data to the data stream.
      */
-    public void writePacketData(PacketBuffer p_148840_1_) throws IOException
+    public void writePacketData(PacketBuffer buf) throws IOException
     {
-        p_148840_1_.writeByte(this.field_149387_a);
+        buf.writeByte(this.heldItemHotbarIndex);
     }
 
-    public void processPacket(INetHandlerPlayClient p_148833_1_)
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayClient handler)
     {
-        p_148833_1_.handleHeldItemChange(this);
+        handler.handleHeldItemChange(this);
     }
 
-    public int func_149385_c()
+    public int getHeldItemHotbarIndex()
     {
-        return this.field_149387_a;
-    }
-
-    public void processPacket(INetHandler p_148833_1_)
-    {
-        this.processPacket((INetHandlerPlayClient)p_148833_1_);
+        return this.heldItemHotbarIndex;
     }
 }

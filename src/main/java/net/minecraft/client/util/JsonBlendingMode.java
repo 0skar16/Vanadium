@@ -1,8 +1,8 @@
 package net.minecraft.client.util;
 
 import com.google.gson.JsonObject;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.util.JsonUtils;
-import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL14;
 
 public class JsonBlendingMode
@@ -15,7 +15,6 @@ public class JsonBlendingMode
     private final int field_148112_f;
     private final boolean field_148113_g;
     private final boolean field_148119_h;
-    private static final String __OBFID = "CL_00001038";
 
     private JsonBlendingMode(boolean p_i45084_1_, boolean p_i45084_2_, int p_i45084_3_, int p_i45084_4_, int p_i45084_5_, int p_i45084_6_, int p_i45084_7_)
     {
@@ -53,22 +52,22 @@ public class JsonBlendingMode
 
                 if (this.field_148119_h)
                 {
-                    GL11.glDisable(GL11.GL_BLEND);
+                    GlStateManager.disableBlend();
                     return;
                 }
 
-                GL11.glEnable(GL11.GL_BLEND);
+                GlStateManager.enableBlend();
             }
 
             GL14.glBlendEquation(this.field_148112_f);
 
             if (this.field_148113_g)
             {
-                GL14.glBlendFuncSeparate(this.field_148116_b, this.field_148114_d, this.field_148117_c, this.field_148115_e);
+                GlStateManager.tryBlendFuncSeparate(this.field_148116_b, this.field_148114_d, this.field_148117_c, this.field_148115_e);
             }
             else
             {
-                GL11.glBlendFunc(this.field_148116_b, this.field_148114_d);
+                GlStateManager.blendFunc(this.field_148116_b, this.field_148114_d);
             }
         }
     }
@@ -85,21 +84,21 @@ public class JsonBlendingMode
         }
         else
         {
-            JsonBlendingMode var2 = (JsonBlendingMode)p_equals_1_;
-            return this.field_148112_f != var2.field_148112_f ? false : (this.field_148115_e != var2.field_148115_e ? false : (this.field_148114_d != var2.field_148114_d ? false : (this.field_148119_h != var2.field_148119_h ? false : (this.field_148113_g != var2.field_148113_g ? false : (this.field_148117_c != var2.field_148117_c ? false : this.field_148116_b == var2.field_148116_b)))));
+            JsonBlendingMode jsonblendingmode = (JsonBlendingMode)p_equals_1_;
+            return this.field_148112_f != jsonblendingmode.field_148112_f ? false : (this.field_148115_e != jsonblendingmode.field_148115_e ? false : (this.field_148114_d != jsonblendingmode.field_148114_d ? false : (this.field_148119_h != jsonblendingmode.field_148119_h ? false : (this.field_148113_g != jsonblendingmode.field_148113_g ? false : (this.field_148117_c != jsonblendingmode.field_148117_c ? false : this.field_148116_b == jsonblendingmode.field_148116_b)))));
         }
     }
 
     public int hashCode()
     {
-        int var1 = this.field_148116_b;
-        var1 = 31 * var1 + this.field_148117_c;
-        var1 = 31 * var1 + this.field_148114_d;
-        var1 = 31 * var1 + this.field_148115_e;
-        var1 = 31 * var1 + this.field_148112_f;
-        var1 = 31 * var1 + (this.field_148113_g ? 1 : 0);
-        var1 = 31 * var1 + (this.field_148119_h ? 1 : 0);
-        return var1;
+        int i = this.field_148116_b;
+        i = 31 * i + this.field_148117_c;
+        i = 31 * i + this.field_148114_d;
+        i = 31 * i + this.field_148115_e;
+        i = 31 * i + this.field_148112_f;
+        i = 31 * i + (this.field_148113_g ? 1 : 0);
+        i = 31 * i + (this.field_148119_h ? 1 : 0);
+        return i;
     }
 
     public boolean func_148111_b()
@@ -115,85 +114,85 @@ public class JsonBlendingMode
         }
         else
         {
-            int var1 = 32774;
-            int var2 = 1;
-            int var3 = 0;
-            int var4 = 1;
-            int var5 = 0;
-            boolean var6 = true;
-            boolean var7 = false;
+            int i = 32774;
+            int j = 1;
+            int k = 0;
+            int l = 1;
+            int i1 = 0;
+            boolean flag = true;
+            boolean flag1 = false;
 
-            if (JsonUtils.jsonObjectFieldTypeIsString(p_148110_0_, "func"))
+            if (JsonUtils.isString(p_148110_0_, "func"))
             {
-                var1 = func_148108_a(p_148110_0_.get("func").getAsString());
+                i = func_148108_a(p_148110_0_.get("func").getAsString());
 
-                if (var1 != 32774)
+                if (i != 32774)
                 {
-                    var6 = false;
+                    flag = false;
                 }
             }
 
-            if (JsonUtils.jsonObjectFieldTypeIsString(p_148110_0_, "srcrgb"))
+            if (JsonUtils.isString(p_148110_0_, "srcrgb"))
             {
-                var2 = func_148107_b(p_148110_0_.get("srcrgb").getAsString());
+                j = func_148107_b(p_148110_0_.get("srcrgb").getAsString());
 
-                if (var2 != 1)
+                if (j != 1)
                 {
-                    var6 = false;
+                    flag = false;
                 }
             }
 
-            if (JsonUtils.jsonObjectFieldTypeIsString(p_148110_0_, "dstrgb"))
+            if (JsonUtils.isString(p_148110_0_, "dstrgb"))
             {
-                var3 = func_148107_b(p_148110_0_.get("dstrgb").getAsString());
+                k = func_148107_b(p_148110_0_.get("dstrgb").getAsString());
 
-                if (var3 != 0)
+                if (k != 0)
                 {
-                    var6 = false;
+                    flag = false;
                 }
             }
 
-            if (JsonUtils.jsonObjectFieldTypeIsString(p_148110_0_, "srcalpha"))
+            if (JsonUtils.isString(p_148110_0_, "srcalpha"))
             {
-                var4 = func_148107_b(p_148110_0_.get("srcalpha").getAsString());
+                l = func_148107_b(p_148110_0_.get("srcalpha").getAsString());
 
-                if (var4 != 1)
+                if (l != 1)
                 {
-                    var6 = false;
+                    flag = false;
                 }
 
-                var7 = true;
+                flag1 = true;
             }
 
-            if (JsonUtils.jsonObjectFieldTypeIsString(p_148110_0_, "dstalpha"))
+            if (JsonUtils.isString(p_148110_0_, "dstalpha"))
             {
-                var5 = func_148107_b(p_148110_0_.get("dstalpha").getAsString());
+                i1 = func_148107_b(p_148110_0_.get("dstalpha").getAsString());
 
-                if (var5 != 0)
+                if (i1 != 0)
                 {
-                    var6 = false;
+                    flag = false;
                 }
 
-                var7 = true;
+                flag1 = true;
             }
 
-            return var6 ? new JsonBlendingMode() : (var7 ? new JsonBlendingMode(var2, var3, var4, var5, var1) : new JsonBlendingMode(var2, var3, var1));
+            return flag ? new JsonBlendingMode() : (flag1 ? new JsonBlendingMode(j, k, l, i1, i) : new JsonBlendingMode(j, k, i));
         }
     }
 
     private static int func_148108_a(String p_148108_0_)
     {
-        String var1 = p_148108_0_.trim().toLowerCase();
-        return var1.equals("add") ? 32774 : (var1.equals("subtract") ? 32778 : (var1.equals("reversesubtract") ? 32779 : (var1.equals("reverse_subtract") ? 32779 : (var1.equals("min") ? 32775 : (var1.equals("max") ? 32776 : 32774)))));
+        String s = p_148108_0_.trim().toLowerCase();
+        return s.equals("add") ? 32774 : (s.equals("subtract") ? 32778 : (s.equals("reversesubtract") ? 32779 : (s.equals("reverse_subtract") ? 32779 : (s.equals("min") ? 32775 : (s.equals("max") ? 32776 : 32774)))));
     }
 
     private static int func_148107_b(String p_148107_0_)
     {
-        String var1 = p_148107_0_.trim().toLowerCase();
-        var1 = var1.replaceAll("_", "");
-        var1 = var1.replaceAll("one", "1");
-        var1 = var1.replaceAll("zero", "0");
-        var1 = var1.replaceAll("minus", "-");
-        return var1.equals("0") ? 0 : (var1.equals("1") ? 1 : (var1.equals("srccolor") ? 768 : (var1.equals("1-srccolor") ? 769 : (var1.equals("dstcolor") ? 774 : (var1.equals("1-dstcolor") ? 775 : (var1.equals("srcalpha") ? 770 : (var1.equals("1-srcalpha") ? 771 : (var1.equals("dstalpha") ? 772 : (var1.equals("1-dstalpha") ? 773 : -1)))))))));
+        String s = p_148107_0_.trim().toLowerCase();
+        s = s.replaceAll("_", "");
+        s = s.replaceAll("one", "1");
+        s = s.replaceAll("zero", "0");
+        s = s.replaceAll("minus", "-");
+        return s.equals("0") ? 0 : (s.equals("1") ? 1 : (s.equals("srccolor") ? 768 : (s.equals("1-srccolor") ? 769 : (s.equals("dstcolor") ? 774 : (s.equals("1-dstcolor") ? 775 : (s.equals("srcalpha") ? 770 : (s.equals("1-srcalpha") ? 771 : (s.equals("dstalpha") ? 772 : (s.equals("1-dstalpha") ? 773 : -1)))))))));
     }
 }

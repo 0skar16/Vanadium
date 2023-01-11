@@ -1,5 +1,6 @@
 package net.minecraft.client.gui.stream;
 
+import java.io.IOException;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiOptionButton;
 import net.minecraft.client.gui.GuiOptionSlider;
@@ -12,118 +13,111 @@ public class GuiStreamOptions extends GuiScreen
 {
     private static final GameSettings.Options[] field_152312_a = new GameSettings.Options[] {GameSettings.Options.STREAM_BYTES_PER_PIXEL, GameSettings.Options.STREAM_FPS, GameSettings.Options.STREAM_KBPS, GameSettings.Options.STREAM_SEND_METADATA, GameSettings.Options.STREAM_VOLUME_MIC, GameSettings.Options.STREAM_VOLUME_SYSTEM, GameSettings.Options.STREAM_MIC_TOGGLE_BEHAVIOR, GameSettings.Options.STREAM_COMPRESSION};
     private static final GameSettings.Options[] field_152316_f = new GameSettings.Options[] {GameSettings.Options.STREAM_CHAT_ENABLED, GameSettings.Options.STREAM_CHAT_USER_FILTER};
-    private final GuiScreen field_152317_g;
+    private final GuiScreen parentScreen;
     private final GameSettings field_152318_h;
     private String field_152319_i;
     private String field_152313_r;
     private int field_152314_s;
     private boolean field_152315_t = false;
-    private static final String __OBFID = "CL_00001841";
 
-    public GuiStreamOptions(GuiScreen p_i1073_1_, GameSettings p_i1073_2_)
+    public GuiStreamOptions(GuiScreen parentScreenIn, GameSettings p_i1073_2_)
     {
-        this.field_152317_g = p_i1073_1_;
+        this.parentScreen = parentScreenIn;
         this.field_152318_h = p_i1073_2_;
     }
 
     /**
-     * Adds the buttons (and other controls) to the screen in question.
+     * Adds the buttons (and other controls) to the screen in question. Called when the GUI is displayed and when the
+     * window resizes, the buttonList is cleared beforehand.
      */
     public void initGui()
     {
-        int var1 = 0;
+        int i = 0;
         this.field_152319_i = I18n.format("options.stream.title", new Object[0]);
         this.field_152313_r = I18n.format("options.stream.chat.title", new Object[0]);
-        GameSettings.Options[] var2 = field_152312_a;
-        int var3 = var2.length;
-        int var4;
-        GameSettings.Options var5;
 
-        for (var4 = 0; var4 < var3; ++var4)
+        for (GameSettings.Options gamesettings$options : field_152312_a)
         {
-            var5 = var2[var4];
-
-            if (var5.getEnumFloat())
+            if (gamesettings$options.getEnumFloat())
             {
-                this.buttonList.add(new GuiOptionSlider(var5.returnEnumOrdinal(), this.width / 2 - 155 + var1 % 2 * 160, this.height / 6 + 24 * (var1 >> 1), var5));
+                this.buttonList.add(new GuiOptionSlider(gamesettings$options.returnEnumOrdinal(), this.width / 2 - 155 + i % 2 * 160, this.height / 6 + 24 * (i >> 1), gamesettings$options));
             }
             else
             {
-                this.buttonList.add(new GuiOptionButton(var5.returnEnumOrdinal(), this.width / 2 - 155 + var1 % 2 * 160, this.height / 6 + 24 * (var1 >> 1), var5, this.field_152318_h.getKeyBinding(var5)));
+                this.buttonList.add(new GuiOptionButton(gamesettings$options.returnEnumOrdinal(), this.width / 2 - 155 + i % 2 * 160, this.height / 6 + 24 * (i >> 1), gamesettings$options, this.field_152318_h.getKeyBinding(gamesettings$options)));
             }
 
-            ++var1;
+            ++i;
         }
 
-        if (var1 % 2 == 1)
+        if (i % 2 == 1)
         {
-            ++var1;
+            ++i;
         }
 
-        this.field_152314_s = this.height / 6 + 24 * (var1 >> 1) + 6;
-        var1 += 2;
-        var2 = field_152316_f;
-        var3 = var2.length;
+        this.field_152314_s = this.height / 6 + 24 * (i >> 1) + 6;
+        i = i + 2;
 
-        for (var4 = 0; var4 < var3; ++var4)
+        for (GameSettings.Options gamesettings$options1 : field_152316_f)
         {
-            var5 = var2[var4];
-
-            if (var5.getEnumFloat())
+            if (gamesettings$options1.getEnumFloat())
             {
-                this.buttonList.add(new GuiOptionSlider(var5.returnEnumOrdinal(), this.width / 2 - 155 + var1 % 2 * 160, this.height / 6 + 24 * (var1 >> 1), var5));
+                this.buttonList.add(new GuiOptionSlider(gamesettings$options1.returnEnumOrdinal(), this.width / 2 - 155 + i % 2 * 160, this.height / 6 + 24 * (i >> 1), gamesettings$options1));
             }
             else
             {
-                this.buttonList.add(new GuiOptionButton(var5.returnEnumOrdinal(), this.width / 2 - 155 + var1 % 2 * 160, this.height / 6 + 24 * (var1 >> 1), var5, this.field_152318_h.getKeyBinding(var5)));
+                this.buttonList.add(new GuiOptionButton(gamesettings$options1.returnEnumOrdinal(), this.width / 2 - 155 + i % 2 * 160, this.height / 6 + 24 * (i >> 1), gamesettings$options1, this.field_152318_h.getKeyBinding(gamesettings$options1)));
             }
 
-            ++var1;
+            ++i;
         }
 
         this.buttonList.add(new GuiButton(200, this.width / 2 - 155, this.height / 6 + 168, 150, 20, I18n.format("gui.done", new Object[0])));
-        GuiButton var6 = new GuiButton(201, this.width / 2 + 5, this.height / 6 + 168, 150, 20, I18n.format("options.stream.ingestSelection", new Object[0]));
-        var6.enabled = this.mc.func_152346_Z().func_152924_m() && this.mc.func_152346_Z().func_152925_v().length > 0 || this.mc.func_152346_Z().func_152908_z();
-        this.buttonList.add(var6);
+        GuiButton guibutton = new GuiButton(201, this.width / 2 + 5, this.height / 6 + 168, 150, 20, I18n.format("options.stream.ingestSelection", new Object[0]));
+        guibutton.enabled = this.mc.getTwitchStream().isReadyToBroadcast() && this.mc.getTwitchStream().func_152925_v().length > 0 || this.mc.getTwitchStream().func_152908_z();
+        this.buttonList.add(guibutton);
     }
 
-    protected void actionPerformed(GuiButton p_146284_1_)
+    /**
+     * Called by the controls from the buttonList when activated. (Mouse pressed for buttons)
+     */
+    protected void actionPerformed(GuiButton button) throws IOException
     {
-        if (p_146284_1_.enabled)
+        if (button.enabled)
         {
-            if (p_146284_1_.id < 100 && p_146284_1_ instanceof GuiOptionButton)
+            if (button.id < 100 && button instanceof GuiOptionButton)
             {
-                GameSettings.Options var2 = ((GuiOptionButton)p_146284_1_).func_146136_c();
-                this.field_152318_h.setOptionValue(var2, 1);
-                p_146284_1_.displayString = this.field_152318_h.getKeyBinding(GameSettings.Options.getEnumOptions(p_146284_1_.id));
+                GameSettings.Options gamesettings$options = ((GuiOptionButton)button).returnEnumOptions();
+                this.field_152318_h.setOptionValue(gamesettings$options, 1);
+                button.displayString = this.field_152318_h.getKeyBinding(GameSettings.Options.getEnumOptions(button.id));
 
-                if (this.mc.func_152346_Z().func_152934_n() && var2 != GameSettings.Options.STREAM_CHAT_ENABLED && var2 != GameSettings.Options.STREAM_CHAT_USER_FILTER)
+                if (this.mc.getTwitchStream().isBroadcasting() && gamesettings$options != GameSettings.Options.STREAM_CHAT_ENABLED && gamesettings$options != GameSettings.Options.STREAM_CHAT_USER_FILTER)
                 {
                     this.field_152315_t = true;
                 }
             }
-            else if (p_146284_1_ instanceof GuiOptionSlider)
+            else if (button instanceof GuiOptionSlider)
             {
-                if (p_146284_1_.id == GameSettings.Options.STREAM_VOLUME_MIC.returnEnumOrdinal())
+                if (button.id == GameSettings.Options.STREAM_VOLUME_MIC.returnEnumOrdinal())
                 {
-                    this.mc.func_152346_Z().func_152915_s();
+                    this.mc.getTwitchStream().updateStreamVolume();
                 }
-                else if (p_146284_1_.id == GameSettings.Options.STREAM_VOLUME_SYSTEM.returnEnumOrdinal())
+                else if (button.id == GameSettings.Options.STREAM_VOLUME_SYSTEM.returnEnumOrdinal())
                 {
-                    this.mc.func_152346_Z().func_152915_s();
+                    this.mc.getTwitchStream().updateStreamVolume();
                 }
-                else if (this.mc.func_152346_Z().func_152934_n())
+                else if (this.mc.getTwitchStream().isBroadcasting())
                 {
                     this.field_152315_t = true;
                 }
             }
 
-            if (p_146284_1_.id == 200)
+            if (button.id == 200)
             {
                 this.mc.gameSettings.saveOptions();
-                this.mc.displayGuiScreen(this.field_152317_g);
+                this.mc.displayGuiScreen(this.parentScreen);
             }
-            else if (p_146284_1_.id == 201)
+            else if (button.id == 201)
             {
                 this.mc.gameSettings.saveOptions();
                 this.mc.displayGuiScreen(new GuiIngestServers(this));
@@ -132,9 +126,9 @@ public class GuiStreamOptions extends GuiScreen
     }
 
     /**
-     * Draws the screen and all the components in it.
+     * Draws the screen and all the components in it. Args : mouseX, mouseY, renderPartialTicks
      */
-    public void drawScreen(int p_73863_1_, int p_73863_2_, float p_73863_3_)
+    public void drawScreen(int mouseX, int mouseY, float partialTicks)
     {
         this.drawDefaultBackground();
         this.drawCenteredString(this.fontRendererObj, this.field_152319_i, this.width / 2, 20, 16777215);
@@ -145,6 +139,6 @@ public class GuiStreamOptions extends GuiScreen
             this.drawCenteredString(this.fontRendererObj, EnumChatFormatting.RED + I18n.format("options.stream.changes", new Object[0]), this.width / 2, 20 + this.fontRendererObj.FONT_HEIGHT, 16777215);
         }
 
-        super.drawScreen(p_73863_1_, p_73863_2_, p_73863_3_);
+        super.drawScreen(mouseX, mouseY, partialTicks);
     }
 }

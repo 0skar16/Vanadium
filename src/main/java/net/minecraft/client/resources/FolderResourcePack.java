@@ -3,58 +3,52 @@ package net.minecraft.client.resources;
 import com.google.common.collect.Sets;
 import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashSet;
 import java.util.Set;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
 
 public class FolderResourcePack extends AbstractResourcePack
 {
-    private static final String __OBFID = "CL_00001076";
-
-    public FolderResourcePack(File p_i1291_1_)
+    public FolderResourcePack(File resourcePackFileIn)
     {
-        super(p_i1291_1_);
+        super(resourcePackFileIn);
     }
 
-    protected InputStream getInputStreamByName(String p_110591_1_) throws IOException
+    protected InputStream getInputStreamByName(String name) throws IOException
     {
-        return new BufferedInputStream(new FileInputStream(new File(this.resourcePackFile, p_110591_1_)));
+        return new BufferedInputStream(new FileInputStream(new File(this.resourcePackFile, name)));
     }
 
-    protected boolean hasResourceName(String p_110593_1_)
+    protected boolean hasResourceName(String name)
     {
-        return (new File(this.resourcePackFile, p_110593_1_)).isFile();
+        return (new File(this.resourcePackFile, name)).isFile();
     }
 
-    public Set getResourceDomains()
+    public Set<String> getResourceDomains()
     {
-        HashSet var1 = Sets.newHashSet();
-        File var2 = new File(this.resourcePackFile, "assets/");
+        Set<String> set = Sets.<String>newHashSet();
+        File file1 = new File(this.resourcePackFile, "assets/");
 
-        if (var2.isDirectory())
+        if (file1.isDirectory())
         {
-            File[] var3 = var2.listFiles((java.io.FileFilter)DirectoryFileFilter.DIRECTORY);
-            int var4 = var3.length;
-
-            for (int var5 = 0; var5 < var4; ++var5)
+            for (File file2 : file1.listFiles((FileFilter)DirectoryFileFilter.DIRECTORY))
             {
-                File var6 = var3[var5];
-                String var7 = getRelativeName(var2, var6);
+                String s = getRelativeName(file1, file2);
 
-                if (!var7.equals(var7.toLowerCase()))
+                if (!s.equals(s.toLowerCase()))
                 {
-                    this.logNameNotLowercase(var7);
+                    this.logNameNotLowercase(s);
                 }
                 else
                 {
-                    var1.add(var7.substring(0, var7.length() - 1));
+                    set.add(s.substring(0, s.length() - 1));
                 }
             }
         }
 
-        return var1;
+        return set;
     }
 }

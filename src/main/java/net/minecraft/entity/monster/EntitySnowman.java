@@ -15,32 +15,24 @@ import net.minecraft.entity.projectile.EntitySnowball;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
+import net.minecraft.pathfinding.PathNavigateGround;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 
 public class EntitySnowman extends EntityGolem implements IRangedAttackMob
 {
-    private static final String __OBFID = "CL_00001650";
-
-    public EntitySnowman(World p_i1692_1_)
+    public EntitySnowman(World worldIn)
     {
-        super(p_i1692_1_);
-        this.setSize(0.4F, 1.8F);
-        this.getNavigator().setAvoidsWater(true);
+        super(worldIn);
+        this.setSize(0.7F, 1.9F);
+        ((PathNavigateGround)this.getNavigator()).setAvoidsWater(true);
         this.tasks.addTask(1, new EntityAIArrowAttack(this, 1.25D, 20, 10.0F));
         this.tasks.addTask(2, new EntityAIWander(this, 1.0D));
         this.tasks.addTask(3, new EntityAIWatchClosest(this, EntityPlayer.class, 6.0F));
         this.tasks.addTask(4, new EntityAILookIdle(this));
-        this.targetTasks.addTask(1, new EntityAINearestAttackableTarget(this, EntityLiving.class, 0, true, false, IMob.mobSelector));
-    }
-
-    /**
-     * Returns true if the newer Entity AI code should be run
-     */
-    public boolean isAIEnabled()
-    {
-        return true;
+        this.targetTasks.addTask(1, new EntityAINearestAttackableTarget(this, EntityLiving.class, 10, true, false, IMob.mobSelector));
     }
 
     protected void applyEntityAttributes()
@@ -57,63 +49,78 @@ public class EntitySnowman extends EntityGolem implements IRangedAttackMob
     public void onLivingUpdate()
     {
         super.onLivingUpdate();
-        int var1 = MathHelper.floor_double(this.posX);
-        int var2 = MathHelper.floor_double(this.posY);
-        int var3 = MathHelper.floor_double(this.posZ);
 
-        if (this.isWet())
+        if (!this.worldObj.isRemote)
         {
-            this.attackEntityFrom(DamageSource.drown, 1.0F);
-        }
+            int i = MathHelper.floor_double(this.posX);
+            int j = MathHelper.floor_double(this.posY);
+            int k = MathHelper.floor_double(this.posZ);
 
-        if (this.worldObj.getBiomeGenForCoords(var1, var3).getFloatTemperature(var1, var2, var3) > 1.0F)
-        {
-            this.attackEntityFrom(DamageSource.onFire, 1.0F);
-        }
-
-        for (int var4 = 0; var4 < 4; ++var4)
-        {
-            var1 = MathHelper.floor_double(this.posX + (double)((float)(var4 % 2 * 2 - 1) * 0.25F));
-            var2 = MathHelper.floor_double(this.posY);
-            var3 = MathHelper.floor_double(this.posZ + (double)((float)(var4 / 2 % 2 * 2 - 1) * 0.25F));
-
-            if (this.worldObj.getBlock(var1, var2, var3).getMaterial() == Material.air && this.worldObj.getBiomeGenForCoords(var1, var3).getFloatTemperature(var1, var2, var3) < 0.8F && Blocks.snow_layer.canPlaceBlockAt(this.worldObj, var1, var2, var3))
+            if (this.isWet())
             {
-                this.worldObj.setBlock(var1, var2, var3, Blocks.snow_layer);
+                this.attackEntityFrom(DamageSource.drown, 1.0F);
+            }
+
+            if (this.worldObj.getBiomeGenForCoords(new BlockPos(i, 0, k)).getFloatTemperature(new BlockPos(i, j, k)) > 1.0F)
+            {
+                this.attackEntityFrom(DamageSource.onFire, 1.0F);
+            }
+
+            for (int l = 0; l < 4; ++l)
+            {
+                i = MathHelper.floor_double(this.posX + (double)((float)(l % 2 * 2 - 1) * 0.25F));
+                j = MathHelper.floor_double(this.posY);
+                k = MathHelper.floor_double(this.posZ + (double)((float)(l / 2 % 2 * 2 - 1) * 0.25F));
+                BlockPos blockpos = new BlockPos(i, j, k);
+
+                if (this.worldObj.getBlockState(blockpos).getBlock().getMaterial() == Material.air && this.worldObj.getBiomeGenForCoords(new BlockPos(i, 0, k)).getFloatTemperature(blockpos) < 0.8F && Blocks.snow_layer.canPlaceBlockAt(this.worldObj, blockpos))
+                {
+                    this.worldObj.setBlockState(blockpos, Blocks.snow_layer.getDefaultState());
+                }
             }
         }
     }
 
-    protected Item func_146068_u()
+    protected Item getDropItem()
     {
         return Items.snowball;
     }
 
     /**
      * Drop 0-2 items of this living's type
+     *  
+     * @param wasRecentlyHit true if this this entity was recently hit by appropriate entity (generally only if player
+     * or tameable)
+     * @param lootingModifier level of enchanment to be applied to this drop
      */
-    protected void dropFewItems(boolean p_70628_1_, int p_70628_2_)
+    protected void dropFewItems(boolean wasRecentlyHit, int lootingModifier)
     {
-        int var3 = this.rand.nextInt(16);
+        int i = this.rand.nextInt(16);
 
-        for (int var4 = 0; var4 < var3; ++var4)
+        for (int j = 0; j < i; ++j)
         {
-            this.func_145779_a(Items.snowball, 1);
+            this.dropItem(Items.snowball, 1);
         }
     }
 
     /**
      * Attack the specified entity using a ranged attack.
      */
-    public void attackEntityWithRangedAttack(EntityLivingBase p_82196_1_, float p_82196_2_)
+    public void attackEntityWithRangedAttack(EntityLivingBase target, float p_82196_2_)
     {
-        EntitySnowball var3 = new EntitySnowball(this.worldObj, this);
-        double var4 = p_82196_1_.posX - this.posX;
-        double var6 = p_82196_1_.posY + (double)p_82196_1_.getEyeHeight() - 1.100000023841858D - var3.posY;
-        double var8 = p_82196_1_.posZ - this.posZ;
-        float var10 = MathHelper.sqrt_double(var4 * var4 + var8 * var8) * 0.2F;
-        var3.setThrowableHeading(var4, var6 + (double)var10, var8, 1.6F, 12.0F);
+        EntitySnowball entitysnowball = new EntitySnowball(this.worldObj, this);
+        double d0 = target.posY + (double)target.getEyeHeight() - 1.100000023841858D;
+        double d1 = target.posX - this.posX;
+        double d2 = d0 - entitysnowball.posY;
+        double d3 = target.posZ - this.posZ;
+        float f = MathHelper.sqrt_double(d1 * d1 + d3 * d3) * 0.2F;
+        entitysnowball.setThrowableHeading(d1, d2 + (double)f, d3, 1.6F, 12.0F);
         this.playSound("random.bow", 1.0F, 1.0F / (this.getRNG().nextFloat() * 0.4F + 0.8F));
-        this.worldObj.spawnEntityInWorld(var3);
+        this.worldObj.spawnEntityInWorld(entitysnowball);
+    }
+
+    public float getEyeHeight()
+    {
+        return 1.7F;
     }
 }

@@ -10,12 +10,19 @@ public class EntityAIWander extends EntityAIBase
     private double yPosition;
     private double zPosition;
     private double speed;
-    private static final String __OBFID = "CL_00001608";
+    private int executionChance;
+    private boolean mustUpdate;
 
-    public EntityAIWander(EntityCreature p_i1648_1_, double p_i1648_2_)
+    public EntityAIWander(EntityCreature creatureIn, double speedIn)
     {
-        this.entity = p_i1648_1_;
-        this.speed = p_i1648_2_;
+        this(creatureIn, speedIn, 120);
+    }
+
+    public EntityAIWander(EntityCreature creatureIn, double speedIn, int chance)
+    {
+        this.entity = creatureIn;
+        this.speed = speedIn;
+        this.executionChance = chance;
         this.setMutexBits(1);
     }
 
@@ -24,29 +31,32 @@ public class EntityAIWander extends EntityAIBase
      */
     public boolean shouldExecute()
     {
-        if (this.entity.getAge() >= 100)
+        if (!this.mustUpdate)
         {
-            return false;
+            if (this.entity.getAge() >= 100)
+            {
+                return false;
+            }
+
+            if (this.entity.getRNG().nextInt(this.executionChance) != 0)
+            {
+                return false;
+            }
         }
-        else if (this.entity.getRNG().nextInt(120) != 0)
+
+        Vec3 vec3 = RandomPositionGenerator.findRandomTarget(this.entity, 10, 7);
+
+        if (vec3 == null)
         {
             return false;
         }
         else
         {
-            Vec3 var1 = RandomPositionGenerator.findRandomTarget(this.entity, 10, 7);
-
-            if (var1 == null)
-            {
-                return false;
-            }
-            else
-            {
-                this.xPosition = var1.xCoord;
-                this.yPosition = var1.yCoord;
-                this.zPosition = var1.zCoord;
-                return true;
-            }
+            this.xPosition = vec3.xCoord;
+            this.yPosition = vec3.yCoord;
+            this.zPosition = vec3.zCoord;
+            this.mustUpdate = false;
+            return true;
         }
     }
 
@@ -64,5 +74,21 @@ public class EntityAIWander extends EntityAIBase
     public void startExecuting()
     {
         this.entity.getNavigator().tryMoveToXYZ(this.xPosition, this.yPosition, this.zPosition, this.speed);
+    }
+
+    /**
+     * Makes task to bypass chance
+     */
+    public void makeUpdate()
+    {
+        this.mustUpdate = true;
+    }
+
+    /**
+     * Changes task random possibility for execution
+     */
+    public void setExecutionChance(int newchance)
+    {
+        this.executionChance = newchance;
     }
 }

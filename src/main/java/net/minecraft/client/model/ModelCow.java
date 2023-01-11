@@ -2,8 +2,6 @@ package net.minecraft.client.model;
 
 public class ModelCow extends ModelQuadruped
 {
-    private static final String __OBFID = "CL_00000836";
-
     public ModelCow()
     {
         super(12, 0.0F);
@@ -24,6 +22,6 @@ public class ModelCow extends ModelQuadruped
         ++this.leg4.rotationPointX;
         --this.leg3.rotationPointZ;
         --this.leg4.rotationPointZ;
-        this.field_78151_h += 2.0F;
+        this.childZOffset += 2.0F;
     }
 }

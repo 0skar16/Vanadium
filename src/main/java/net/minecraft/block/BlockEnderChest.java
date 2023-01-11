@@ -2,7 +2,10 @@ package net.minecraft.block;
 
 import java.util.Random;
 import net.minecraft.block.material.Material;
-import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.block.properties.IProperty;
+import net.minecraft.block.properties.PropertyDirection;
+import net.minecraft.block.state.BlockState;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
@@ -10,41 +13,51 @@ import net.minecraft.init.Blocks;
 import net.minecraft.inventory.InventoryEnderChest;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.stats.StatList;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityEnderChest;
-import net.minecraft.util.MathHelper;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.world.World;
 
 public class BlockEnderChest extends BlockContainer
 {
-    private static final String __OBFID = "CL_00000238";
+    public static final PropertyDirection FACING = PropertyDirection.create("facing", EnumFacing.Plane.HORIZONTAL);
 
     protected BlockEnderChest()
     {
         super(Material.rock);
+        this.setDefaultState(this.blockState.getBaseState().withProperty(FACING, EnumFacing.NORTH));
         this.setCreativeTab(CreativeTabs.tabDecorations);
         this.setBlockBounds(0.0625F, 0.0F, 0.0625F, 0.9375F, 0.875F, 0.9375F);
     }
 
+    /**
+     * Used to determine ambient occlusion and culling when rebuilding chunks for render
+     */
     public boolean isOpaqueCube()
     {
         return false;
     }
 
-    public boolean renderAsNormalBlock()
+    public boolean isFullCube()
     {
         return false;
     }
 
     /**
-     * The type of render function that is called for this block
+     * The type of render function called. 3 for standard block models, 2 for TESR's, 1 for liquids, -1 is no render
      */
     public int getRenderType()
     {
-        return 22;
+        return 2;
     }
 
-    public Item getItemDropped(int p_149650_1_, Random p_149650_2_, int p_149650_3_)
+    /**
+     * Get the Item that this Block should drop when harvested.
+     */
+    public Item getItemDropped(IBlockState state, Random rand, int fortune)
     {
         return Item.getItemFromBlock(Blocks.obsidian);
     }
@@ -52,7 +65,7 @@ public class BlockEnderChest extends BlockContainer
     /**
      * Returns the quantity of items to drop on block destruction.
      */
-    public int quantityDropped(Random p_149745_1_)
+    public int quantityDropped(Random random)
     {
         return 8;
     }
@@ -63,58 +76,42 @@ public class BlockEnderChest extends BlockContainer
     }
 
     /**
-     * Called when the block is placed in the world.
+     * Called by ItemBlocks just before a block is actually set in the world, to allow for adjustments to the
+     * IBlockstate
      */
-    public void onBlockPlacedBy(World p_149689_1_, int p_149689_2_, int p_149689_3_, int p_149689_4_, EntityLivingBase p_149689_5_, ItemStack p_149689_6_)
+    public IBlockState onBlockPlaced(World worldIn, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta, EntityLivingBase placer)
     {
-        byte var7 = 0;
-        int var8 = MathHelper.floor_double((double)(p_149689_5_.rotationYaw * 4.0F / 360.0F) + 0.5D) & 3;
-
-        if (var8 == 0)
-        {
-            var7 = 2;
-        }
-
-        if (var8 == 1)
-        {
-            var7 = 5;
-        }
-
-        if (var8 == 2)
-        {
-            var7 = 3;
-        }
-
-        if (var8 == 3)
-        {
-            var7 = 4;
-        }
-
-        p_149689_1_.setBlockMetadataWithNotify(p_149689_2_, p_149689_3_, p_149689_4_, var7, 2);
+        return this.getDefaultState().withProperty(FACING, placer.getHorizontalFacing().getOpposite());
     }
 
     /**
-     * Called upon block activation (right click on the block.)
+     * Called by ItemBlocks after a block is set in the world, to allow post-place logic
      */
-    public boolean onBlockActivated(World p_149727_1_, int p_149727_2_, int p_149727_3_, int p_149727_4_, EntityPlayer p_149727_5_, int p_149727_6_, float p_149727_7_, float p_149727_8_, float p_149727_9_)
+    public void onBlockPlacedBy(World worldIn, BlockPos pos, IBlockState state, EntityLivingBase placer, ItemStack stack)
     {
-        InventoryEnderChest var10 = p_149727_5_.getInventoryEnderChest();
-        TileEntityEnderChest var11 = (TileEntityEnderChest)p_149727_1_.getTileEntity(p_149727_2_, p_149727_3_, p_149727_4_);
+        worldIn.setBlockState(pos, state.withProperty(FACING, placer.getHorizontalFacing().getOpposite()), 2);
+    }
 
-        if (var10 != null && var11 != null)
+    public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumFacing side, float hitX, float hitY, float hitZ)
+    {
+        InventoryEnderChest inventoryenderchest = playerIn.getInventoryEnderChest();
+        TileEntity tileentity = worldIn.getTileEntity(pos);
+
+        if (inventoryenderchest != null && tileentity instanceof TileEntityEnderChest)
         {
-            if (p_149727_1_.getBlock(p_149727_2_, p_149727_3_ + 1, p_149727_4_).isNormalCube())
+            if (worldIn.getBlockState(pos.up()).getBlock().isNormalCube())
             {
                 return true;
             }
-            else if (p_149727_1_.isClient)
+            else if (worldIn.isRemote)
             {
                 return true;
             }
             else
             {
-                var10.func_146031_a(var11);
-                p_149727_5_.displayGUIChest(var10);
+                inventoryenderchest.setChestTileEntity((TileEntityEnderChest)tileentity);
+                playerIn.displayGUIChest(inventoryenderchest);
+                playerIn.triggerAchievement(StatList.field_181738_V);
                 return true;
             }
         }
@@ -127,39 +124,52 @@ public class BlockEnderChest extends BlockContainer
     /**
      * Returns a new instance of a block's tile entity class. Called on placing the block.
      */
-    public TileEntity createNewTileEntity(World p_149915_1_, int p_149915_2_)
+    public TileEntity createNewTileEntity(World worldIn, int meta)
     {
         return new TileEntityEnderChest();
     }
 
-    /**
-     * A randomly called display update to be able to add particles or other items for display
-     */
-    public void randomDisplayTick(World p_149734_1_, int p_149734_2_, int p_149734_3_, int p_149734_4_, Random p_149734_5_)
+    public void randomDisplayTick(World worldIn, BlockPos pos, IBlockState state, Random rand)
     {
-        for (int var6 = 0; var6 < 3; ++var6)
+        for (int i = 0; i < 3; ++i)
         {
-            double var10000 = (double)((float)p_149734_2_ + p_149734_5_.nextFloat());
-            double var9 = (double)((float)p_149734_3_ + p_149734_5_.nextFloat());
-            var10000 = (double)((float)p_149734_4_ + p_149734_5_.nextFloat());
-            double var13 = 0.0D;
-            double var15 = 0.0D;
-            double var17 = 0.0D;
-            int var19 = p_149734_5_.nextInt(2) * 2 - 1;
-            int var20 = p_149734_5_.nextInt(2) * 2 - 1;
-            var13 = ((double)p_149734_5_.nextFloat() - 0.5D) * 0.125D;
-            var15 = ((double)p_149734_5_.nextFloat() - 0.5D) * 0.125D;
-            var17 = ((double)p_149734_5_.nextFloat() - 0.5D) * 0.125D;
-            double var11 = (double)p_149734_4_ + 0.5D + 0.25D * (double)var20;
-            var17 = (double)(p_149734_5_.nextFloat() * 1.0F * (float)var20);
-            double var7 = (double)p_149734_2_ + 0.5D + 0.25D * (double)var19;
-            var13 = (double)(p_149734_5_.nextFloat() * 1.0F * (float)var19);
-            p_149734_1_.spawnParticle("portal", var7, var9, var11, var13, var15, var17);
+            int j = rand.nextInt(2) * 2 - 1;
+            int k = rand.nextInt(2) * 2 - 1;
+            double d0 = (double)pos.getX() + 0.5D + 0.25D * (double)j;
+            double d1 = (double)((float)pos.getY() + rand.nextFloat());
+            double d2 = (double)pos.getZ() + 0.5D + 0.25D * (double)k;
+            double d3 = (double)(rand.nextFloat() * (float)j);
+            double d4 = ((double)rand.nextFloat() - 0.5D) * 0.125D;
+            double d5 = (double)(rand.nextFloat() * (float)k);
+            worldIn.spawnParticle(EnumParticleTypes.PORTAL, d0, d1, d2, d3, d4, d5, new int[0]);
         }
     }
 
-    public void registerBlockIcons(IIconRegister p_149651_1_)
+    /**
+     * Convert the given metadata into a BlockState for this Block
+     */
+    public IBlockState getStateFromMeta(int meta)
     {
-        this.blockIcon = p_149651_1_.registerIcon("obsidian");
+        EnumFacing enumfacing = EnumFacing.getFront(meta);
+
+        if (enumfacing.getAxis() == EnumFacing.Axis.Y)
+        {
+            enumfacing = EnumFacing.NORTH;
+        }
+
+        return this.getDefaultState().withProperty(FACING, enumfacing);
+    }
+
+    /**
+     * Convert the BlockState into the correct metadata value
+     */
+    public int getMetaFromState(IBlockState state)
+    {
+        return ((EnumFacing)state.getValue(FACING)).getIndex();
+    }
+
+    protected BlockState createBlockState()
+    {
+        return new BlockState(this, new IProperty[] {FACING});
     }
 }

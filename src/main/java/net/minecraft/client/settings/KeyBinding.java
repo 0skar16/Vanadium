@@ -1,94 +1,90 @@
 package net.minecraft.client.settings;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import java.util.List;
 import java.util.Set;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.IntHashMap;
 
-public class KeyBinding implements Comparable
+public class KeyBinding implements Comparable<KeyBinding>
 {
-    private static final List keybindArray = new ArrayList();
-    private static final IntHashMap hash = new IntHashMap();
-    private static final Set keybindSet = new HashSet();
+    private static final List<KeyBinding> keybindArray = Lists.<KeyBinding>newArrayList();
+    private static final IntHashMap<KeyBinding> hash = new IntHashMap();
+    private static final Set<String> keybindSet = Sets.<String>newHashSet();
     private final String keyDescription;
     private final int keyCodeDefault;
     private final String keyCategory;
     private int keyCode;
 
-    /** because _303 wanted me to call it that(Caironater) */
+    /** Is the key held down? */
     private boolean pressed;
-    private int presses;
-    private static final String __OBFID = "CL_00000628";
+    private int pressTime;
 
-    public static void onTick(int p_74507_0_)
+    public static void onTick(int keyCode)
     {
-        if (p_74507_0_ != 0)
+        if (keyCode != 0)
         {
-            KeyBinding var1 = (KeyBinding)hash.lookup(p_74507_0_);
+            KeyBinding keybinding = (KeyBinding)hash.lookup(keyCode);
 
-            if (var1 != null)
+            if (keybinding != null)
             {
-                ++var1.presses;
+                ++keybinding.pressTime;
             }
         }
     }
 
-    public static void setKeyBindState(int p_74510_0_, boolean p_74510_1_)
+    public static void setKeyBindState(int keyCode, boolean pressed)
     {
-        if (p_74510_0_ != 0)
+        if (keyCode != 0)
         {
-            KeyBinding var2 = (KeyBinding)hash.lookup(p_74510_0_);
+            KeyBinding keybinding = (KeyBinding)hash.lookup(keyCode);
 
-            if (var2 != null)
+            if (keybinding != null)
             {
-                var2.pressed = p_74510_1_;
+                keybinding.pressed = pressed;
             }
         }
     }
 
     public static void unPressAllKeys()
     {
-        Iterator var0 = keybindArray.iterator();
-
-        while (var0.hasNext())
+        for (KeyBinding keybinding : keybindArray)
         {
-            KeyBinding var1 = (KeyBinding)var0.next();
-            var1.unpressKey();
+            keybinding.unpressKey();
         }
     }
 
     public static void resetKeyBindingArrayAndHash()
     {
         hash.clearMap();
-        Iterator var0 = keybindArray.iterator();
 
-        while (var0.hasNext())
+        for (KeyBinding keybinding : keybindArray)
         {
-            KeyBinding var1 = (KeyBinding)var0.next();
-            hash.addKey(var1.keyCode, var1);
+            hash.addKey(keybinding.keyCode, keybinding);
         }
     }
 
-    public static Set func_151467_c()
+    public static Set<String> getKeybinds()
     {
         return keybindSet;
     }
 
-    public KeyBinding(String p_i45001_1_, int p_i45001_2_, String p_i45001_3_)
+    public KeyBinding(String description, int keyCode, String category)
     {
-        this.keyDescription = p_i45001_1_;
-        this.keyCode = p_i45001_2_;
-        this.keyCodeDefault = p_i45001_2_;
-        this.keyCategory = p_i45001_3_;
+        this.keyDescription = description;
+        this.keyCode = keyCode;
+        this.keyCodeDefault = keyCode;
+        this.keyCategory = category;
         keybindArray.add(this);
-        hash.addKey(p_i45001_2_, this);
-        keybindSet.add(p_i45001_3_);
+        hash.addKey(keyCode, this);
+        keybindSet.add(category);
     }
 
-    public boolean getIsKeyPressed()
+    /**
+     * Returns true if the key is pressed (used for continuous querying). Should be used in tickers.
+     */
+    public boolean isKeyDown()
     {
         return this.pressed;
     }
@@ -98,22 +94,26 @@ public class KeyBinding implements Comparable
         return this.keyCategory;
     }
 
+    /**
+     * Returns true on the initial key press. For continuous querying use {@link isKeyDown()}. Should be used in key
+     * events.
+     */
     public boolean isPressed()
     {
-        if (this.presses == 0)
+        if (this.pressTime == 0)
         {
             return false;
         }
         else
         {
-            --this.presses;
+            --this.pressTime;
             return true;
         }
     }
 
     private void unpressKey()
     {
-        this.presses = 0;
+        this.pressTime = 0;
         this.pressed = false;
     }
 
@@ -132,25 +132,20 @@ public class KeyBinding implements Comparable
         return this.keyCode;
     }
 
-    public void setKeyCode(int p_151462_1_)
+    public void setKeyCode(int keyCode)
     {
-        this.keyCode = p_151462_1_;
+        this.keyCode = keyCode;
     }
 
     public int compareTo(KeyBinding p_compareTo_1_)
     {
-        int var2 = I18n.format(this.keyCategory, new Object[0]).compareTo(I18n.format(p_compareTo_1_.keyCategory, new Object[0]));
+        int i = I18n.format(this.keyCategory, new Object[0]).compareTo(I18n.format(p_compareTo_1_.keyCategory, new Object[0]));
 
-        if (var2 == 0)
+        if (i == 0)
         {
-            var2 = I18n.format(this.keyDescription, new Object[0]).compareTo(I18n.format(p_compareTo_1_.keyDescription, new Object[0]));
+            i = I18n.format(this.keyDescription, new Object[0]).compareTo(I18n.format(p_compareTo_1_.keyDescription, new Object[0]));
         }
 
-        return var2;
-    }
-
-    public int compareTo(Object p_compareTo_1_)
-    {
-        return this.compareTo((KeyBinding)p_compareTo_1_);
+        return i;
     }
 }

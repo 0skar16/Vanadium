@@ -1,60 +1,44 @@
 package net.minecraft.network.status.server;
 
 import java.io.IOException;
-import net.minecraft.network.INetHandler;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.status.INetHandlerStatusClient;
 
-public class S01PacketPong extends Packet
+public class S01PacketPong implements Packet<INetHandlerStatusClient>
 {
-    private long field_149293_a;
-    private static final String __OBFID = "CL_00001383";
+    private long clientTime;
 
-    public S01PacketPong() {}
-
-    public S01PacketPong(long p_i45272_1_)
+    public S01PacketPong()
     {
-        this.field_149293_a = p_i45272_1_;
+    }
+
+    public S01PacketPong(long time)
+    {
+        this.clientTime = time;
     }
 
     /**
      * Reads the raw packet data from the data stream.
      */
-    public void readPacketData(PacketBuffer p_148837_1_) throws IOException
+    public void readPacketData(PacketBuffer buf) throws IOException
     {
-        this.field_149293_a = p_148837_1_.readLong();
+        this.clientTime = buf.readLong();
     }
 
     /**
      * Writes the raw packet data to the data stream.
      */
-    public void writePacketData(PacketBuffer p_148840_1_) throws IOException
+    public void writePacketData(PacketBuffer buf) throws IOException
     {
-        p_148840_1_.writeLong(this.field_149293_a);
-    }
-
-    public void processPacket(INetHandlerStatusClient p_148833_1_)
-    {
-        p_148833_1_.handlePong(this);
+        buf.writeLong(this.clientTime);
     }
 
     /**
-     * If true, the network manager will process the packet immediately when received, otherwise it will queue it for
-     * processing. Currently true for: Disconnect, LoginSuccess, KeepAlive, ServerQuery/Info, Ping/Pong
+     * Passes this Packet on to the NetHandler for processing.
      */
-    public boolean hasPriority()
+    public void processPacket(INetHandlerStatusClient handler)
     {
-        return true;
-    }
-
-    public long func_149292_c()
-    {
-        return this.field_149293_a;
-    }
-
-    public void processPacket(INetHandler p_148833_1_)
-    {
-        this.processPacket((INetHandlerStatusClient)p_148833_1_);
+        handler.handlePong(this);
     }
 }

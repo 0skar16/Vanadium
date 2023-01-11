@@ -3,16 +3,15 @@ package net.minecraft.entity.monster;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
+import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.world.EnumDifficulty;
 import net.minecraft.world.World;
 
 public class EntityMagmaCube extends EntitySlime
 {
-    private static final String __OBFID = "CL_00001691";
-
-    public EntityMagmaCube(World p_i1737_1_)
+    public EntityMagmaCube(World worldIn)
     {
-        super(p_i1737_1_);
+        super(worldIn);
         this.isImmuneToFire = true;
     }
 
@@ -27,7 +26,15 @@ public class EntityMagmaCube extends EntitySlime
      */
     public boolean getCanSpawnHere()
     {
-        return this.worldObj.difficultySetting != EnumDifficulty.PEACEFUL && this.worldObj.checkNoEntityCollision(this.boundingBox) && this.worldObj.getCollidingBoundingBoxes(this, this.boundingBox).isEmpty() && !this.worldObj.isAnyLiquid(this.boundingBox);
+        return this.worldObj.getDifficulty() != EnumDifficulty.PEACEFUL;
+    }
+
+    /**
+     * Checks that the entity is not colliding with any blocks / liquids
+     */
+    public boolean isNotColliding()
+    {
+        return this.worldObj.checkNoEntityCollision(this.getEntityBoundingBox(), this) && this.worldObj.getCollidingBoundingBoxes(this, this.getEntityBoundingBox()).isEmpty() && !this.worldObj.isAnyLiquid(this.getEntityBoundingBox());
     }
 
     /**
@@ -38,7 +45,7 @@ public class EntityMagmaCube extends EntitySlime
         return this.getSlimeSize() * 3;
     }
 
-    public int getBrightnessForRender(float p_70070_1_)
+    public int getBrightnessForRender(float partialTicks)
     {
         return 15728880;
     }
@@ -46,17 +53,14 @@ public class EntityMagmaCube extends EntitySlime
     /**
      * Gets how bright this entity is.
      */
-    public float getBrightness(float p_70013_1_)
+    public float getBrightness(float partialTicks)
     {
         return 1.0F;
     }
 
-    /**
-     * Returns the name of a particle effect that may be randomly created by EntitySlime.onUpdate()
-     */
-    protected String getSlimeParticle()
+    protected EnumParticleTypes getParticleType()
     {
-        return "flame";
+        return EnumParticleTypes.FLAME;
     }
 
     protected EntitySlime createInstance()
@@ -64,30 +68,34 @@ public class EntityMagmaCube extends EntitySlime
         return new EntityMagmaCube(this.worldObj);
     }
 
-    protected Item func_146068_u()
+    protected Item getDropItem()
     {
         return Items.magma_cream;
     }
 
     /**
      * Drop 0-2 items of this living's type
+     *  
+     * @param wasRecentlyHit true if this this entity was recently hit by appropriate entity (generally only if player
+     * or tameable)
+     * @param lootingModifier level of enchanment to be applied to this drop
      */
-    protected void dropFewItems(boolean p_70628_1_, int p_70628_2_)
+    protected void dropFewItems(boolean wasRecentlyHit, int lootingModifier)
     {
-        Item var3 = this.func_146068_u();
+        Item item = this.getDropItem();
 
-        if (var3 != null && this.getSlimeSize() > 1)
+        if (item != null && this.getSlimeSize() > 1)
         {
-            int var4 = this.rand.nextInt(4) - 2;
+            int i = this.rand.nextInt(4) - 2;
 
-            if (p_70628_2_ > 0)
+            if (lootingModifier > 0)
             {
-                var4 += this.rand.nextInt(p_70628_2_ + 1);
+                i += this.rand.nextInt(lootingModifier + 1);
             }
 
-            for (int var5 = 0; var5 < var4; ++var5)
+            for (int j = 0; j < i; ++j)
             {
-                this.func_145779_a(var3, 1);
+                this.dropItem(item, 1);
             }
         }
     }
@@ -122,10 +130,15 @@ public class EntityMagmaCube extends EntitySlime
         this.isAirBorne = true;
     }
 
-    /**
-     * Called when the mob is falling. Calculates and applies fall damage.
-     */
-    protected void fall(float p_70069_1_) {}
+    protected void handleJumpLava()
+    {
+        this.motionY = (double)(0.22F + (float)this.getSlimeSize() * 0.05F);
+        this.isAirBorne = true;
+    }
+
+    public void fall(float distance, float damageMultiplier)
+    {
+    }
 
     /**
      * Indicates weather the slime is able to damage the player (based upon the slime's size)
@@ -149,14 +162,6 @@ public class EntityMagmaCube extends EntitySlime
     protected String getJumpSound()
     {
         return this.getSlimeSize() > 1 ? "mob.magmacube.big" : "mob.magmacube.small";
-    }
-
-    /**
-     * Whether or not the current entity is in lava
-     */
-    public boolean handleLavaMovement()
-    {
-        return false;
     }
 
     /**

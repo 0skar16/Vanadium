@@ -1,22 +1,33 @@
 package net.minecraft.entity.ai;
 
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockTallGrass;
+import net.minecraft.block.state.IBlockState;
+import net.minecraft.block.state.pattern.BlockStateHelper;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.init.Blocks;
-import net.minecraft.util.MathHelper;
+import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
 
 public class EntityAIEatGrass extends EntityAIBase
 {
-    private EntityLiving field_151500_b;
-    private World field_151501_c;
-    int field_151502_a;
-    private static final String __OBFID = "CL_00001582";
+    private static final Predicate<IBlockState> field_179505_b = BlockStateHelper.forBlock(Blocks.tallgrass).where(BlockTallGrass.TYPE, Predicates.equalTo(BlockTallGrass.EnumType.GRASS));
 
-    public EntityAIEatGrass(EntityLiving p_i45314_1_)
+    /** The entity owner of this AITask */
+    private EntityLiving grassEaterEntity;
+
+    /** The world the grass eater entity is eating from */
+    private World entityWorld;
+
+    /** Number of ticks since the entity started to eat grass */
+    int eatingGrassTimer;
+
+    public EntityAIEatGrass(EntityLiving grassEaterEntityIn)
     {
-        this.field_151500_b = p_i45314_1_;
-        this.field_151501_c = p_i45314_1_.worldObj;
+        this.grassEaterEntity = grassEaterEntityIn;
+        this.entityWorld = grassEaterEntityIn.worldObj;
         this.setMutexBits(7);
     }
 
@@ -25,16 +36,14 @@ public class EntityAIEatGrass extends EntityAIBase
      */
     public boolean shouldExecute()
     {
-        if (this.field_151500_b.getRNG().nextInt(this.field_151500_b.isChild() ? 50 : 1000) != 0)
+        if (this.grassEaterEntity.getRNG().nextInt(this.grassEaterEntity.isChild() ? 50 : 1000) != 0)
         {
             return false;
         }
         else
         {
-            int var1 = MathHelper.floor_double(this.field_151500_b.posX);
-            int var2 = MathHelper.floor_double(this.field_151500_b.posY);
-            int var3 = MathHelper.floor_double(this.field_151500_b.posZ);
-            return this.field_151501_c.getBlock(var1, var2, var3) == Blocks.tallgrass && this.field_151501_c.getBlockMetadata(var1, var2, var3) == 1 ? true : this.field_151501_c.getBlock(var1, var2 - 1, var3) == Blocks.grass;
+            BlockPos blockpos = new BlockPos(this.grassEaterEntity.posX, this.grassEaterEntity.posY, this.grassEaterEntity.posZ);
+            return field_179505_b.apply(this.entityWorld.getBlockState(blockpos)) ? true : this.entityWorld.getBlockState(blockpos.down()).getBlock() == Blocks.grass;
         }
     }
 
@@ -43,9 +52,9 @@ public class EntityAIEatGrass extends EntityAIBase
      */
     public void startExecuting()
     {
-        this.field_151502_a = 40;
-        this.field_151501_c.setEntityState(this.field_151500_b, (byte)10);
-        this.field_151500_b.getNavigator().clearPathEntity();
+        this.eatingGrassTimer = 40;
+        this.entityWorld.setEntityState(this.grassEaterEntity, (byte)10);
+        this.grassEaterEntity.getNavigator().clearPathEntity();
     }
 
     /**
@@ -53,7 +62,7 @@ public class EntityAIEatGrass extends EntityAIBase
      */
     public void resetTask()
     {
-        this.field_151502_a = 0;
+        this.eatingGrassTimer = 0;
     }
 
     /**
@@ -61,12 +70,15 @@ public class EntityAIEatGrass extends EntityAIBase
      */
     public boolean continueExecuting()
     {
-        return this.field_151502_a > 0;
+        return this.eatingGrassTimer > 0;
     }
 
-    public int func_151499_f()
+    /**
+     * Number of ticks since the entity started to eat grass
+     */
+    public int getEatingGrassTimer()
     {
-        return this.field_151502_a;
+        return this.eatingGrassTimer;
     }
 
     /**
@@ -74,32 +86,35 @@ public class EntityAIEatGrass extends EntityAIBase
      */
     public void updateTask()
     {
-        this.field_151502_a = Math.max(0, this.field_151502_a - 1);
+        this.eatingGrassTimer = Math.max(0, this.eatingGrassTimer - 1);
 
-        if (this.field_151502_a == 4)
+        if (this.eatingGrassTimer == 4)
         {
-            int var1 = MathHelper.floor_double(this.field_151500_b.posX);
-            int var2 = MathHelper.floor_double(this.field_151500_b.posY);
-            int var3 = MathHelper.floor_double(this.field_151500_b.posZ);
+            BlockPos blockpos = new BlockPos(this.grassEaterEntity.posX, this.grassEaterEntity.posY, this.grassEaterEntity.posZ);
 
-            if (this.field_151501_c.getBlock(var1, var2, var3) == Blocks.tallgrass)
+            if (field_179505_b.apply(this.entityWorld.getBlockState(blockpos)))
             {
-                if (this.field_151501_c.getGameRules().getGameRuleBooleanValue("mobGriefing"))
+                if (this.entityWorld.getGameRules().getBoolean("mobGriefing"))
                 {
-                    this.field_151501_c.func_147480_a(var1, var2, var3, false);
+                    this.entityWorld.destroyBlock(blockpos, false);
                 }
 
-                this.field_151500_b.eatGrassBonus();
+                this.grassEaterEntity.eatGrassBonus();
             }
-            else if (this.field_151501_c.getBlock(var1, var2 - 1, var3) == Blocks.grass)
+            else
             {
-                if (this.field_151501_c.getGameRules().getGameRuleBooleanValue("mobGriefing"))
-                {
-                    this.field_151501_c.playAuxSFX(2001, var1, var2 - 1, var3, Block.getIdFromBlock(Blocks.grass));
-                    this.field_151501_c.setBlock(var1, var2 - 1, var3, Blocks.dirt, 0, 2);
-                }
+                BlockPos blockpos1 = blockpos.down();
 
-                this.field_151500_b.eatGrassBonus();
+                if (this.entityWorld.getBlockState(blockpos1).getBlock() == Blocks.grass)
+                {
+                    if (this.entityWorld.getGameRules().getBoolean("mobGriefing"))
+                    {
+                        this.entityWorld.playAuxSFX(2001, blockpos1, Block.getIdFromBlock(Blocks.grass));
+                        this.entityWorld.setBlockState(blockpos1, Blocks.dirt.getDefaultState(), 2);
+                    }
+
+                    this.grassEaterEntity.eatGrassBonus();
+                }
             }
         }
     }

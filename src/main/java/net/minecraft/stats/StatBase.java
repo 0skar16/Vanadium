@@ -8,6 +8,7 @@ import net.minecraft.scoreboard.IScoreObjectiveCriteria;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.IChatComponent;
+import net.minecraft.util.IJsonSerializable;
 
 public class StatBase
 {
@@ -18,63 +19,58 @@ public class StatBase
     private final IChatComponent statName;
     public boolean isIndependent;
     private final IStatType type;
-    private final IScoreObjectiveCriteria field_150957_c;
-    private Class field_150956_d;
+    private final IScoreObjectiveCriteria objectiveCriteria;
+    private Class <? extends IJsonSerializable > field_150956_d;
     private static NumberFormat numberFormat = NumberFormat.getIntegerInstance(Locale.US);
     public static IStatType simpleStatType = new IStatType()
     {
-        private static final String __OBFID = "CL_00001473";
-        public String format(int p_75843_1_)
+        public String format(int number)
         {
-            return StatBase.numberFormat.format((long)p_75843_1_);
+            return StatBase.numberFormat.format((long)number);
         }
     };
     private static DecimalFormat decimalFormat = new DecimalFormat("########0.00");
     public static IStatType timeStatType = new IStatType()
     {
-        private static final String __OBFID = "CL_00001474";
-        public String format(int p_75843_1_)
+        public String format(int number)
         {
-            double var2 = (double)p_75843_1_ / 20.0D;
-            double var4 = var2 / 60.0D;
-            double var6 = var4 / 60.0D;
-            double var8 = var6 / 24.0D;
-            double var10 = var8 / 365.0D;
-            return var10 > 0.5D ? StatBase.decimalFormat.format(var10) + " y" : (var8 > 0.5D ? StatBase.decimalFormat.format(var8) + " d" : (var6 > 0.5D ? StatBase.decimalFormat.format(var6) + " h" : (var4 > 0.5D ? StatBase.decimalFormat.format(var4) + " m" : var2 + " s")));
+            double d0 = (double)number / 20.0D;
+            double d1 = d0 / 60.0D;
+            double d2 = d1 / 60.0D;
+            double d3 = d2 / 24.0D;
+            double d4 = d3 / 365.0D;
+            return d4 > 0.5D ? StatBase.decimalFormat.format(d4) + " y" : (d3 > 0.5D ? StatBase.decimalFormat.format(d3) + " d" : (d2 > 0.5D ? StatBase.decimalFormat.format(d2) + " h" : (d1 > 0.5D ? StatBase.decimalFormat.format(d1) + " m" : d0 + " s")));
         }
     };
     public static IStatType distanceStatType = new IStatType()
     {
-        private static final String __OBFID = "CL_00001475";
-        public String format(int p_75843_1_)
+        public String format(int number)
         {
-            double var2 = (double)p_75843_1_ / 100.0D;
-            double var4 = var2 / 1000.0D;
-            return var4 > 0.5D ? StatBase.decimalFormat.format(var4) + " km" : (var2 > 0.5D ? StatBase.decimalFormat.format(var2) + " m" : p_75843_1_ + " cm");
+            double d0 = (double)number / 100.0D;
+            double d1 = d0 / 1000.0D;
+            return d1 > 0.5D ? StatBase.decimalFormat.format(d1) + " km" : (d0 > 0.5D ? StatBase.decimalFormat.format(d0) + " m" : number + " cm");
         }
     };
     public static IStatType field_111202_k = new IStatType()
     {
-        private static final String __OBFID = "CL_00001476";
-        public String format(int p_75843_1_)
+        public String format(int number)
         {
-            return StatBase.decimalFormat.format((double)p_75843_1_ * 0.1D);
+            return StatBase.decimalFormat.format((double)number * 0.1D);
         }
     };
-    private static final String __OBFID = "CL_00001472";
 
-    public StatBase(String p_i45307_1_, IChatComponent p_i45307_2_, IStatType p_i45307_3_)
+    public StatBase(String statIdIn, IChatComponent statNameIn, IStatType typeIn)
     {
-        this.statId = p_i45307_1_;
-        this.statName = p_i45307_2_;
-        this.type = p_i45307_3_;
-        this.field_150957_c = new ObjectiveStat(this);
-        IScoreObjectiveCriteria.field_96643_a.put(this.field_150957_c.func_96636_a(), this.field_150957_c);
+        this.statId = statIdIn;
+        this.statName = statNameIn;
+        this.type = typeIn;
+        this.objectiveCriteria = new ObjectiveStat(this);
+        IScoreObjectiveCriteria.INSTANCES.put(this.objectiveCriteria.getName(), this.objectiveCriteria);
     }
 
-    public StatBase(String p_i45308_1_, IChatComponent p_i45308_2_)
+    public StatBase(String statIdIn, IChatComponent statNameIn)
     {
-        this(p_i45308_1_, p_i45308_2_, simpleStatType);
+        this(statIdIn, statNameIn, simpleStatType);
     }
 
     /**
@@ -112,25 +108,28 @@ public class StatBase
         return false;
     }
 
-    public String func_75968_a(int p_75968_1_)
+    public String format(int p_75968_1_)
     {
         return this.type.format(p_75968_1_);
     }
 
-    public IChatComponent func_150951_e()
+    public IChatComponent getStatName()
     {
-        IChatComponent var1 = this.statName.createCopy();
-        var1.getChatStyle().setColor(EnumChatFormatting.GRAY);
-        var1.getChatStyle().setChatHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_ACHIEVEMENT, new ChatComponentText(this.statId)));
-        return var1;
+        IChatComponent ichatcomponent = this.statName.createCopy();
+        ichatcomponent.getChatStyle().setColor(EnumChatFormatting.GRAY);
+        ichatcomponent.getChatStyle().setChatHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_ACHIEVEMENT, new ChatComponentText(this.statId)));
+        return ichatcomponent;
     }
 
-    public IChatComponent func_150955_j()
+    /**
+     * 1.8.9
+     */
+    public IChatComponent createChatComponent()
     {
-        IChatComponent var1 = this.func_150951_e();
-        IChatComponent var2 = (new ChatComponentText("[")).appendSibling(var1).appendText("]");
-        var2.setChatStyle(var1.getChatStyle());
-        return var2;
+        IChatComponent ichatcomponent = this.getStatName();
+        IChatComponent ichatcomponent1 = (new ChatComponentText("[")).appendSibling(ichatcomponent).appendText("]");
+        ichatcomponent1.setChatStyle(ichatcomponent.getChatStyle());
+        return ichatcomponent1;
     }
 
     public boolean equals(Object p_equals_1_)
@@ -141,8 +140,8 @@ public class StatBase
         }
         else if (p_equals_1_ != null && this.getClass() == p_equals_1_.getClass())
         {
-            StatBase var2 = (StatBase)p_equals_1_;
-            return this.statId.equals(var2.statId);
+            StatBase statbase = (StatBase)p_equals_1_;
+            return this.statId.equals(statbase.statId);
         }
         else
         {
@@ -157,20 +156,23 @@ public class StatBase
 
     public String toString()
     {
-        return "Stat{id=" + this.statId + ", nameId=" + this.statName + ", awardLocallyOnly=" + this.isIndependent + ", formatter=" + this.type + ", objectiveCriteria=" + this.field_150957_c + '}';
+        return "Stat{id=" + this.statId + ", nameId=" + this.statName + ", awardLocallyOnly=" + this.isIndependent + ", formatter=" + this.type + ", objectiveCriteria=" + this.objectiveCriteria + '}';
     }
 
-    public IScoreObjectiveCriteria func_150952_k()
+    /**
+     * 1.8.9
+     */
+    public IScoreObjectiveCriteria getCriteria()
     {
-        return this.field_150957_c;
+        return this.objectiveCriteria;
     }
 
-    public Class func_150954_l()
+    public Class <? extends IJsonSerializable > func_150954_l()
     {
         return this.field_150956_d;
     }
 
-    public StatBase func_150953_b(Class p_150953_1_)
+    public StatBase func_150953_b(Class <? extends IJsonSerializable > p_150953_1_)
     {
         this.field_150956_d = p_150953_1_;
         return this;

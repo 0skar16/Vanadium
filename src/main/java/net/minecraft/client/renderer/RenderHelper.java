@@ -8,19 +8,18 @@ public class RenderHelper
 {
     /** Float buffer used to set OpenGL material colors */
     private static FloatBuffer colorBuffer = GLAllocation.createDirectFloatBuffer(16);
-    private static final Vec3 field_82884_b = Vec3.createVectorHelper(0.20000000298023224D, 1.0D, -0.699999988079071D).normalize();
-    private static final Vec3 field_82885_c = Vec3.createVectorHelper(-0.20000000298023224D, 1.0D, 0.699999988079071D).normalize();
-    private static final String __OBFID = "CL_00000629";
+    private static final Vec3 LIGHT0_POS = (new Vec3(0.20000000298023224D, 1.0D, -0.699999988079071D)).normalize();
+    private static final Vec3 LIGHT1_POS = (new Vec3(-0.20000000298023224D, 1.0D, 0.699999988079071D)).normalize();
 
     /**
      * Disables the OpenGL lighting properties enabled by enableStandardItemLighting
      */
     public static void disableStandardItemLighting()
     {
-        GL11.glDisable(GL11.GL_LIGHTING);
-        GL11.glDisable(GL11.GL_LIGHT0);
-        GL11.glDisable(GL11.GL_LIGHT1);
-        GL11.glDisable(GL11.GL_COLOR_MATERIAL);
+        GlStateManager.disableLighting();
+        GlStateManager.disableLight(0);
+        GlStateManager.disableLight(1);
+        GlStateManager.disableColorMaterial();
     }
 
     /**
@@ -28,24 +27,24 @@ public class RenderHelper
      */
     public static void enableStandardItemLighting()
     {
-        GL11.glEnable(GL11.GL_LIGHTING);
-        GL11.glEnable(GL11.GL_LIGHT0);
-        GL11.glEnable(GL11.GL_LIGHT1);
-        GL11.glEnable(GL11.GL_COLOR_MATERIAL);
-        GL11.glColorMaterial(GL11.GL_FRONT_AND_BACK, GL11.GL_AMBIENT_AND_DIFFUSE);
-        float var0 = 0.4F;
-        float var1 = 0.6F;
-        float var2 = 0.0F;
-        GL11.glLight(GL11.GL_LIGHT0, GL11.GL_POSITION, setColorBuffer(field_82884_b.xCoord, field_82884_b.yCoord, field_82884_b.zCoord, 0.0D));
-        GL11.glLight(GL11.GL_LIGHT0, GL11.GL_DIFFUSE, setColorBuffer(var1, var1, var1, 1.0F));
-        GL11.glLight(GL11.GL_LIGHT0, GL11.GL_AMBIENT, setColorBuffer(0.0F, 0.0F, 0.0F, 1.0F));
-        GL11.glLight(GL11.GL_LIGHT0, GL11.GL_SPECULAR, setColorBuffer(var2, var2, var2, 1.0F));
-        GL11.glLight(GL11.GL_LIGHT1, GL11.GL_POSITION, setColorBuffer(field_82885_c.xCoord, field_82885_c.yCoord, field_82885_c.zCoord, 0.0D));
-        GL11.glLight(GL11.GL_LIGHT1, GL11.GL_DIFFUSE, setColorBuffer(var1, var1, var1, 1.0F));
-        GL11.glLight(GL11.GL_LIGHT1, GL11.GL_AMBIENT, setColorBuffer(0.0F, 0.0F, 0.0F, 1.0F));
-        GL11.glLight(GL11.GL_LIGHT1, GL11.GL_SPECULAR, setColorBuffer(var2, var2, var2, 1.0F));
-        GL11.glShadeModel(GL11.GL_FLAT);
-        GL11.glLightModel(GL11.GL_LIGHT_MODEL_AMBIENT, setColorBuffer(var0, var0, var0, 1.0F));
+        GlStateManager.enableLighting();
+        GlStateManager.enableLight(0);
+        GlStateManager.enableLight(1);
+        GlStateManager.enableColorMaterial();
+        GlStateManager.colorMaterial(1032, 5634);
+        float f = 0.4F;
+        float f1 = 0.6F;
+        float f2 = 0.0F;
+        GL11.glLight(GL11.GL_LIGHT0, GL11.GL_POSITION, (FloatBuffer)setColorBuffer(LIGHT0_POS.xCoord, LIGHT0_POS.yCoord, LIGHT0_POS.zCoord, 0.0D));
+        GL11.glLight(GL11.GL_LIGHT0, GL11.GL_DIFFUSE, (FloatBuffer)setColorBuffer(f1, f1, f1, 1.0F));
+        GL11.glLight(GL11.GL_LIGHT0, GL11.GL_AMBIENT, (FloatBuffer)setColorBuffer(0.0F, 0.0F, 0.0F, 1.0F));
+        GL11.glLight(GL11.GL_LIGHT0, GL11.GL_SPECULAR, (FloatBuffer)setColorBuffer(f2, f2, f2, 1.0F));
+        GL11.glLight(GL11.GL_LIGHT1, GL11.GL_POSITION, (FloatBuffer)setColorBuffer(LIGHT1_POS.xCoord, LIGHT1_POS.yCoord, LIGHT1_POS.zCoord, 0.0D));
+        GL11.glLight(GL11.GL_LIGHT1, GL11.GL_DIFFUSE, (FloatBuffer)setColorBuffer(f1, f1, f1, 1.0F));
+        GL11.glLight(GL11.GL_LIGHT1, GL11.GL_AMBIENT, (FloatBuffer)setColorBuffer(0.0F, 0.0F, 0.0F, 1.0F));
+        GL11.glLight(GL11.GL_LIGHT1, GL11.GL_SPECULAR, (FloatBuffer)setColorBuffer(f2, f2, f2, 1.0F));
+        GlStateManager.shadeModel(7424);
+        GL11.glLightModel(GL11.GL_LIGHT_MODEL_AMBIENT, (FloatBuffer)setColorBuffer(f, f, f, 1.0F));
     }
 
     /**
@@ -72,10 +71,10 @@ public class RenderHelper
      */
     public static void enableGUIStandardItemLighting()
     {
-        GL11.glPushMatrix();
-        GL11.glRotatef(-30.0F, 0.0F, 1.0F, 0.0F);
-        GL11.glRotatef(165.0F, 1.0F, 0.0F, 0.0F);
+        GlStateManager.pushMatrix();
+        GlStateManager.rotate(-30.0F, 0.0F, 1.0F, 0.0F);
+        GlStateManager.rotate(165.0F, 1.0F, 0.0F, 0.0F);
         enableStandardItemLighting();
-        GL11.glPopMatrix();
+        GlStateManager.popMatrix();
     }
 }

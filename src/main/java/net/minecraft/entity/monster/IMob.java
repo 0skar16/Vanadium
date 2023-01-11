@@ -1,18 +1,23 @@
 package net.minecraft.entity.monster;
 
-import net.minecraft.command.IEntitySelector;
+import com.google.common.base.Predicate;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.passive.IAnimals;
 
 public interface IMob extends IAnimals
 {
-    /** Entity selector for IMob types. */
-    IEntitySelector mobSelector = new IEntitySelector()
+    Predicate<Entity> mobSelector = new Predicate<Entity>()
     {
-        private static final String __OBFID = "CL_00001688";
-        public boolean isEntityApplicable(Entity p_82704_1_)
+        public boolean apply(Entity p_apply_1_)
         {
-            return p_82704_1_ instanceof IMob;
+            return p_apply_1_ instanceof IMob;
+        }
+    };
+    Predicate<Entity> VISIBLE_MOB_SELECTOR = new Predicate<Entity>()
+    {
+        public boolean apply(Entity p_apply_1_)
+        {
+            return p_apply_1_ instanceof IMob && !p_apply_1_.isInvisible();
         }
     };
 }

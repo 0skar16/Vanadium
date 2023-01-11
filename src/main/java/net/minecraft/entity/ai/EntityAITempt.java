@@ -4,12 +4,13 @@ import net.minecraft.entity.EntityCreature;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.pathfinding.PathNavigateGround;
 
 public class EntityAITempt extends EntityAIBase
 {
     /** The entity using this AI that is tempted by the player. */
     private EntityCreature temptedEntity;
-    private double field_75282_b;
+    private double speed;
 
     /** X position of player tempting this mob */
     private double targetX;
@@ -19,8 +20,12 @@ public class EntityAITempt extends EntityAIBase
 
     /** Z position of player tempting this mob */
     private double targetZ;
-    private double field_75278_f;
-    private double field_75279_g;
+
+    /** Tempting player's pitch */
+    private double pitch;
+
+    /** Tempting player's yaw */
+    private double yaw;
 
     /** The player that is tempting the entity that is using this AI. */
     private EntityPlayer temptingPlayer;
@@ -33,22 +38,26 @@ public class EntityAITempt extends EntityAIBase
 
     /** True if this EntityAITempt task is running */
     private boolean isRunning;
-    private Item field_151484_k;
+    private Item temptItem;
 
     /**
      * Whether the entity using this AI will be scared by the tempter's sudden movement.
      */
     private boolean scaredByPlayerMovement;
-    private boolean field_75286_m;
-    private static final String __OBFID = "CL_00001616";
+    private boolean avoidWater;
 
-    public EntityAITempt(EntityCreature p_i45316_1_, double p_i45316_2_, Item p_i45316_4_, boolean p_i45316_5_)
+    public EntityAITempt(EntityCreature temptedEntityIn, double speedIn, Item temptItemIn, boolean scaredByPlayerMovementIn)
     {
-        this.temptedEntity = p_i45316_1_;
-        this.field_75282_b = p_i45316_2_;
-        this.field_151484_k = p_i45316_4_;
-        this.scaredByPlayerMovement = p_i45316_5_;
+        this.temptedEntity = temptedEntityIn;
+        this.speed = speedIn;
+        this.temptItem = temptItemIn;
+        this.scaredByPlayerMovement = scaredByPlayerMovementIn;
         this.setMutexBits(3);
+
+        if (!(temptedEntityIn.getNavigator() instanceof PathNavigateGround))
+        {
+            throw new IllegalArgumentException("Unsupported mob type for TemptGoal");
+        }
     }
 
     /**
@@ -71,8 +80,8 @@ public class EntityAITempt extends EntityAIBase
             }
             else
             {
-                ItemStack var1 = this.temptingPlayer.getCurrentEquippedItem();
-                return var1 == null ? false : var1.getItem() == this.field_151484_k;
+                ItemStack itemstack = this.temptingPlayer.getCurrentEquippedItem();
+                return itemstack == null ? false : itemstack.getItem() == this.temptItem;
             }
         }
     }
@@ -91,7 +100,7 @@ public class EntityAITempt extends EntityAIBase
                     return false;
                 }
 
-                if (Math.abs((double)this.temptingPlayer.rotationPitch - this.field_75278_f) > 5.0D || Math.abs((double)this.temptingPlayer.rotationYaw - this.field_75279_g) > 5.0D)
+                if (Math.abs((double)this.temptingPlayer.rotationPitch - this.pitch) > 5.0D || Math.abs((double)this.temptingPlayer.rotationYaw - this.yaw) > 5.0D)
                 {
                     return false;
                 }
@@ -103,8 +112,8 @@ public class EntityAITempt extends EntityAIBase
                 this.targetZ = this.temptingPlayer.posZ;
             }
 
-            this.field_75278_f = (double)this.temptingPlayer.rotationPitch;
-            this.field_75279_g = (double)this.temptingPlayer.rotationYaw;
+            this.pitch = (double)this.temptingPlayer.rotationPitch;
+            this.yaw = (double)this.temptingPlayer.rotationYaw;
         }
 
         return this.shouldExecute();
@@ -119,8 +128,8 @@ public class EntityAITempt extends EntityAIBase
         this.targetY = this.temptingPlayer.posY;
         this.targetZ = this.temptingPlayer.posZ;
         this.isRunning = true;
-        this.field_75286_m = this.temptedEntity.getNavigator().getAvoidsWater();
-        this.temptedEntity.getNavigator().setAvoidsWater(false);
+        this.avoidWater = ((PathNavigateGround)this.temptedEntity.getNavigator()).getAvoidsWater();
+        ((PathNavigateGround)this.temptedEntity.getNavigator()).setAvoidsWater(false);
     }
 
     /**
@@ -132,7 +141,7 @@ public class EntityAITempt extends EntityAIBase
         this.temptedEntity.getNavigator().clearPathEntity();
         this.delayTemptCounter = 100;
         this.isRunning = false;
-        this.temptedEntity.getNavigator().setAvoidsWater(this.field_75286_m);
+        ((PathNavigateGround)this.temptedEntity.getNavigator()).setAvoidsWater(this.avoidWater);
     }
 
     /**
@@ -148,7 +157,7 @@ public class EntityAITempt extends EntityAIBase
         }
         else
         {
-            this.temptedEntity.getNavigator().tryMoveToEntityLiving(this.temptingPlayer, this.field_75282_b);
+            this.temptedEntity.getNavigator().tryMoveToEntityLiving(this.temptingPlayer, this.speed);
         }
     }
 

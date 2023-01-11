@@ -2,105 +2,80 @@ package net.minecraft.network.play.client;
 
 import java.io.IOException;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.network.INetHandler;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayServer;
-import net.minecraft.world.EnumDifficulty;
 
-public class C15PacketClientSettings extends Packet
+public class C15PacketClientSettings implements Packet<INetHandlerPlayServer>
 {
-    private String field_149530_a;
-    private int field_149528_b;
-    private EntityPlayer.EnumChatVisibility field_149529_c;
-    private boolean field_149526_d;
-    private EnumDifficulty field_149527_e;
-    private boolean field_149525_f;
-    private static final String __OBFID = "CL_00001350";
+    private String lang;
+    private int view;
+    private EntityPlayer.EnumChatVisibility chatVisibility;
+    private boolean enableColors;
+    private int modelPartFlags;
 
-    public C15PacketClientSettings() {}
-
-    public C15PacketClientSettings(String p_i45243_1_, int p_i45243_2_, EntityPlayer.EnumChatVisibility p_i45243_3_, boolean p_i45243_4_, EnumDifficulty p_i45243_5_, boolean p_i45243_6_)
+    public C15PacketClientSettings()
     {
-        this.field_149530_a = p_i45243_1_;
-        this.field_149528_b = p_i45243_2_;
-        this.field_149529_c = p_i45243_3_;
-        this.field_149526_d = p_i45243_4_;
-        this.field_149527_e = p_i45243_5_;
-        this.field_149525_f = p_i45243_6_;
+    }
+
+    public C15PacketClientSettings(String langIn, int viewIn, EntityPlayer.EnumChatVisibility chatVisibilityIn, boolean enableColorsIn, int modelPartFlagsIn)
+    {
+        this.lang = langIn;
+        this.view = viewIn;
+        this.chatVisibility = chatVisibilityIn;
+        this.enableColors = enableColorsIn;
+        this.modelPartFlags = modelPartFlagsIn;
     }
 
     /**
      * Reads the raw packet data from the data stream.
      */
-    public void readPacketData(PacketBuffer p_148837_1_) throws IOException
+    public void readPacketData(PacketBuffer buf) throws IOException
     {
-        this.field_149530_a = p_148837_1_.readStringFromBuffer(7);
-        this.field_149528_b = p_148837_1_.readByte();
-        this.field_149529_c = EntityPlayer.EnumChatVisibility.getEnumChatVisibility(p_148837_1_.readByte());
-        this.field_149526_d = p_148837_1_.readBoolean();
-        this.field_149527_e = EnumDifficulty.getDifficultyEnum(p_148837_1_.readByte());
-        this.field_149525_f = p_148837_1_.readBoolean();
+        this.lang = buf.readStringFromBuffer(7);
+        this.view = buf.readByte();
+        this.chatVisibility = EntityPlayer.EnumChatVisibility.getEnumChatVisibility(buf.readByte());
+        this.enableColors = buf.readBoolean();
+        this.modelPartFlags = buf.readUnsignedByte();
     }
 
     /**
      * Writes the raw packet data to the data stream.
      */
-    public void writePacketData(PacketBuffer p_148840_1_) throws IOException
+    public void writePacketData(PacketBuffer buf) throws IOException
     {
-        p_148840_1_.writeStringToBuffer(this.field_149530_a);
-        p_148840_1_.writeByte(this.field_149528_b);
-        p_148840_1_.writeByte(this.field_149529_c.getChatVisibility());
-        p_148840_1_.writeBoolean(this.field_149526_d);
-        p_148840_1_.writeByte(this.field_149527_e.getDifficultyId());
-        p_148840_1_.writeBoolean(this.field_149525_f);
-    }
-
-    public void processPacket(INetHandlerPlayServer p_148833_1_)
-    {
-        p_148833_1_.processClientSettings(this);
-    }
-
-    public String func_149524_c()
-    {
-        return this.field_149530_a;
-    }
-
-    public int func_149521_d()
-    {
-        return this.field_149528_b;
-    }
-
-    public EntityPlayer.EnumChatVisibility func_149523_e()
-    {
-        return this.field_149529_c;
-    }
-
-    public boolean func_149520_f()
-    {
-        return this.field_149526_d;
-    }
-
-    public EnumDifficulty func_149518_g()
-    {
-        return this.field_149527_e;
-    }
-
-    public boolean func_149519_h()
-    {
-        return this.field_149525_f;
+        buf.writeString(this.lang);
+        buf.writeByte(this.view);
+        buf.writeByte(this.chatVisibility.getChatVisibility());
+        buf.writeBoolean(this.enableColors);
+        buf.writeByte(this.modelPartFlags);
     }
 
     /**
-     * Returns a string formatted as comma separated [field]=[value] values. Used by Minecraft for logging purposes.
+     * Passes this Packet on to the NetHandler for processing.
      */
-    public String serialize()
+    public void processPacket(INetHandlerPlayServer handler)
     {
-        return String.format("lang=\'%s\', view=%d, chat=%s, col=%b, difficulty=%s, cape=%b", new Object[] {this.field_149530_a, Integer.valueOf(this.field_149528_b), this.field_149529_c, Boolean.valueOf(this.field_149526_d), this.field_149527_e, Boolean.valueOf(this.field_149525_f)});
+        handler.processClientSettings(this);
     }
 
-    public void processPacket(INetHandler p_148833_1_)
+    public String getLang()
     {
-        this.processPacket((INetHandlerPlayServer)p_148833_1_);
+        return this.lang;
+    }
+
+    public EntityPlayer.EnumChatVisibility getChatVisibility()
+    {
+        return this.chatVisibility;
+    }
+
+    public boolean isColorsEnabled()
+    {
+        return this.enableColors;
+    }
+
+    public int getModelPartFlags()
+    {
+        return this.modelPartFlags;
     }
 }

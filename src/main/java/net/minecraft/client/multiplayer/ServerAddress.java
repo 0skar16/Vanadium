@@ -1,24 +1,25 @@
 package net.minecraft.client.multiplayer;
 
+import java.net.IDN;
 import java.util.Hashtable;
 import javax.naming.directory.Attributes;
+import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 
 public class ServerAddress
 {
     private final String ipAddress;
     private final int serverPort;
-    private static final String __OBFID = "CL_00000889";
 
-    protected ServerAddress(String p_i1192_1_, int p_i1192_2_)
+    private ServerAddress(String address, int port)
     {
-        this.ipAddress = p_i1192_1_;
-        this.serverPort = p_i1192_2_;
+        this.ipAddress = address;
+        this.serverPort = port;
     }
 
     public String getIP()
     {
-        return this.ipAddress;
+        return IDN.toASCII(this.ipAddress);
     }
 
     public int getPort()
@@ -26,7 +27,7 @@ public class ServerAddress
         return this.serverPort;
     }
 
-    public static ServerAddress func_78860_a(String p_78860_0_)
+    public static ServerAddress fromString(String p_78860_0_)
     {
         if (p_78860_0_ == null)
         {
@@ -34,45 +35,45 @@ public class ServerAddress
         }
         else
         {
-            String[] var1 = p_78860_0_.split(":");
+            String[] astring = p_78860_0_.split(":");
 
             if (p_78860_0_.startsWith("["))
             {
-                int var2 = p_78860_0_.indexOf("]");
+                int i = p_78860_0_.indexOf("]");
 
-                if (var2 > 0)
+                if (i > 0)
                 {
-                    String var3 = p_78860_0_.substring(1, var2);
-                    String var4 = p_78860_0_.substring(var2 + 1).trim();
+                    String s = p_78860_0_.substring(1, i);
+                    String s1 = p_78860_0_.substring(i + 1).trim();
 
-                    if (var4.startsWith(":") && var4.length() > 0)
+                    if (s1.startsWith(":") && s1.length() > 0)
                     {
-                        var4 = var4.substring(1);
-                        var1 = new String[] {var3, var4};
+                        s1 = s1.substring(1);
+                        astring = new String[] {s, s1};
                     }
                     else
                     {
-                        var1 = new String[] {var3};
+                        astring = new String[] {s};
                     }
                 }
             }
 
-            if (var1.length > 2)
+            if (astring.length > 2)
             {
-                var1 = new String[] {p_78860_0_};
+                astring = new String[] {p_78860_0_};
             }
 
-            String var5 = var1[0];
-            int var6 = var1.length > 1 ? parseIntWithDefault(var1[1], 25565) : 25565;
+            String s2 = astring[0];
+            int j = astring.length > 1 ? parseIntWithDefault(astring[1], 25565) : 25565;
 
-            if (var6 == 25565)
+            if (j == 25565)
             {
-                String[] var7 = getServerAddress(var5);
-                var5 = var7[0];
-                var6 = parseIntWithDefault(var7[1], 25565);
+                String[] astring1 = getServerAddress(s2);
+                s2 = astring1[0];
+                j = parseIntWithDefault(astring1[1], 25565);
             }
 
-            return new ServerAddress(var5, var6);
+            return new ServerAddress(s2, j);
         }
     }
 
@@ -83,16 +84,16 @@ public class ServerAddress
     {
         try
         {
-            String var1 = "com.sun.jndi.dns.DnsContextFactory";
+            String s = "com.sun.jndi.dns.DnsContextFactory";
             Class.forName("com.sun.jndi.dns.DnsContextFactory");
-            Hashtable var2 = new Hashtable();
-            var2.put("java.naming.factory.initial", "com.sun.jndi.dns.DnsContextFactory");
-            var2.put("java.naming.provider.url", "dns:");
-            var2.put("com.sun.jndi.dns.timeout.retries", "1");
-            InitialDirContext var3 = new InitialDirContext(var2);
-            Attributes var4 = var3.getAttributes("_minecraft._tcp." + p_78863_0_, new String[] {"SRV"});
-            String[] var5 = var4.get("srv").get().toString().split(" ", 4);
-            return new String[] {var5[3], var5[2]};
+            Hashtable hashtable = new Hashtable();
+            hashtable.put("java.naming.factory.initial", "com.sun.jndi.dns.DnsContextFactory");
+            hashtable.put("java.naming.provider.url", "dns:");
+            hashtable.put("com.sun.jndi.dns.timeout.retries", "1");
+            DirContext dircontext = new InitialDirContext(hashtable);
+            Attributes attributes = dircontext.getAttributes("_minecraft._tcp." + p_78863_0_, new String[] {"SRV"});
+            String[] astring = attributes.get("srv").get().toString().split(" ", 4);
+            return new String[] {astring[3], astring[2]};
         }
         catch (Throwable var6)
         {

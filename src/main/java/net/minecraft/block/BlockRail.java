@@ -1,38 +1,53 @@
 package net.minecraft.block;
 
-import net.minecraft.client.renderer.texture.IIconRegister;
-import net.minecraft.util.IIcon;
+import net.minecraft.block.properties.IProperty;
+import net.minecraft.block.properties.PropertyEnum;
+import net.minecraft.block.state.BlockState;
+import net.minecraft.block.state.IBlockState;
+import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
 
 public class BlockRail extends BlockRailBase
 {
-    private IIcon field_150056_b;
-    private static final String __OBFID = "CL_00000293";
+    public static final PropertyEnum<BlockRailBase.EnumRailDirection> SHAPE = PropertyEnum.<BlockRailBase.EnumRailDirection>create("shape", BlockRailBase.EnumRailDirection.class);
 
     protected BlockRail()
     {
         super(false);
+        this.setDefaultState(this.blockState.getBaseState().withProperty(SHAPE, BlockRailBase.EnumRailDirection.NORTH_SOUTH));
+    }
+
+    protected void onNeighborChangedInternal(World worldIn, BlockPos pos, IBlockState state, Block neighborBlock)
+    {
+        if (neighborBlock.canProvidePower() && (new BlockRailBase.Rail(worldIn, pos, state)).countAdjacentRails() == 3)
+        {
+            this.func_176564_a(worldIn, pos, state, false);
+        }
+    }
+
+    public IProperty<BlockRailBase.EnumRailDirection> getShapeProperty()
+    {
+        return SHAPE;
     }
 
     /**
-     * Gets the block's texture. Args: side, meta
+     * Convert the given metadata into a BlockState for this Block
      */
-    public IIcon getIcon(int p_149691_1_, int p_149691_2_)
+    public IBlockState getStateFromMeta(int meta)
     {
-        return p_149691_2_ >= 6 ? this.field_150056_b : this.blockIcon;
+        return this.getDefaultState().withProperty(SHAPE, BlockRailBase.EnumRailDirection.byMetadata(meta));
     }
 
-    public void registerBlockIcons(IIconRegister p_149651_1_)
+    /**
+     * Convert the BlockState into the correct metadata value
+     */
+    public int getMetaFromState(IBlockState state)
     {
-        super.registerBlockIcons(p_149651_1_);
-        this.field_150056_b = p_149651_1_.registerIcon(this.getTextureName() + "_turned");
+        return ((BlockRailBase.EnumRailDirection)state.getValue(SHAPE)).getMetadata();
     }
 
-    protected void func_150048_a(World p_150048_1_, int p_150048_2_, int p_150048_3_, int p_150048_4_, int p_150048_5_, int p_150048_6_, Block p_150048_7_)
+    protected BlockState createBlockState()
     {
-        if (p_150048_7_.canProvidePower() && (new BlockRailBase.Rail(p_150048_1_, p_150048_2_, p_150048_3_, p_150048_4_)).func_150650_a() == 3)
-        {
-            this.func_150052_a(p_150048_1_, p_150048_2_, p_150048_3_, p_150048_4_, false);
-        }
+        return new BlockState(this, new IProperty[] {SHAPE});
     }
 }

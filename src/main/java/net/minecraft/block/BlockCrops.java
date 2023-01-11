@@ -1,219 +1,220 @@
 package net.minecraft.block;
 
 import java.util.Random;
-import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.block.properties.IProperty;
+import net.minecraft.block.properties.PropertyInteger;
+import net.minecraft.block.state.BlockState;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.IIcon;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 
 public class BlockCrops extends BlockBush implements IGrowable
 {
-    private IIcon[] field_149867_a;
-    private static final String __OBFID = "CL_00000222";
+    public static final PropertyInteger AGE = PropertyInteger.create("age", 0, 7);
 
     protected BlockCrops()
     {
+        this.setDefaultState(this.blockState.getBaseState().withProperty(AGE, Integer.valueOf(0)));
         this.setTickRandomly(true);
-        float var1 = 0.5F;
-        this.setBlockBounds(0.5F - var1, 0.0F, 0.5F - var1, 0.5F + var1, 0.25F, 0.5F + var1);
+        float f = 0.5F;
+        this.setBlockBounds(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, 0.25F, 0.5F + f);
         this.setCreativeTab((CreativeTabs)null);
         this.setHardness(0.0F);
         this.setStepSound(soundTypeGrass);
         this.disableStats();
     }
 
-    protected boolean func_149854_a(Block p_149854_1_)
+    /**
+     * is the block grass, dirt or farmland
+     */
+    protected boolean canPlaceBlockOn(Block ground)
     {
-        return p_149854_1_ == Blocks.farmland;
+        return ground == Blocks.farmland;
     }
 
-    /**
-     * Ticks the block if it's been scheduled
-     */
-    public void updateTick(World p_149674_1_, int p_149674_2_, int p_149674_3_, int p_149674_4_, Random p_149674_5_)
+    public void updateTick(World worldIn, BlockPos pos, IBlockState state, Random rand)
     {
-        super.updateTick(p_149674_1_, p_149674_2_, p_149674_3_, p_149674_4_, p_149674_5_);
+        super.updateTick(worldIn, pos, state, rand);
 
-        if (p_149674_1_.getBlockLightValue(p_149674_2_, p_149674_3_ + 1, p_149674_4_) >= 9)
+        if (worldIn.getLightFromNeighbors(pos.up()) >= 9)
         {
-            int var6 = p_149674_1_.getBlockMetadata(p_149674_2_, p_149674_3_, p_149674_4_);
+            int i = ((Integer)state.getValue(AGE)).intValue();
 
-            if (var6 < 7)
+            if (i < 7)
             {
-                float var7 = this.func_149864_n(p_149674_1_, p_149674_2_, p_149674_3_, p_149674_4_);
+                float f = getGrowthChance(this, worldIn, pos);
 
-                if (p_149674_5_.nextInt((int)(25.0F / var7) + 1) == 0)
+                if (rand.nextInt((int)(25.0F / f) + 1) == 0)
                 {
-                    ++var6;
-                    p_149674_1_.setBlockMetadataWithNotify(p_149674_2_, p_149674_3_, p_149674_4_, var6, 2);
+                    worldIn.setBlockState(pos, state.withProperty(AGE, Integer.valueOf(i + 1)), 2);
                 }
             }
         }
     }
 
-    public void func_149863_m(World p_149863_1_, int p_149863_2_, int p_149863_3_, int p_149863_4_)
+    public void grow(World worldIn, BlockPos pos, IBlockState state)
     {
-        int var5 = p_149863_1_.getBlockMetadata(p_149863_2_, p_149863_3_, p_149863_4_) + MathHelper.getRandomIntegerInRange(p_149863_1_.rand, 2, 5);
+        int i = ((Integer)state.getValue(AGE)).intValue() + MathHelper.getRandomIntegerInRange(worldIn.rand, 2, 5);
 
-        if (var5 > 7)
+        if (i > 7)
         {
-            var5 = 7;
+            i = 7;
         }
 
-        p_149863_1_.setBlockMetadataWithNotify(p_149863_2_, p_149863_3_, p_149863_4_, var5, 2);
+        worldIn.setBlockState(pos, state.withProperty(AGE, Integer.valueOf(i)), 2);
     }
 
-    private float func_149864_n(World p_149864_1_, int p_149864_2_, int p_149864_3_, int p_149864_4_)
+    protected static float getGrowthChance(Block blockIn, World worldIn, BlockPos pos)
     {
-        float var5 = 1.0F;
-        Block var6 = p_149864_1_.getBlock(p_149864_2_, p_149864_3_, p_149864_4_ - 1);
-        Block var7 = p_149864_1_.getBlock(p_149864_2_, p_149864_3_, p_149864_4_ + 1);
-        Block var8 = p_149864_1_.getBlock(p_149864_2_ - 1, p_149864_3_, p_149864_4_);
-        Block var9 = p_149864_1_.getBlock(p_149864_2_ + 1, p_149864_3_, p_149864_4_);
-        Block var10 = p_149864_1_.getBlock(p_149864_2_ - 1, p_149864_3_, p_149864_4_ - 1);
-        Block var11 = p_149864_1_.getBlock(p_149864_2_ + 1, p_149864_3_, p_149864_4_ - 1);
-        Block var12 = p_149864_1_.getBlock(p_149864_2_ + 1, p_149864_3_, p_149864_4_ + 1);
-        Block var13 = p_149864_1_.getBlock(p_149864_2_ - 1, p_149864_3_, p_149864_4_ + 1);
-        boolean var14 = var8 == this || var9 == this;
-        boolean var15 = var6 == this || var7 == this;
-        boolean var16 = var10 == this || var11 == this || var12 == this || var13 == this;
+        float f = 1.0F;
+        BlockPos blockpos = pos.down();
 
-        for (int var17 = p_149864_2_ - 1; var17 <= p_149864_2_ + 1; ++var17)
+        for (int i = -1; i <= 1; ++i)
         {
-            for (int var18 = p_149864_4_ - 1; var18 <= p_149864_4_ + 1; ++var18)
+            for (int j = -1; j <= 1; ++j)
             {
-                float var19 = 0.0F;
+                float f1 = 0.0F;
+                IBlockState iblockstate = worldIn.getBlockState(blockpos.add(i, 0, j));
 
-                if (p_149864_1_.getBlock(var17, p_149864_3_ - 1, var18) == Blocks.farmland)
+                if (iblockstate.getBlock() == Blocks.farmland)
                 {
-                    var19 = 1.0F;
+                    f1 = 1.0F;
 
-                    if (p_149864_1_.getBlockMetadata(var17, p_149864_3_ - 1, var18) > 0)
+                    if (((Integer)iblockstate.getValue(BlockFarmland.MOISTURE)).intValue() > 0)
                     {
-                        var19 = 3.0F;
+                        f1 = 3.0F;
                     }
                 }
 
-                if (var17 != p_149864_2_ || var18 != p_149864_4_)
+                if (i != 0 || j != 0)
                 {
-                    var19 /= 4.0F;
+                    f1 /= 4.0F;
                 }
 
-                var5 += var19;
+                f += f1;
             }
         }
 
-        if (var16 || var14 && var15)
+        BlockPos blockpos1 = pos.north();
+        BlockPos blockpos2 = pos.south();
+        BlockPos blockpos3 = pos.west();
+        BlockPos blockpos4 = pos.east();
+        boolean flag = blockIn == worldIn.getBlockState(blockpos3).getBlock() || blockIn == worldIn.getBlockState(blockpos4).getBlock();
+        boolean flag1 = blockIn == worldIn.getBlockState(blockpos1).getBlock() || blockIn == worldIn.getBlockState(blockpos2).getBlock();
+
+        if (flag && flag1)
         {
-            var5 /= 2.0F;
+            f /= 2.0F;
+        }
+        else
+        {
+            boolean flag2 = blockIn == worldIn.getBlockState(blockpos3.north()).getBlock() || blockIn == worldIn.getBlockState(blockpos4.north()).getBlock() || blockIn == worldIn.getBlockState(blockpos4.south()).getBlock() || blockIn == worldIn.getBlockState(blockpos3.south()).getBlock();
+
+            if (flag2)
+            {
+                f /= 2.0F;
+            }
         }
 
-        return var5;
+        return f;
     }
 
-    /**
-     * Gets the block's texture. Args: side, meta
-     */
-    public IIcon getIcon(int p_149691_1_, int p_149691_2_)
+    public boolean canBlockStay(World worldIn, BlockPos pos, IBlockState state)
     {
-        if (p_149691_2_ < 0 || p_149691_2_ > 7)
-        {
-            p_149691_2_ = 7;
-        }
-
-        return this.field_149867_a[p_149691_2_];
+        return (worldIn.getLight(pos) >= 8 || worldIn.canSeeSky(pos)) && this.canPlaceBlockOn(worldIn.getBlockState(pos.down()).getBlock());
     }
 
-    /**
-     * The type of render function that is called for this block
-     */
-    public int getRenderType()
-    {
-        return 6;
-    }
-
-    protected Item func_149866_i()
+    protected Item getSeed()
     {
         return Items.wheat_seeds;
     }
 
-    protected Item func_149865_P()
+    protected Item getCrop()
     {
         return Items.wheat;
     }
 
     /**
-     * Drops the block items with a specified chance of dropping the specified items
+     * Spawns this Block's drops into the World as EntityItems.
      */
-    public void dropBlockAsItemWithChance(World p_149690_1_, int p_149690_2_, int p_149690_3_, int p_149690_4_, int p_149690_5_, float p_149690_6_, int p_149690_7_)
+    public void dropBlockAsItemWithChance(World worldIn, BlockPos pos, IBlockState state, float chance, int fortune)
     {
-        super.dropBlockAsItemWithChance(p_149690_1_, p_149690_2_, p_149690_3_, p_149690_4_, p_149690_5_, p_149690_6_, 0);
+        super.dropBlockAsItemWithChance(worldIn, pos, state, chance, 0);
 
-        if (!p_149690_1_.isClient)
+        if (!worldIn.isRemote)
         {
-            if (p_149690_5_ >= 7)
-            {
-                int var8 = 3 + p_149690_7_;
+            int i = ((Integer)state.getValue(AGE)).intValue();
 
-                for (int var9 = 0; var9 < var8; ++var9)
+            if (i >= 7)
+            {
+                int j = 3 + fortune;
+
+                for (int k = 0; k < j; ++k)
                 {
-                    if (p_149690_1_.rand.nextInt(15) <= p_149690_5_)
+                    if (worldIn.rand.nextInt(15) <= i)
                     {
-                        this.dropBlockAsItem_do(p_149690_1_, p_149690_2_, p_149690_3_, p_149690_4_, new ItemStack(this.func_149866_i(), 1, 0));
+                        spawnAsEntity(worldIn, pos, new ItemStack(this.getSeed(), 1, 0));
                     }
                 }
             }
         }
     }
 
-    public Item getItemDropped(int p_149650_1_, Random p_149650_2_, int p_149650_3_)
+    /**
+     * Get the Item that this Block should drop when harvested.
+     */
+    public Item getItemDropped(IBlockState state, Random rand, int fortune)
     {
-        return p_149650_1_ == 7 ? this.func_149865_P() : this.func_149866_i();
+        return ((Integer)state.getValue(AGE)).intValue() == 7 ? this.getCrop() : this.getSeed();
+    }
+
+    public Item getItem(World worldIn, BlockPos pos)
+    {
+        return this.getSeed();
     }
 
     /**
-     * Returns the quantity of items to drop on block destruction.
+     * Whether this IGrowable can grow
      */
-    public int quantityDropped(Random p_149745_1_)
+    public boolean canGrow(World worldIn, BlockPos pos, IBlockState state, boolean isClient)
     {
-        return 1;
+        return ((Integer)state.getValue(AGE)).intValue() < 7;
     }
 
-    /**
-     * Gets an item for the block being called on. Args: world, x, y, z
-     */
-    public Item getItem(World p_149694_1_, int p_149694_2_, int p_149694_3_, int p_149694_4_)
-    {
-        return this.func_149866_i();
-    }
-
-    public void registerBlockIcons(IIconRegister p_149651_1_)
-    {
-        this.field_149867_a = new IIcon[8];
-
-        for (int var2 = 0; var2 < this.field_149867_a.length; ++var2)
-        {
-            this.field_149867_a[var2] = p_149651_1_.registerIcon(this.getTextureName() + "_stage_" + var2);
-        }
-    }
-
-    public boolean func_149851_a(World p_149851_1_, int p_149851_2_, int p_149851_3_, int p_149851_4_, boolean p_149851_5_)
-    {
-        return p_149851_1_.getBlockMetadata(p_149851_2_, p_149851_3_, p_149851_4_) != 7;
-    }
-
-    public boolean func_149852_a(World p_149852_1_, Random p_149852_2_, int p_149852_3_, int p_149852_4_, int p_149852_5_)
+    public boolean canUseBonemeal(World worldIn, Random rand, BlockPos pos, IBlockState state)
     {
         return true;
     }
 
-    public void func_149853_b(World p_149853_1_, Random p_149853_2_, int p_149853_3_, int p_149853_4_, int p_149853_5_)
+    public void grow(World worldIn, Random rand, BlockPos pos, IBlockState state)
     {
-        this.func_149863_m(p_149853_1_, p_149853_3_, p_149853_4_, p_149853_5_);
+        this.grow(worldIn, pos, state);
+    }
+
+    /**
+     * Convert the given metadata into a BlockState for this Block
+     */
+    public IBlockState getStateFromMeta(int meta)
+    {
+        return this.getDefaultState().withProperty(AGE, Integer.valueOf(meta));
+    }
+
+    /**
+     * Convert the BlockState into the correct metadata value
+     */
+    public int getMetaFromState(IBlockState state)
+    {
+        return ((Integer)state.getValue(AGE)).intValue();
+    }
+
+    protected BlockState createBlockState()
+    {
+        return new BlockState(this, new IProperty[] {AGE});
     }
 }

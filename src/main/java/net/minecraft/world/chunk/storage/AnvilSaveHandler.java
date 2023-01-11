@@ -11,46 +11,43 @@ import net.minecraft.world.storage.WorldInfo;
 
 public class AnvilSaveHandler extends SaveHandler
 {
-    private static final String __OBFID = "CL_00000581";
-
-    public AnvilSaveHandler(File p_i2142_1_, String p_i2142_2_, boolean p_i2142_3_)
+    public AnvilSaveHandler(File savesDirectory, String directoryName, boolean storePlayerdata)
     {
-        super(p_i2142_1_, p_i2142_2_, p_i2142_3_);
+        super(savesDirectory, directoryName, storePlayerdata);
     }
 
     /**
-     * Returns the chunk loader with the provided world provider
+     * initializes and returns the chunk loader for the specified world provider
      */
-    public IChunkLoader getChunkLoader(WorldProvider p_75763_1_)
+    public IChunkLoader getChunkLoader(WorldProvider provider)
     {
-        File var2 = this.getWorldDirectory();
-        File var3;
+        File file1 = this.getWorldDirectory();
 
-        if (p_75763_1_ instanceof WorldProviderHell)
+        if (provider instanceof WorldProviderHell)
         {
-            var3 = new File(var2, "DIM-1");
-            var3.mkdirs();
-            return new AnvilChunkLoader(var3);
+            File file3 = new File(file1, "DIM-1");
+            file3.mkdirs();
+            return new AnvilChunkLoader(file3);
         }
-        else if (p_75763_1_ instanceof WorldProviderEnd)
+        else if (provider instanceof WorldProviderEnd)
         {
-            var3 = new File(var2, "DIM1");
-            var3.mkdirs();
-            return new AnvilChunkLoader(var3);
+            File file2 = new File(file1, "DIM1");
+            file2.mkdirs();
+            return new AnvilChunkLoader(file2);
         }
         else
         {
-            return new AnvilChunkLoader(var2);
+            return new AnvilChunkLoader(file1);
         }
     }
 
     /**
      * Saves the given World Info with the given NBTTagCompound as the Player.
      */
-    public void saveWorldInfoWithPlayer(WorldInfo p_75755_1_, NBTTagCompound p_75755_2_)
+    public void saveWorldInfoWithPlayer(WorldInfo worldInformation, NBTTagCompound tagCompound)
     {
-        p_75755_1_.setSaveVersion(19133);
-        super.saveWorldInfoWithPlayer(p_75755_1_, p_75755_2_);
+        worldInformation.setSaveVersion(19133);
+        super.saveWorldInfoWithPlayer(worldInformation, tagCompound);
     }
 
     /**
@@ -60,11 +57,11 @@ public class AnvilSaveHandler extends SaveHandler
     {
         try
         {
-            ThreadedFileIOBase.threadedIOInstance.waitForFinish();
+            ThreadedFileIOBase.getThreadedIOInstance().waitForFinish();
         }
-        catch (InterruptedException var2)
+        catch (InterruptedException interruptedexception)
         {
-            var2.printStackTrace();
+            interruptedexception.printStackTrace();
         }
 
         RegionFileCache.clearRegionFileReferences();

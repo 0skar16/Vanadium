@@ -1,41 +1,51 @@
 package net.minecraft.client.gui;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.inventory.GuiContainer;
-import net.minecraft.client.resources.I18n;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.ContainerHopper;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.util.ResourceLocation;
-import org.lwjgl.opengl.GL11;
 
 public class GuiHopper extends GuiContainer
 {
-    private static final ResourceLocation field_147085_u = new ResourceLocation("textures/gui/container/hopper.png");
-    private IInventory field_147084_v;
-    private IInventory field_147083_w;
-    private static final String __OBFID = "CL_00000759";
+    /** The ResourceLocation containing the gui texture for the hopper */
+    private static final ResourceLocation HOPPER_GUI_TEXTURE = new ResourceLocation("textures/gui/container/hopper.png");
 
-    public GuiHopper(InventoryPlayer p_i1092_1_, IInventory p_i1092_2_)
+    /** The player inventory currently bound to this GUI instance */
+    private IInventory playerInventory;
+
+    /** The hopper inventory bound to this GUI instance */
+    private IInventory hopperInventory;
+
+    public GuiHopper(InventoryPlayer playerInv, IInventory hopperInv)
     {
-        super(new ContainerHopper(p_i1092_1_, p_i1092_2_));
-        this.field_147084_v = p_i1092_1_;
-        this.field_147083_w = p_i1092_2_;
-        this.field_146291_p = false;
-        this.field_147000_g = 133;
+        super(new ContainerHopper(playerInv, hopperInv, Minecraft.getMinecraft().thePlayer));
+        this.playerInventory = playerInv;
+        this.hopperInventory = hopperInv;
+        this.allowUserInput = false;
+        this.ySize = 133;
     }
 
-    protected void func_146979_b(int p_146979_1_, int p_146979_2_)
+    /**
+     * Draw the foreground layer for the GuiContainer (everything in front of the items). Args : mouseX, mouseY
+     */
+    protected void drawGuiContainerForegroundLayer(int mouseX, int mouseY)
     {
-        this.fontRendererObj.drawString(this.field_147083_w.isInventoryNameLocalized() ? this.field_147083_w.getInventoryName() : I18n.format(this.field_147083_w.getInventoryName(), new Object[0]), 8, 6, 4210752);
-        this.fontRendererObj.drawString(this.field_147084_v.isInventoryNameLocalized() ? this.field_147084_v.getInventoryName() : I18n.format(this.field_147084_v.getInventoryName(), new Object[0]), 8, this.field_147000_g - 96 + 2, 4210752);
+        this.fontRendererObj.drawString(this.hopperInventory.getDisplayName().getUnformattedText(), 8, 6, 4210752);
+        this.fontRendererObj.drawString(this.playerInventory.getDisplayName().getUnformattedText(), 8, this.ySize - 96 + 2, 4210752);
     }
 
-    protected void func_146976_a(float p_146976_1_, int p_146976_2_, int p_146976_3_)
+    /**
+     * Args : renderPartialTicks, mouseX, mouseY
+     */
+    protected void drawGuiContainerBackgroundLayer(float partialTicks, int mouseX, int mouseY)
     {
-        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-        this.mc.getTextureManager().bindTexture(field_147085_u);
-        int var4 = (this.width - this.field_146999_f) / 2;
-        int var5 = (this.height - this.field_147000_g) / 2;
-        this.drawTexturedModalRect(var4, var5, 0, 0, this.field_146999_f, this.field_147000_g);
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        this.mc.getTextureManager().bindTexture(HOPPER_GUI_TEXTURE);
+        int i = (this.width - this.xSize) / 2;
+        int j = (this.height - this.ySize) / 2;
+        this.drawTexturedModalRect(i, j, 0, 0, this.xSize, this.ySize);
     }
 }

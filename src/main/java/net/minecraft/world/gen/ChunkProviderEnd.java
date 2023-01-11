@@ -2,17 +2,18 @@ package net.minecraft.world.gen;
 
 import java.util.List;
 import java.util.Random;
-import net.minecraft.block.Block;
 import net.minecraft.block.BlockFalling;
 import net.minecraft.block.material.Material;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.EnumCreatureType;
 import net.minecraft.init.Blocks;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.IProgressUpdate;
 import net.minecraft.util.MathHelper;
-import net.minecraft.world.ChunkPosition;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.BiomeGenBase;
 import net.minecraft.world.chunk.Chunk;
+import net.minecraft.world.chunk.ChunkPrimer;
 import net.minecraft.world.chunk.IChunkProvider;
 
 public class ChunkProviderEnd implements IChunkProvider
@@ -33,13 +34,11 @@ public class ChunkProviderEnd implements IChunkProvider
     double[] noiseData3;
     double[] noiseData4;
     double[] noiseData5;
-    int[][] field_73203_h = new int[32][32];
-    private static final String __OBFID = "CL_00000397";
 
-    public ChunkProviderEnd(World p_i2007_1_, long p_i2007_2_)
+    public ChunkProviderEnd(World worldIn, long seed)
     {
-        this.endWorld = p_i2007_1_;
-        this.endRNG = new Random(p_i2007_2_);
+        this.endWorld = worldIn;
+        this.endRNG = new Random(seed);
         this.noiseGen1 = new NoiseGeneratorOctaves(this.endRNG, 16);
         this.noiseGen2 = new NoiseGeneratorOctaves(this.endRNG, 16);
         this.noiseGen3 = new NoiseGeneratorOctaves(this.endRNG, 8);
@@ -47,158 +46,146 @@ public class ChunkProviderEnd implements IChunkProvider
         this.noiseGen5 = new NoiseGeneratorOctaves(this.endRNG, 16);
     }
 
-    public void func_147420_a(int p_147420_1_, int p_147420_2_, Block[] p_147420_3_, BiomeGenBase[] p_147420_4_)
+    public void func_180520_a(int p_180520_1_, int p_180520_2_, ChunkPrimer p_180520_3_)
     {
-        byte var5 = 2;
-        int var6 = var5 + 1;
-        byte var7 = 33;
-        int var8 = var5 + 1;
-        this.densities = this.initializeNoiseField(this.densities, p_147420_1_ * var5, 0, p_147420_2_ * var5, var6, var7, var8);
+        int i = 2;
+        int j = i + 1;
+        int k = 33;
+        int l = i + 1;
+        this.densities = this.initializeNoiseField(this.densities, p_180520_1_ * i, 0, p_180520_2_ * i, j, k, l);
 
-        for (int var9 = 0; var9 < var5; ++var9)
+        for (int i1 = 0; i1 < i; ++i1)
         {
-            for (int var10 = 0; var10 < var5; ++var10)
+            for (int j1 = 0; j1 < i; ++j1)
             {
-                for (int var11 = 0; var11 < 32; ++var11)
+                for (int k1 = 0; k1 < 32; ++k1)
                 {
-                    double var12 = 0.25D;
-                    double var14 = this.densities[((var9 + 0) * var8 + var10 + 0) * var7 + var11 + 0];
-                    double var16 = this.densities[((var9 + 0) * var8 + var10 + 1) * var7 + var11 + 0];
-                    double var18 = this.densities[((var9 + 1) * var8 + var10 + 0) * var7 + var11 + 0];
-                    double var20 = this.densities[((var9 + 1) * var8 + var10 + 1) * var7 + var11 + 0];
-                    double var22 = (this.densities[((var9 + 0) * var8 + var10 + 0) * var7 + var11 + 1] - var14) * var12;
-                    double var24 = (this.densities[((var9 + 0) * var8 + var10 + 1) * var7 + var11 + 1] - var16) * var12;
-                    double var26 = (this.densities[((var9 + 1) * var8 + var10 + 0) * var7 + var11 + 1] - var18) * var12;
-                    double var28 = (this.densities[((var9 + 1) * var8 + var10 + 1) * var7 + var11 + 1] - var20) * var12;
+                    double d0 = 0.25D;
+                    double d1 = this.densities[((i1 + 0) * l + j1 + 0) * k + k1 + 0];
+                    double d2 = this.densities[((i1 + 0) * l + j1 + 1) * k + k1 + 0];
+                    double d3 = this.densities[((i1 + 1) * l + j1 + 0) * k + k1 + 0];
+                    double d4 = this.densities[((i1 + 1) * l + j1 + 1) * k + k1 + 0];
+                    double d5 = (this.densities[((i1 + 0) * l + j1 + 0) * k + k1 + 1] - d1) * d0;
+                    double d6 = (this.densities[((i1 + 0) * l + j1 + 1) * k + k1 + 1] - d2) * d0;
+                    double d7 = (this.densities[((i1 + 1) * l + j1 + 0) * k + k1 + 1] - d3) * d0;
+                    double d8 = (this.densities[((i1 + 1) * l + j1 + 1) * k + k1 + 1] - d4) * d0;
 
-                    for (int var30 = 0; var30 < 4; ++var30)
+                    for (int l1 = 0; l1 < 4; ++l1)
                     {
-                        double var31 = 0.125D;
-                        double var33 = var14;
-                        double var35 = var16;
-                        double var37 = (var18 - var14) * var31;
-                        double var39 = (var20 - var16) * var31;
+                        double d9 = 0.125D;
+                        double d10 = d1;
+                        double d11 = d2;
+                        double d12 = (d3 - d1) * d9;
+                        double d13 = (d4 - d2) * d9;
 
-                        for (int var41 = 0; var41 < 8; ++var41)
+                        for (int i2 = 0; i2 < 8; ++i2)
                         {
-                            int var42 = var41 + var9 * 8 << 11 | 0 + var10 * 8 << 7 | var11 * 4 + var30;
-                            short var43 = 128;
-                            double var44 = 0.125D;
-                            double var46 = var33;
-                            double var48 = (var35 - var33) * var44;
+                            double d14 = 0.125D;
+                            double d15 = d10;
+                            double d16 = (d11 - d10) * d14;
 
-                            for (int var50 = 0; var50 < 8; ++var50)
+                            for (int j2 = 0; j2 < 8; ++j2)
                             {
-                                Block var51 = null;
+                                IBlockState iblockstate = null;
 
-                                if (var46 > 0.0D)
+                                if (d15 > 0.0D)
                                 {
-                                    var51 = Blocks.end_stone;
+                                    iblockstate = Blocks.end_stone.getDefaultState();
                                 }
 
-                                p_147420_3_[var42] = var51;
-                                var42 += var43;
-                                var46 += var48;
+                                int k2 = i2 + i1 * 8;
+                                int l2 = l1 + k1 * 4;
+                                int i3 = j2 + j1 * 8;
+                                p_180520_3_.setBlockState(k2, l2, i3, iblockstate);
+                                d15 += d16;
                             }
 
-                            var33 += var37;
-                            var35 += var39;
+                            d10 += d12;
+                            d11 += d13;
                         }
 
-                        var14 += var22;
-                        var16 += var24;
-                        var18 += var26;
-                        var20 += var28;
+                        d1 += d5;
+                        d2 += d6;
+                        d3 += d7;
+                        d4 += d8;
                     }
                 }
             }
         }
     }
 
-    public void func_147421_b(int p_147421_1_, int p_147421_2_, Block[] p_147421_3_, BiomeGenBase[] p_147421_4_)
+    public void func_180519_a(ChunkPrimer p_180519_1_)
     {
-        for (int var5 = 0; var5 < 16; ++var5)
+        for (int i = 0; i < 16; ++i)
         {
-            for (int var6 = 0; var6 < 16; ++var6)
+            for (int j = 0; j < 16; ++j)
             {
-                byte var7 = 1;
-                int var8 = -1;
-                Block var9 = Blocks.end_stone;
-                Block var10 = Blocks.end_stone;
+                int k = 1;
+                int l = -1;
+                IBlockState iblockstate = Blocks.end_stone.getDefaultState();
+                IBlockState iblockstate1 = Blocks.end_stone.getDefaultState();
 
-                for (int var11 = 127; var11 >= 0; --var11)
+                for (int i1 = 127; i1 >= 0; --i1)
                 {
-                    int var12 = (var6 * 16 + var5) * 128 + var11;
-                    Block var13 = p_147421_3_[var12];
+                    IBlockState iblockstate2 = p_180519_1_.getBlockState(i, i1, j);
 
-                    if (var13 != null && var13.getMaterial() != Material.air)
+                    if (iblockstate2.getBlock().getMaterial() == Material.air)
                     {
-                        if (var13 == Blocks.stone)
+                        l = -1;
+                    }
+                    else if (iblockstate2.getBlock() == Blocks.stone)
+                    {
+                        if (l == -1)
                         {
-                            if (var8 == -1)
+                            if (k <= 0)
                             {
-                                if (var7 <= 0)
-                                {
-                                    var9 = null;
-                                    var10 = Blocks.end_stone;
-                                }
-
-                                var8 = var7;
-
-                                if (var11 >= 0)
-                                {
-                                    p_147421_3_[var12] = var9;
-                                }
-                                else
-                                {
-                                    p_147421_3_[var12] = var10;
-                                }
+                                iblockstate = Blocks.air.getDefaultState();
+                                iblockstate1 = Blocks.end_stone.getDefaultState();
                             }
-                            else if (var8 > 0)
+
+                            l = k;
+
+                            if (i1 >= 0)
                             {
-                                --var8;
-                                p_147421_3_[var12] = var10;
+                                p_180519_1_.setBlockState(i, i1, j, iblockstate);
+                            }
+                            else
+                            {
+                                p_180519_1_.setBlockState(i, i1, j, iblockstate1);
                             }
                         }
-                    }
-                    else
-                    {
-                        var8 = -1;
+                        else if (l > 0)
+                        {
+                            --l;
+                            p_180519_1_.setBlockState(i, i1, j, iblockstate1);
+                        }
                     }
                 }
             }
         }
-    }
-
-    /**
-     * loads or generates the chunk at the chunk location specified
-     */
-    public Chunk loadChunk(int p_73158_1_, int p_73158_2_)
-    {
-        return this.provideChunk(p_73158_1_, p_73158_2_);
     }
 
     /**
      * Will return back a chunk, if it doesn't exist and its not a MP client it will generates all the blocks for the
      * specified chunk from the map seed and chunk seed
      */
-    public Chunk provideChunk(int p_73154_1_, int p_73154_2_)
+    public Chunk provideChunk(int x, int z)
     {
-        this.endRNG.setSeed((long)p_73154_1_ * 341873128712L + (long)p_73154_2_ * 132897987541L);
-        Block[] var3 = new Block[32768];
-        this.biomesForGeneration = this.endWorld.getWorldChunkManager().loadBlockGeneratorData(this.biomesForGeneration, p_73154_1_ * 16, p_73154_2_ * 16, 16, 16);
-        this.func_147420_a(p_73154_1_, p_73154_2_, var3, this.biomesForGeneration);
-        this.func_147421_b(p_73154_1_, p_73154_2_, var3, this.biomesForGeneration);
-        Chunk var4 = new Chunk(this.endWorld, var3, p_73154_1_, p_73154_2_);
-        byte[] var5 = var4.getBiomeArray();
+        this.endRNG.setSeed((long)x * 341873128712L + (long)z * 132897987541L);
+        ChunkPrimer chunkprimer = new ChunkPrimer();
+        this.biomesForGeneration = this.endWorld.getWorldChunkManager().loadBlockGeneratorData(this.biomesForGeneration, x * 16, z * 16, 16, 16);
+        this.func_180520_a(x, z, chunkprimer);
+        this.func_180519_a(chunkprimer);
+        Chunk chunk = new Chunk(this.endWorld, chunkprimer, x, z);
+        byte[] abyte = chunk.getBiomeArray();
 
-        for (int var6 = 0; var6 < var5.length; ++var6)
+        for (int i = 0; i < abyte.length; ++i)
         {
-            var5[var6] = (byte)this.biomesForGeneration[var6].biomeID;
+            abyte[i] = (byte)this.biomesForGeneration[i].biomeID;
         }
 
-        var4.generateSkylightMap();
-        return var4;
+        chunk.generateSkylightMap();
+        return chunk;
     }
 
     /**
@@ -212,127 +199,75 @@ public class ChunkProviderEnd implements IChunkProvider
             p_73187_1_ = new double[p_73187_5_ * p_73187_6_ * p_73187_7_];
         }
 
-        double var8 = 684.412D;
-        double var10 = 684.412D;
+        double d0 = 684.412D;
+        double d1 = 684.412D;
         this.noiseData4 = this.noiseGen4.generateNoiseOctaves(this.noiseData4, p_73187_2_, p_73187_4_, p_73187_5_, p_73187_7_, 1.121D, 1.121D, 0.5D);
         this.noiseData5 = this.noiseGen5.generateNoiseOctaves(this.noiseData5, p_73187_2_, p_73187_4_, p_73187_5_, p_73187_7_, 200.0D, 200.0D, 0.5D);
-        var8 *= 2.0D;
-        this.noiseData1 = this.noiseGen3.generateNoiseOctaves(this.noiseData1, p_73187_2_, p_73187_3_, p_73187_4_, p_73187_5_, p_73187_6_, p_73187_7_, var8 / 80.0D, var10 / 160.0D, var8 / 80.0D);
-        this.noiseData2 = this.noiseGen1.generateNoiseOctaves(this.noiseData2, p_73187_2_, p_73187_3_, p_73187_4_, p_73187_5_, p_73187_6_, p_73187_7_, var8, var10, var8);
-        this.noiseData3 = this.noiseGen2.generateNoiseOctaves(this.noiseData3, p_73187_2_, p_73187_3_, p_73187_4_, p_73187_5_, p_73187_6_, p_73187_7_, var8, var10, var8);
-        int var12 = 0;
-        int var13 = 0;
+        d0 = d0 * 2.0D;
+        this.noiseData1 = this.noiseGen3.generateNoiseOctaves(this.noiseData1, p_73187_2_, p_73187_3_, p_73187_4_, p_73187_5_, p_73187_6_, p_73187_7_, d0 / 80.0D, d1 / 160.0D, d0 / 80.0D);
+        this.noiseData2 = this.noiseGen1.generateNoiseOctaves(this.noiseData2, p_73187_2_, p_73187_3_, p_73187_4_, p_73187_5_, p_73187_6_, p_73187_7_, d0, d1, d0);
+        this.noiseData3 = this.noiseGen2.generateNoiseOctaves(this.noiseData3, p_73187_2_, p_73187_3_, p_73187_4_, p_73187_5_, p_73187_6_, p_73187_7_, d0, d1, d0);
+        int i = 0;
 
-        for (int var14 = 0; var14 < p_73187_5_; ++var14)
+        for (int j = 0; j < p_73187_5_; ++j)
         {
-            for (int var15 = 0; var15 < p_73187_7_; ++var15)
+            for (int k = 0; k < p_73187_7_; ++k)
             {
-                double var16 = (this.noiseData4[var13] + 256.0D) / 512.0D;
+                float f = (float)(j + p_73187_2_) / 1.0F;
+                float f1 = (float)(k + p_73187_4_) / 1.0F;
+                float f2 = 100.0F - MathHelper.sqrt_float(f * f + f1 * f1) * 8.0F;
 
-                if (var16 > 1.0D)
+                if (f2 > 80.0F)
                 {
-                    var16 = 1.0D;
+                    f2 = 80.0F;
                 }
 
-                double var18 = this.noiseData5[var13] / 8000.0D;
-
-                if (var18 < 0.0D)
+                if (f2 < -100.0F)
                 {
-                    var18 = -var18 * 0.3D;
+                    f2 = -100.0F;
                 }
 
-                var18 = var18 * 3.0D - 2.0D;
-                float var20 = (float)(var14 + p_73187_2_ - 0) / 1.0F;
-                float var21 = (float)(var15 + p_73187_4_ - 0) / 1.0F;
-                float var22 = 100.0F - MathHelper.sqrt_float(var20 * var20 + var21 * var21) * 8.0F;
-
-                if (var22 > 80.0F)
+                for (int l = 0; l < p_73187_6_; ++l)
                 {
-                    var22 = 80.0F;
-                }
+                    double d2 = 0.0D;
+                    double d3 = this.noiseData2[i] / 512.0D;
+                    double d4 = this.noiseData3[i] / 512.0D;
+                    double d5 = (this.noiseData1[i] / 10.0D + 1.0D) / 2.0D;
 
-                if (var22 < -100.0F)
-                {
-                    var22 = -100.0F;
-                }
-
-                if (var18 > 1.0D)
-                {
-                    var18 = 1.0D;
-                }
-
-                var18 /= 8.0D;
-                var18 = 0.0D;
-
-                if (var16 < 0.0D)
-                {
-                    var16 = 0.0D;
-                }
-
-                var16 += 0.5D;
-                var18 = var18 * (double)p_73187_6_ / 16.0D;
-                ++var13;
-                double var23 = (double)p_73187_6_ / 2.0D;
-
-                for (int var25 = 0; var25 < p_73187_6_; ++var25)
-                {
-                    double var26 = 0.0D;
-                    double var28 = ((double)var25 - var23) * 8.0D / var16;
-
-                    if (var28 < 0.0D)
+                    if (d5 < 0.0D)
                     {
-                        var28 *= -1.0D;
+                        d2 = d3;
                     }
-
-                    double var30 = this.noiseData2[var12] / 512.0D;
-                    double var32 = this.noiseData3[var12] / 512.0D;
-                    double var34 = (this.noiseData1[var12] / 10.0D + 1.0D) / 2.0D;
-
-                    if (var34 < 0.0D)
+                    else if (d5 > 1.0D)
                     {
-                        var26 = var30;
-                    }
-                    else if (var34 > 1.0D)
-                    {
-                        var26 = var32;
+                        d2 = d4;
                     }
                     else
                     {
-                        var26 = var30 + (var32 - var30) * var34;
+                        d2 = d3 + (d4 - d3) * d5;
                     }
 
-                    var26 -= 8.0D;
-                    var26 += (double)var22;
-                    byte var36 = 2;
-                    double var37;
+                    d2 = d2 - 8.0D;
+                    d2 = d2 + (double)f2;
+                    int i1 = 2;
 
-                    if (var25 > p_73187_6_ / 2 - var36)
+                    if (l > p_73187_6_ / 2 - i1)
                     {
-                        var37 = (double)((float)(var25 - (p_73187_6_ / 2 - var36)) / 64.0F);
-
-                        if (var37 < 0.0D)
-                        {
-                            var37 = 0.0D;
-                        }
-
-                        if (var37 > 1.0D)
-                        {
-                            var37 = 1.0D;
-                        }
-
-                        var26 = var26 * (1.0D - var37) + -3000.0D * var37;
+                        double d6 = (double)((float)(l - (p_73187_6_ / 2 - i1)) / 64.0F);
+                        d6 = MathHelper.clamp_double(d6, 0.0D, 1.0D);
+                        d2 = d2 * (1.0D - d6) + -3000.0D * d6;
                     }
 
-                    var36 = 8;
+                    i1 = 8;
 
-                    if (var25 < var36)
+                    if (l < i1)
                     {
-                        var37 = (double)((float)(var36 - var25) / ((float)var36 - 1.0F));
-                        var26 = var26 * (1.0D - var37) + -30.0D * var37;
+                        double d7 = (double)((float)(i1 - l) / ((float)i1 - 1.0F));
+                        d2 = d2 * (1.0D - d7) + -30.0D * d7;
                     }
 
-                    p_73187_1_[var12] = var26;
-                    ++var12;
+                    p_73187_1_[i] = d2;
+                    ++i;
                 }
             }
         }
@@ -341,9 +276,9 @@ public class ChunkProviderEnd implements IChunkProvider
     }
 
     /**
-     * Checks to see if a chunk exists at x, y
+     * Checks to see if a chunk exists at x, z
      */
-    public boolean chunkExists(int p_73149_1_, int p_73149_2_)
+    public boolean chunkExists(int x, int z)
     {
         return true;
     }
@@ -351,21 +286,24 @@ public class ChunkProviderEnd implements IChunkProvider
     /**
      * Populates chunk with ores etc etc
      */
-    public void populate(IChunkProvider p_73153_1_, int p_73153_2_, int p_73153_3_)
+    public void populate(IChunkProvider chunkProvider, int x, int z)
     {
-        BlockFalling.field_149832_M = true;
-        int var4 = p_73153_2_ * 16;
-        int var5 = p_73153_3_ * 16;
-        BiomeGenBase var6 = this.endWorld.getBiomeGenForCoords(var4 + 16, var5 + 16);
-        var6.decorate(this.endWorld, this.endWorld.rand, var4, var5);
-        BlockFalling.field_149832_M = false;
+        BlockFalling.fallInstantly = true;
+        BlockPos blockpos = new BlockPos(x * 16, 0, z * 16);
+        this.endWorld.getBiomeGenForCoords(blockpos.add(16, 0, 16)).decorate(this.endWorld, this.endWorld.rand, blockpos);
+        BlockFalling.fallInstantly = false;
+    }
+
+    public boolean populateChunk(IChunkProvider chunkProvider, Chunk chunkIn, int x, int z)
+    {
+        return false;
     }
 
     /**
      * Two modes of operation: if passed true, save all Chunks in one go.  If passed false, save up to two chunks.
      * Return true if all chunks have been saved.
      */
-    public boolean saveChunks(boolean p_73151_1_, IProgressUpdate p_73151_2_)
+    public boolean saveChunks(boolean saveAllChunks, IProgressUpdate progressCallback)
     {
         return true;
     }
@@ -374,7 +312,9 @@ public class ChunkProviderEnd implements IChunkProvider
      * Save extra data not associated with any Chunk.  Not saved during autosave, only during world unload.  Currently
      * unimplemented.
      */
-    public void saveExtraData() {}
+    public void saveExtraData()
+    {
+    }
 
     /**
      * Unloads chunks that are marked to be unloaded. This is not guaranteed to unload every such chunk.
@@ -400,16 +340,12 @@ public class ChunkProviderEnd implements IChunkProvider
         return "RandomLevelSource";
     }
 
-    /**
-     * Returns a list of creatures of the specified type that can spawn at the given location.
-     */
-    public List getPossibleCreatures(EnumCreatureType p_73155_1_, int p_73155_2_, int p_73155_3_, int p_73155_4_)
+    public List<BiomeGenBase.SpawnListEntry> getPossibleCreatures(EnumCreatureType creatureType, BlockPos pos)
     {
-        BiomeGenBase var5 = this.endWorld.getBiomeGenForCoords(p_73155_2_, p_73155_4_);
-        return var5.getSpawnableList(p_73155_1_);
+        return this.endWorld.getBiomeGenForCoords(pos).getSpawnableList(creatureType);
     }
 
-    public ChunkPosition func_147416_a(World p_147416_1_, String p_147416_2_, int p_147416_3_, int p_147416_4_, int p_147416_5_)
+    public BlockPos getStrongholdGen(World worldIn, String structureName, BlockPos position)
     {
         return null;
     }
@@ -419,5 +355,12 @@ public class ChunkProviderEnd implements IChunkProvider
         return 0;
     }
 
-    public void recreateStructures(int p_82695_1_, int p_82695_2_) {}
+    public void recreateStructures(Chunk chunkIn, int x, int z)
+    {
+    }
+
+    public Chunk provideChunk(BlockPos blockPosIn)
+    {
+        return this.provideChunk(blockPosIn.getX() >> 4, blockPosIn.getZ() >> 4);
+    }
 }

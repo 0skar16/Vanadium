@@ -1,89 +1,68 @@
 package net.minecraft.item;
 
 import java.util.List;
-import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagIntArray;
-import net.minecraft.util.IIcon;
 import net.minecraft.util.StatCollector;
 
 public class ItemFireworkCharge extends Item
 {
-    private IIcon field_150904_a;
-    private static final String __OBFID = "CL_00000030";
-
-    /**
-     * Gets an icon index based on an item's damage value and the given render pass
-     */
-    public IIcon getIconFromDamageForRenderPass(int p_77618_1_, int p_77618_2_)
+    public int getColorFromItemStack(ItemStack stack, int renderPass)
     {
-        return p_77618_2_ > 0 ? this.field_150904_a : super.getIconFromDamageForRenderPass(p_77618_1_, p_77618_2_);
-    }
-
-    public int getColorFromItemStack(ItemStack p_82790_1_, int p_82790_2_)
-    {
-        if (p_82790_2_ != 1)
+        if (renderPass != 1)
         {
-            return super.getColorFromItemStack(p_82790_1_, p_82790_2_);
+            return super.getColorFromItemStack(stack, renderPass);
         }
         else
         {
-            NBTBase var3 = func_150903_a(p_82790_1_, "Colors");
+            NBTBase nbtbase = getExplosionTag(stack, "Colors");
 
-            if (var3 != null && var3 instanceof NBTTagIntArray)
+            if (!(nbtbase instanceof NBTTagIntArray))
             {
-                NBTTagIntArray var4 = (NBTTagIntArray)var3;
-                int[] var5 = var4.func_150302_c();
-
-                if (var5.length == 1)
-                {
-                    return var5[0];
-                }
-                else
-                {
-                    int var6 = 0;
-                    int var7 = 0;
-                    int var8 = 0;
-                    int[] var9 = var5;
-                    int var10 = var5.length;
-
-                    for (int var11 = 0; var11 < var10; ++var11)
-                    {
-                        int var12 = var9[var11];
-                        var6 += (var12 & 16711680) >> 16;
-                        var7 += (var12 & 65280) >> 8;
-                        var8 += (var12 & 255) >> 0;
-                    }
-
-                    var6 /= var5.length;
-                    var7 /= var5.length;
-                    var8 /= var5.length;
-                    return var6 << 16 | var7 << 8 | var8;
-                }
+                return 9079434;
             }
             else
             {
-                return 9079434;
+                NBTTagIntArray nbttagintarray = (NBTTagIntArray)nbtbase;
+                int[] aint = nbttagintarray.getIntArray();
+
+                if (aint.length == 1)
+                {
+                    return aint[0];
+                }
+                else
+                {
+                    int i = 0;
+                    int j = 0;
+                    int k = 0;
+
+                    for (int l : aint)
+                    {
+                        i += (l & 16711680) >> 16;
+                        j += (l & 65280) >> 8;
+                        k += (l & 255) >> 0;
+                    }
+
+                    i = i / aint.length;
+                    j = j / aint.length;
+                    k = k / aint.length;
+                    return i << 16 | j << 8 | k;
+                }
             }
         }
     }
 
-    public boolean requiresMultipleRenderPasses()
+    public static NBTBase getExplosionTag(ItemStack stack, String key)
     {
-        return true;
-    }
-
-    public static NBTBase func_150903_a(ItemStack p_150903_0_, String p_150903_1_)
-    {
-        if (p_150903_0_.hasTagCompound())
+        if (stack.hasTagCompound())
         {
-            NBTTagCompound var2 = p_150903_0_.getTagCompound().getCompoundTag("Explosion");
+            NBTTagCompound nbttagcompound = stack.getTagCompound().getCompoundTag("Explosion");
 
-            if (var2 != null)
+            if (nbttagcompound != null)
             {
-                return var2.getTag(p_150903_1_);
+                return nbttagcompound.getTag(key);
             }
         }
 
@@ -93,133 +72,116 @@ public class ItemFireworkCharge extends Item
     /**
      * allows items to add custom lines of information to the mouseover description
      */
-    public void addInformation(ItemStack p_77624_1_, EntityPlayer p_77624_2_, List p_77624_3_, boolean p_77624_4_)
+    public void addInformation(ItemStack stack, EntityPlayer playerIn, List<String> tooltip, boolean advanced)
     {
-        if (p_77624_1_.hasTagCompound())
+        if (stack.hasTagCompound())
         {
-            NBTTagCompound var5 = p_77624_1_.getTagCompound().getCompoundTag("Explosion");
+            NBTTagCompound nbttagcompound = stack.getTagCompound().getCompoundTag("Explosion");
 
-            if (var5 != null)
+            if (nbttagcompound != null)
             {
-                func_150902_a(var5, p_77624_3_);
+                addExplosionInfo(nbttagcompound, tooltip);
             }
         }
     }
 
-    public static void func_150902_a(NBTTagCompound p_150902_0_, List p_150902_1_)
+    public static void addExplosionInfo(NBTTagCompound nbt, List<String> tooltip)
     {
-        byte var2 = p_150902_0_.getByte("Type");
+        byte b0 = nbt.getByte("Type");
 
-        if (var2 >= 0 && var2 <= 4)
+        if (b0 >= 0 && b0 <= 4)
         {
-            p_150902_1_.add(StatCollector.translateToLocal("item.fireworksCharge.type." + var2).trim());
+            tooltip.add(StatCollector.translateToLocal("item.fireworksCharge.type." + b0).trim());
         }
         else
         {
-            p_150902_1_.add(StatCollector.translateToLocal("item.fireworksCharge.type").trim());
+            tooltip.add(StatCollector.translateToLocal("item.fireworksCharge.type").trim());
         }
 
-        int[] var3 = p_150902_0_.getIntArray("Colors");
-        int var8;
-        int var9;
+        int[] aint = nbt.getIntArray("Colors");
 
-        if (var3.length > 0)
+        if (aint.length > 0)
         {
-            boolean var4 = true;
-            String var5 = "";
-            int[] var6 = var3;
-            int var7 = var3.length;
+            boolean flag = true;
+            String s = "";
 
-            for (var8 = 0; var8 < var7; ++var8)
+            for (int i : aint)
             {
-                var9 = var6[var8];
-
-                if (!var4)
+                if (!flag)
                 {
-                    var5 = var5 + ", ";
+                    s = s + ", ";
                 }
 
-                var4 = false;
-                boolean var10 = false;
+                flag = false;
+                boolean flag1 = false;
 
-                for (int var11 = 0; var11 < 16; ++var11)
+                for (int j = 0; j < ItemDye.dyeColors.length; ++j)
                 {
-                    if (var9 == ItemDye.field_150922_c[var11])
+                    if (i == ItemDye.dyeColors[j])
                     {
-                        var10 = true;
-                        var5 = var5 + StatCollector.translateToLocal("item.fireworksCharge." + ItemDye.field_150923_a[var11]);
+                        flag1 = true;
+                        s = s + StatCollector.translateToLocal("item.fireworksCharge." + EnumDyeColor.byDyeDamage(j).getUnlocalizedName());
                         break;
                     }
                 }
 
-                if (!var10)
+                if (!flag1)
                 {
-                    var5 = var5 + StatCollector.translateToLocal("item.fireworksCharge.customColor");
+                    s = s + StatCollector.translateToLocal("item.fireworksCharge.customColor");
                 }
             }
 
-            p_150902_1_.add(var5);
+            tooltip.add(s);
         }
 
-        int[] var13 = p_150902_0_.getIntArray("FadeColors");
-        boolean var14;
+        int[] aint1 = nbt.getIntArray("FadeColors");
 
-        if (var13.length > 0)
+        if (aint1.length > 0)
         {
-            var14 = true;
-            String var15 = StatCollector.translateToLocal("item.fireworksCharge.fadeTo") + " ";
-            int[] var17 = var13;
-            var8 = var13.length;
+            boolean flag2 = true;
+            String s1 = StatCollector.translateToLocal("item.fireworksCharge.fadeTo") + " ";
 
-            for (var9 = 0; var9 < var8; ++var9)
+            for (int l : aint1)
             {
-                int var18 = var17[var9];
-
-                if (!var14)
+                if (!flag2)
                 {
-                    var15 = var15 + ", ";
+                    s1 = s1 + ", ";
                 }
 
-                var14 = false;
-                boolean var19 = false;
+                flag2 = false;
+                boolean flag5 = false;
 
-                for (int var12 = 0; var12 < 16; ++var12)
+                for (int k = 0; k < 16; ++k)
                 {
-                    if (var18 == ItemDye.field_150922_c[var12])
+                    if (l == ItemDye.dyeColors[k])
                     {
-                        var19 = true;
-                        var15 = var15 + StatCollector.translateToLocal("item.fireworksCharge." + ItemDye.field_150923_a[var12]);
+                        flag5 = true;
+                        s1 = s1 + StatCollector.translateToLocal("item.fireworksCharge." + EnumDyeColor.byDyeDamage(k).getUnlocalizedName());
                         break;
                     }
                 }
 
-                if (!var19)
+                if (!flag5)
                 {
-                    var15 = var15 + StatCollector.translateToLocal("item.fireworksCharge.customColor");
+                    s1 = s1 + StatCollector.translateToLocal("item.fireworksCharge.customColor");
                 }
             }
 
-            p_150902_1_.add(var15);
+            tooltip.add(s1);
         }
 
-        var14 = p_150902_0_.getBoolean("Trail");
+        boolean flag3 = nbt.getBoolean("Trail");
 
-        if (var14)
+        if (flag3)
         {
-            p_150902_1_.add(StatCollector.translateToLocal("item.fireworksCharge.trail"));
+            tooltip.add(StatCollector.translateToLocal("item.fireworksCharge.trail"));
         }
 
-        boolean var16 = p_150902_0_.getBoolean("Flicker");
+        boolean flag4 = nbt.getBoolean("Flicker");
 
-        if (var16)
+        if (flag4)
         {
-            p_150902_1_.add(StatCollector.translateToLocal("item.fireworksCharge.flicker"));
+            tooltip.add(StatCollector.translateToLocal("item.fireworksCharge.flicker"));
         }
-    }
-
-    public void registerIcons(IIconRegister p_94581_1_)
-    {
-        super.registerIcons(p_94581_1_);
-        this.field_150904_a = p_94581_1_.registerIcon(this.getIconString() + "_overlay");
     }
 }

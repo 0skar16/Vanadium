@@ -2,89 +2,148 @@ package net.minecraft.item;
 
 import java.util.List;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.inventory.Slot;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
+import net.minecraft.nbt.NBTTagString;
+import net.minecraft.network.play.server.S2FPacketSetSlot;
+import net.minecraft.stats.StatList;
+import net.minecraft.util.ChatComponentProcessor;
+import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.IChatComponent;
 import net.minecraft.util.StatCollector;
 import net.minecraft.util.StringUtils;
 import net.minecraft.world.World;
 
 public class ItemEditableBook extends Item
 {
-    private static final String __OBFID = "CL_00000077";
-
     public ItemEditableBook()
     {
         this.setMaxStackSize(1);
     }
 
-    public static boolean validBookTagContents(NBTTagCompound p_77828_0_)
+    public static boolean validBookTagContents(NBTTagCompound nbt)
     {
-        if (!ItemWritableBook.func_150930_a(p_77828_0_))
+        if (!ItemWritableBook.isNBTValid(nbt))
         {
             return false;
         }
-        else if (!p_77828_0_.func_150297_b("title", 8))
+        else if (!nbt.hasKey("title", 8))
         {
             return false;
         }
         else
         {
-            String var1 = p_77828_0_.getString("title");
-            return var1 != null && var1.length() <= 16 ? p_77828_0_.func_150297_b("author", 8) : false;
+            String s = nbt.getString("title");
+            return s != null && s.length() <= 32 ? nbt.hasKey("author", 8) : false;
         }
     }
 
-    public String getItemStackDisplayName(ItemStack p_77653_1_)
+    /**
+     * Gets the generation of the book (how many times it has been cloned)
+     */
+    public static int getGeneration(ItemStack book)
     {
-        if (p_77653_1_.hasTagCompound())
-        {
-            NBTTagCompound var2 = p_77653_1_.getTagCompound();
-            String var3 = var2.getString("title");
+        return book.getTagCompound().getInteger("generation");
+    }
 
-            if (!StringUtils.isNullOrEmpty(var3))
+    public String getItemStackDisplayName(ItemStack stack)
+    {
+        if (stack.hasTagCompound())
+        {
+            NBTTagCompound nbttagcompound = stack.getTagCompound();
+            String s = nbttagcompound.getString("title");
+
+            if (!StringUtils.isNullOrEmpty(s))
             {
-                return var3;
+                return s;
             }
         }
 
-        return super.getItemStackDisplayName(p_77653_1_);
+        return super.getItemStackDisplayName(stack);
     }
 
     /**
      * allows items to add custom lines of information to the mouseover description
      */
-    public void addInformation(ItemStack p_77624_1_, EntityPlayer p_77624_2_, List p_77624_3_, boolean p_77624_4_)
+    public void addInformation(ItemStack stack, EntityPlayer playerIn, List<String> tooltip, boolean advanced)
     {
-        if (p_77624_1_.hasTagCompound())
+        if (stack.hasTagCompound())
         {
-            NBTTagCompound var5 = p_77624_1_.getTagCompound();
-            String var6 = var5.getString("author");
+            NBTTagCompound nbttagcompound = stack.getTagCompound();
+            String s = nbttagcompound.getString("author");
 
-            if (!StringUtils.isNullOrEmpty(var6))
+            if (!StringUtils.isNullOrEmpty(s))
             {
-                p_77624_3_.add(EnumChatFormatting.GRAY + StatCollector.translateToLocalFormatted("book.byAuthor", new Object[] {var6}));
+                tooltip.add(EnumChatFormatting.GRAY + StatCollector.translateToLocalFormatted("book.byAuthor", new Object[] {s}));
             }
+
+            tooltip.add(EnumChatFormatting.GRAY + StatCollector.translateToLocal("book.generation." + nbttagcompound.getInteger("generation")));
         }
     }
 
     /**
      * Called whenever this item is equipped and the right mouse button is pressed. Args: itemStack, world, entityPlayer
      */
-    public ItemStack onItemRightClick(ItemStack p_77659_1_, World p_77659_2_, EntityPlayer p_77659_3_)
+    public ItemStack onItemRightClick(ItemStack itemStackIn, World worldIn, EntityPlayer playerIn)
     {
-        p_77659_3_.displayGUIBook(p_77659_1_);
-        return p_77659_1_;
+        if (!worldIn.isRemote)
+        {
+            this.resolveContents(itemStackIn, playerIn);
+        }
+
+        playerIn.displayGUIBook(itemStackIn);
+        playerIn.triggerAchievement(StatList.objectUseStats[Item.getIdFromItem(this)]);
+        return itemStackIn;
     }
 
-    /**
-     * If this function returns true (or the item is damageable), the ItemStack's NBT tag will be sent to the client.
-     */
-    public boolean getShareTag()
+    private void resolveContents(ItemStack stack, EntityPlayer player)
     {
-        return true;
+        if (stack != null && stack.getTagCompound() != null)
+        {
+            NBTTagCompound nbttagcompound = stack.getTagCompound();
+
+            if (!nbttagcompound.getBoolean("resolved"))
+            {
+                nbttagcompound.setBoolean("resolved", true);
+
+                if (validBookTagContents(nbttagcompound))
+                {
+                    NBTTagList nbttaglist = nbttagcompound.getTagList("pages", 8);
+
+                    for (int i = 0; i < nbttaglist.tagCount(); ++i)
+                    {
+                        String s = nbttaglist.getStringTagAt(i);
+                        IChatComponent ichatcomponent;
+
+                        try
+                        {
+                            ichatcomponent = IChatComponent.Serializer.jsonToComponent(s);
+                            ichatcomponent = ChatComponentProcessor.processComponent(player, ichatcomponent, player);
+                        }
+                        catch (Exception var9)
+                        {
+                            ichatcomponent = new ChatComponentText(s);
+                        }
+
+                        nbttaglist.set(i, new NBTTagString(IChatComponent.Serializer.componentToJson(ichatcomponent)));
+                    }
+
+                    nbttagcompound.setTag("pages", nbttaglist);
+
+                    if (player instanceof EntityPlayerMP && player.getCurrentEquippedItem() == stack)
+                    {
+                        Slot slot = player.openContainer.getSlotFromInventory(player.inventory, player.inventory.currentItem);
+                        ((EntityPlayerMP)player).playerNetServerHandler.sendPacket(new S2FPacketSetSlot(0, slot.slotNumber, stack));
+                    }
+                }
+            }
+        }
     }
 
-    public boolean hasEffect(ItemStack p_77636_1_)
+    public boolean hasEffect(ItemStack stack)
     {
         return true;
     }

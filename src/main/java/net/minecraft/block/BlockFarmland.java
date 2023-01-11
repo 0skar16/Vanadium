@@ -2,162 +2,176 @@ package net.minecraft.block;
 
 import java.util.Random;
 import net.minecraft.block.material.Material;
-import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.block.properties.IProperty;
+import net.minecraft.block.properties.PropertyInteger;
+import net.minecraft.block.state.BlockState;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.util.AxisAlignedBB;
-import net.minecraft.util.IIcon;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 
 public class BlockFarmland extends Block
 {
-    private IIcon field_149824_a;
-    private IIcon field_149823_b;
-    private static final String __OBFID = "CL_00000241";
+    public static final PropertyInteger MOISTURE = PropertyInteger.create("moisture", 0, 7);
 
     protected BlockFarmland()
     {
         super(Material.ground);
+        this.setDefaultState(this.blockState.getBaseState().withProperty(MOISTURE, Integer.valueOf(0)));
         this.setTickRandomly(true);
         this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 0.9375F, 1.0F);
         this.setLightOpacity(255);
     }
 
-    /**
-     * Returns a bounding box from the pool of bounding boxes (this means this box can change after the pool has been
-     * cleared to be reused)
-     */
-    public AxisAlignedBB getCollisionBoundingBoxFromPool(World p_149668_1_, int p_149668_2_, int p_149668_3_, int p_149668_4_)
+    public AxisAlignedBB getCollisionBoundingBox(World worldIn, BlockPos pos, IBlockState state)
     {
-        return AxisAlignedBB.getBoundingBox((double)(p_149668_2_ + 0), (double)(p_149668_3_ + 0), (double)(p_149668_4_ + 0), (double)(p_149668_2_ + 1), (double)(p_149668_3_ + 1), (double)(p_149668_4_ + 1));
+        return new AxisAlignedBB((double)pos.getX(), (double)pos.getY(), (double)pos.getZ(), (double)(pos.getX() + 1), (double)(pos.getY() + 1), (double)(pos.getZ() + 1));
     }
 
+    /**
+     * Used to determine ambient occlusion and culling when rebuilding chunks for render
+     */
     public boolean isOpaqueCube()
     {
         return false;
     }
 
-    public boolean renderAsNormalBlock()
+    public boolean isFullCube()
     {
         return false;
     }
 
-    /**
-     * Gets the block's texture. Args: side, meta
-     */
-    public IIcon getIcon(int p_149691_1_, int p_149691_2_)
+    public void updateTick(World worldIn, BlockPos pos, IBlockState state, Random rand)
     {
-        return p_149691_1_ == 1 ? (p_149691_2_ > 0 ? this.field_149824_a : this.field_149823_b) : Blocks.dirt.getBlockTextureFromSide(p_149691_1_);
-    }
+        int i = ((Integer)state.getValue(MOISTURE)).intValue();
 
-    /**
-     * Ticks the block if it's been scheduled
-     */
-    public void updateTick(World p_149674_1_, int p_149674_2_, int p_149674_3_, int p_149674_4_, Random p_149674_5_)
-    {
-        if (!this.func_149821_m(p_149674_1_, p_149674_2_, p_149674_3_, p_149674_4_) && !p_149674_1_.canLightningStrikeAt(p_149674_2_, p_149674_3_ + 1, p_149674_4_))
+        if (!this.hasWater(worldIn, pos) && !worldIn.isRainingAt(pos.up()))
         {
-            int var6 = p_149674_1_.getBlockMetadata(p_149674_2_, p_149674_3_, p_149674_4_);
-
-            if (var6 > 0)
+            if (i > 0)
             {
-                p_149674_1_.setBlockMetadataWithNotify(p_149674_2_, p_149674_3_, p_149674_4_, var6 - 1, 2);
+                worldIn.setBlockState(pos, state.withProperty(MOISTURE, Integer.valueOf(i - 1)), 2);
             }
-            else if (!this.func_149822_e(p_149674_1_, p_149674_2_, p_149674_3_, p_149674_4_))
+            else if (!this.hasCrops(worldIn, pos))
             {
-                p_149674_1_.setBlock(p_149674_2_, p_149674_3_, p_149674_4_, Blocks.dirt);
+                worldIn.setBlockState(pos, Blocks.dirt.getDefaultState());
             }
         }
-        else
+        else if (i < 7)
         {
-            p_149674_1_.setBlockMetadataWithNotify(p_149674_2_, p_149674_3_, p_149674_4_, 7, 2);
+            worldIn.setBlockState(pos, state.withProperty(MOISTURE, Integer.valueOf(7)), 2);
         }
     }
 
     /**
-     * Block's chance to react to an entity falling on it.
+     * Block's chance to react to a living entity falling on it.
      */
-    public void onFallenUpon(World p_149746_1_, int p_149746_2_, int p_149746_3_, int p_149746_4_, Entity p_149746_5_, float p_149746_6_)
+    public void onFallenUpon(World worldIn, BlockPos pos, Entity entityIn, float fallDistance)
     {
-        if (!p_149746_1_.isClient && p_149746_1_.rand.nextFloat() < p_149746_6_ - 0.5F)
+        if (entityIn instanceof EntityLivingBase)
         {
-            if (!(p_149746_5_ instanceof EntityPlayer) && !p_149746_1_.getGameRules().getGameRuleBooleanValue("mobGriefing"))
+            if (!worldIn.isRemote && worldIn.rand.nextFloat() < fallDistance - 0.5F)
             {
-                return;
-            }
-
-            p_149746_1_.setBlock(p_149746_2_, p_149746_3_, p_149746_4_, Blocks.dirt);
-        }
-    }
-
-    private boolean func_149822_e(World p_149822_1_, int p_149822_2_, int p_149822_3_, int p_149822_4_)
-    {
-        byte var5 = 0;
-
-        for (int var6 = p_149822_2_ - var5; var6 <= p_149822_2_ + var5; ++var6)
-        {
-            for (int var7 = p_149822_4_ - var5; var7 <= p_149822_4_ + var5; ++var7)
-            {
-                Block var8 = p_149822_1_.getBlock(var6, p_149822_3_ + 1, var7);
-
-                if (var8 == Blocks.wheat || var8 == Blocks.melon_stem || var8 == Blocks.pumpkin_stem || var8 == Blocks.potatoes || var8 == Blocks.carrots)
+                if (!(entityIn instanceof EntityPlayer) && !worldIn.getGameRules().getBoolean("mobGriefing"))
                 {
-                    return true;
+                    return;
                 }
-            }
-        }
 
-        return false;
+                worldIn.setBlockState(pos, Blocks.dirt.getDefaultState());
+            }
+
+            super.onFallenUpon(worldIn, pos, entityIn, fallDistance);
+        }
     }
 
-    private boolean func_149821_m(World p_149821_1_, int p_149821_2_, int p_149821_3_, int p_149821_4_)
+    private boolean hasCrops(World worldIn, BlockPos pos)
     {
-        for (int var5 = p_149821_2_ - 4; var5 <= p_149821_2_ + 4; ++var5)
+        Block block = worldIn.getBlockState(pos.up()).getBlock();
+        return block instanceof BlockCrops || block instanceof BlockStem;
+    }
+
+    private boolean hasWater(World worldIn, BlockPos pos)
+    {
+        for (BlockPos.MutableBlockPos blockpos$mutableblockpos : BlockPos.getAllInBoxMutable(pos.add(-4, 0, -4), pos.add(4, 1, 4)))
         {
-            for (int var6 = p_149821_3_; var6 <= p_149821_3_ + 1; ++var6)
+            if (worldIn.getBlockState(blockpos$mutableblockpos).getBlock().getMaterial() == Material.water)
             {
-                for (int var7 = p_149821_4_ - 4; var7 <= p_149821_4_ + 4; ++var7)
-                {
-                    if (p_149821_1_.getBlock(var5, var6, var7).getMaterial() == Material.water)
-                    {
-                        return true;
-                    }
-                }
+                return true;
             }
         }
 
         return false;
-    }
-
-    public void onNeighborBlockChange(World p_149695_1_, int p_149695_2_, int p_149695_3_, int p_149695_4_, Block p_149695_5_)
-    {
-        super.onNeighborBlockChange(p_149695_1_, p_149695_2_, p_149695_3_, p_149695_4_, p_149695_5_);
-        Material var6 = p_149695_1_.getBlock(p_149695_2_, p_149695_3_ + 1, p_149695_4_).getMaterial();
-
-        if (var6.isSolid())
-        {
-            p_149695_1_.setBlock(p_149695_2_, p_149695_3_, p_149695_4_, Blocks.dirt);
-        }
-    }
-
-    public Item getItemDropped(int p_149650_1_, Random p_149650_2_, int p_149650_3_)
-    {
-        return Blocks.dirt.getItemDropped(0, p_149650_2_, p_149650_3_);
     }
 
     /**
-     * Gets an item for the block being called on. Args: world, x, y, z
+     * Called when a neighboring block changes.
      */
-    public Item getItem(World p_149694_1_, int p_149694_2_, int p_149694_3_, int p_149694_4_)
+    public void onNeighborBlockChange(World worldIn, BlockPos pos, IBlockState state, Block neighborBlock)
+    {
+        super.onNeighborBlockChange(worldIn, pos, state, neighborBlock);
+
+        if (worldIn.getBlockState(pos.up()).getBlock().getMaterial().isSolid())
+        {
+            worldIn.setBlockState(pos, Blocks.dirt.getDefaultState());
+        }
+    }
+
+    public boolean shouldSideBeRendered(IBlockAccess worldIn, BlockPos pos, EnumFacing side)
+    {
+        switch (side)
+        {
+            case UP:
+                return true;
+
+            case NORTH:
+            case SOUTH:
+            case WEST:
+            case EAST:
+                Block block = worldIn.getBlockState(pos).getBlock();
+                return !block.isOpaqueCube() && block != Blocks.farmland;
+
+            default:
+                return super.shouldSideBeRendered(worldIn, pos, side);
+        }
+    }
+
+    /**
+     * Get the Item that this Block should drop when harvested.
+     */
+    public Item getItemDropped(IBlockState state, Random rand, int fortune)
+    {
+        return Blocks.dirt.getItemDropped(Blocks.dirt.getDefaultState().withProperty(BlockDirt.VARIANT, BlockDirt.DirtType.DIRT), rand, fortune);
+    }
+
+    public Item getItem(World worldIn, BlockPos pos)
     {
         return Item.getItemFromBlock(Blocks.dirt);
     }
 
-    public void registerBlockIcons(IIconRegister p_149651_1_)
+    /**
+     * Convert the given metadata into a BlockState for this Block
+     */
+    public IBlockState getStateFromMeta(int meta)
     {
-        this.field_149824_a = p_149651_1_.registerIcon(this.getTextureName() + "_wet");
-        this.field_149823_b = p_149651_1_.registerIcon(this.getTextureName() + "_dry");
+        return this.getDefaultState().withProperty(MOISTURE, Integer.valueOf(meta & 7));
+    }
+
+    /**
+     * Convert the BlockState into the correct metadata value
+     */
+    public int getMetaFromState(IBlockState state)
+    {
+        return ((Integer)state.getValue(MOISTURE)).intValue();
+    }
+
+    protected BlockState createBlockState()
+    {
+        return new BlockState(this, new IProperty[] {MOISTURE});
     }
 }

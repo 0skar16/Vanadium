@@ -2,79 +2,62 @@ package net.minecraft.network.play.server;
 
 import java.io.IOException;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.network.INetHandler;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
+import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
 
-public class S0APacketUseBed extends Packet
+public class S0APacketUseBed implements Packet<INetHandlerPlayClient>
 {
-    private int field_149097_a;
-    private int field_149095_b;
-    private int field_149096_c;
-    private int field_149094_d;
-    private static final String __OBFID = "CL_00001319";
+    private int playerID;
 
-    public S0APacketUseBed() {}
+    /** Block location of the head part of the bed */
+    private BlockPos bedPos;
 
-    public S0APacketUseBed(EntityPlayer p_i45210_1_, int p_i45210_2_, int p_i45210_3_, int p_i45210_4_)
+    public S0APacketUseBed()
     {
-        this.field_149095_b = p_i45210_2_;
-        this.field_149096_c = p_i45210_3_;
-        this.field_149094_d = p_i45210_4_;
-        this.field_149097_a = p_i45210_1_.getEntityId();
+    }
+
+    public S0APacketUseBed(EntityPlayer player, BlockPos bedPosIn)
+    {
+        this.playerID = player.getEntityId();
+        this.bedPos = bedPosIn;
     }
 
     /**
      * Reads the raw packet data from the data stream.
      */
-    public void readPacketData(PacketBuffer p_148837_1_) throws IOException
+    public void readPacketData(PacketBuffer buf) throws IOException
     {
-        this.field_149097_a = p_148837_1_.readInt();
-        this.field_149095_b = p_148837_1_.readInt();
-        this.field_149096_c = p_148837_1_.readByte();
-        this.field_149094_d = p_148837_1_.readInt();
+        this.playerID = buf.readVarIntFromBuffer();
+        this.bedPos = buf.readBlockPos();
     }
 
     /**
      * Writes the raw packet data to the data stream.
      */
-    public void writePacketData(PacketBuffer p_148840_1_) throws IOException
+    public void writePacketData(PacketBuffer buf) throws IOException
     {
-        p_148840_1_.writeInt(this.field_149097_a);
-        p_148840_1_.writeInt(this.field_149095_b);
-        p_148840_1_.writeByte(this.field_149096_c);
-        p_148840_1_.writeInt(this.field_149094_d);
+        buf.writeVarIntToBuffer(this.playerID);
+        buf.writeBlockPos(this.bedPos);
     }
 
-    public void processPacket(INetHandlerPlayClient p_148833_1_)
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayClient handler)
     {
-        p_148833_1_.handleUseBed(this);
+        handler.handleUseBed(this);
     }
 
-    public EntityPlayer func_149091_a(World p_149091_1_)
+    public EntityPlayer getPlayer(World worldIn)
     {
-        return (EntityPlayer)p_149091_1_.getEntityByID(this.field_149097_a);
+        return (EntityPlayer)worldIn.getEntityByID(this.playerID);
     }
 
-    public int func_149092_c()
+    public BlockPos getBedPosition()
     {
-        return this.field_149095_b;
-    }
-
-    public int func_149090_d()
-    {
-        return this.field_149096_c;
-    }
-
-    public int func_149089_e()
-    {
-        return this.field_149094_d;
-    }
-
-    public void processPacket(INetHandler p_148833_1_)
-    {
-        this.processPacket((INetHandlerPlayClient)p_148833_1_);
+        return this.bedPos;
     }
 }

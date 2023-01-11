@@ -2,77 +2,67 @@ package net.minecraft.network.play.server;
 
 import java.io.IOException;
 import net.minecraft.item.ItemStack;
-import net.minecraft.network.INetHandler;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 
-public class S04PacketEntityEquipment extends Packet
+public class S04PacketEntityEquipment implements Packet<INetHandlerPlayClient>
 {
-    private int field_149394_a;
-    private int field_149392_b;
-    private ItemStack field_149393_c;
-    private static final String __OBFID = "CL_00001330";
+    private int entityID;
+    private int equipmentSlot;
+    private ItemStack itemStack;
 
-    public S04PacketEntityEquipment() {}
-
-    public S04PacketEntityEquipment(int p_i45221_1_, int p_i45221_2_, ItemStack p_i45221_3_)
+    public S04PacketEntityEquipment()
     {
-        this.field_149394_a = p_i45221_1_;
-        this.field_149392_b = p_i45221_2_;
-        this.field_149393_c = p_i45221_3_ == null ? null : p_i45221_3_.copy();
+    }
+
+    public S04PacketEntityEquipment(int entityIDIn, int p_i45221_2_, ItemStack itemStackIn)
+    {
+        this.entityID = entityIDIn;
+        this.equipmentSlot = p_i45221_2_;
+        this.itemStack = itemStackIn == null ? null : itemStackIn.copy();
     }
 
     /**
      * Reads the raw packet data from the data stream.
      */
-    public void readPacketData(PacketBuffer p_148837_1_) throws IOException
+    public void readPacketData(PacketBuffer buf) throws IOException
     {
-        this.field_149394_a = p_148837_1_.readInt();
-        this.field_149392_b = p_148837_1_.readShort();
-        this.field_149393_c = p_148837_1_.readItemStackFromBuffer();
+        this.entityID = buf.readVarIntFromBuffer();
+        this.equipmentSlot = buf.readShort();
+        this.itemStack = buf.readItemStackFromBuffer();
     }
 
     /**
      * Writes the raw packet data to the data stream.
      */
-    public void writePacketData(PacketBuffer p_148840_1_) throws IOException
+    public void writePacketData(PacketBuffer buf) throws IOException
     {
-        p_148840_1_.writeInt(this.field_149394_a);
-        p_148840_1_.writeShort(this.field_149392_b);
-        p_148840_1_.writeItemStackToBuffer(this.field_149393_c);
-    }
-
-    public void processPacket(INetHandlerPlayClient p_148833_1_)
-    {
-        p_148833_1_.handleEntityEquipment(this);
-    }
-
-    public ItemStack func_149390_c()
-    {
-        return this.field_149393_c;
+        buf.writeVarIntToBuffer(this.entityID);
+        buf.writeShort(this.equipmentSlot);
+        buf.writeItemStackToBuffer(this.itemStack);
     }
 
     /**
-     * Returns a string formatted as comma separated [field]=[value] values. Used by Minecraft for logging purposes.
+     * Passes this Packet on to the NetHandler for processing.
      */
-    public String serialize()
+    public void processPacket(INetHandlerPlayClient handler)
     {
-        return String.format("entity=%d, slot=%d, item=%s", new Object[] {Integer.valueOf(this.field_149394_a), Integer.valueOf(this.field_149392_b), this.field_149393_c});
+        handler.handleEntityEquipment(this);
     }
 
-    public int func_149389_d()
+    public ItemStack getItemStack()
     {
-        return this.field_149394_a;
+        return this.itemStack;
     }
 
-    public int func_149388_e()
+    public int getEntityID()
     {
-        return this.field_149392_b;
+        return this.entityID;
     }
 
-    public void processPacket(INetHandler p_148833_1_)
+    public int getEquipmentSlot()
     {
-        this.processPacket((INetHandlerPlayClient)p_148833_1_);
+        return this.equipmentSlot;
     }
 }

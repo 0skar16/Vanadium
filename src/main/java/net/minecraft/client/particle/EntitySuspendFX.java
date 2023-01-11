@@ -1,25 +1,23 @@
 package net.minecraft.client.particle;
 
 import net.minecraft.block.material.Material;
-import net.minecraft.util.MathHelper;
+import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
 
 public class EntitySuspendFX extends EntityFX
 {
-    private static final String __OBFID = "CL_00000928";
-
-    public EntitySuspendFX(World p_i1231_1_, double p_i1231_2_, double p_i1231_4_, double p_i1231_6_, double p_i1231_8_, double p_i1231_10_, double p_i1231_12_)
+    protected EntitySuspendFX(World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double xSpeedIn, double ySpeedIn, double zSpeedIn)
     {
-        super(p_i1231_1_, p_i1231_2_, p_i1231_4_ - 0.125D, p_i1231_6_, p_i1231_8_, p_i1231_10_, p_i1231_12_);
+        super(worldIn, xCoordIn, yCoordIn - 0.125D, zCoordIn, xSpeedIn, ySpeedIn, zSpeedIn);
         this.particleRed = 0.4F;
         this.particleGreen = 0.4F;
         this.particleBlue = 0.7F;
         this.setParticleTextureIndex(0);
         this.setSize(0.01F, 0.01F);
         this.particleScale *= this.rand.nextFloat() * 0.6F + 0.2F;
-        this.motionX = p_i1231_8_ * 0.0D;
-        this.motionY = p_i1231_10_ * 0.0D;
-        this.motionZ = p_i1231_12_ * 0.0D;
+        this.motionX = xSpeedIn * 0.0D;
+        this.motionY = ySpeedIn * 0.0D;
+        this.motionZ = zSpeedIn * 0.0D;
         this.particleMaxAge = (int)(16.0D / (Math.random() * 0.8D + 0.2D));
     }
 
@@ -33,7 +31,7 @@ public class EntitySuspendFX extends EntityFX
         this.prevPosZ = this.posZ;
         this.moveEntity(this.motionX, this.motionY, this.motionZ);
 
-        if (this.worldObj.getBlock(MathHelper.floor_double(this.posX), MathHelper.floor_double(this.posY), MathHelper.floor_double(this.posZ)).getMaterial() != Material.water)
+        if (this.worldObj.getBlockState(new BlockPos(this)).getBlock().getMaterial() != Material.water)
         {
             this.setDead();
         }
@@ -41,6 +39,14 @@ public class EntitySuspendFX extends EntityFX
         if (this.particleMaxAge-- <= 0)
         {
             this.setDead();
+        }
+    }
+
+    public static class Factory implements IParticleFactory
+    {
+        public EntityFX getEntityFX(int particleID, World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double xSpeedIn, double ySpeedIn, double zSpeedIn, int... p_178902_15_)
+        {
+            return new EntitySuspendFX(worldIn, xCoordIn, yCoordIn, zCoordIn, xSpeedIn, ySpeedIn, zSpeedIn);
         }
     }
 }

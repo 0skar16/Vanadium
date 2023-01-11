@@ -1,40 +1,27 @@
 package net.minecraft.block;
 
+import net.minecraft.util.BlockPos;
+
 public class BlockEventData
 {
-    private int coordX;
-    private int coordY;
-    private int coordZ;
-    private Block field_151344_d;
+    private BlockPos position;
+    private Block blockType;
 
     /** Different for each blockID */
     private int eventID;
     private int eventParameter;
-    private static final String __OBFID = "CL_00000131";
 
-    public BlockEventData(int p_i45362_1_, int p_i45362_2_, int p_i45362_3_, Block p_i45362_4_, int p_i45362_5_, int p_i45362_6_)
+    public BlockEventData(BlockPos pos, Block blockType, int eventId, int p_i45756_4_)
     {
-        this.coordX = p_i45362_1_;
-        this.coordY = p_i45362_2_;
-        this.coordZ = p_i45362_3_;
-        this.eventID = p_i45362_5_;
-        this.eventParameter = p_i45362_6_;
-        this.field_151344_d = p_i45362_4_;
+        this.position = pos;
+        this.eventID = eventId;
+        this.eventParameter = p_i45756_4_;
+        this.blockType = blockType;
     }
 
-    public int func_151340_a()
+    public BlockPos getPosition()
     {
-        return this.coordX;
-    }
-
-    public int func_151342_b()
-    {
-        return this.coordY;
-    }
-
-    public int func_151341_c()
-    {
-        return this.coordZ;
+        return this.position;
     }
 
     /**
@@ -52,7 +39,7 @@ public class BlockEventData
 
     public Block getBlock()
     {
-        return this.field_151344_d;
+        return this.blockType;
     }
 
     public boolean equals(Object p_equals_1_)
@@ -63,13 +50,13 @@ public class BlockEventData
         }
         else
         {
-            BlockEventData var2 = (BlockEventData)p_equals_1_;
-            return this.coordX == var2.coordX && this.coordY == var2.coordY && this.coordZ == var2.coordZ && this.eventID == var2.eventID && this.eventParameter == var2.eventParameter && this.field_151344_d == var2.field_151344_d;
+            BlockEventData blockeventdata = (BlockEventData)p_equals_1_;
+            return this.position.equals(blockeventdata.position) && this.eventID == blockeventdata.eventID && this.eventParameter == blockeventdata.eventParameter && this.blockType == blockeventdata.blockType;
         }
     }
 
     public String toString()
     {
-        return "TE(" + this.coordX + "," + this.coordY + "," + this.coordZ + ")," + this.eventID + "," + this.eventParameter + "," + this.field_151344_d;
+        return "TE(" + this.position + ")," + this.eventID + "," + this.eventParameter + "," + this.blockType;
     }
 }

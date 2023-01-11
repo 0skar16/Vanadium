@@ -8,11 +8,10 @@ public class EntityAILookAtVillager extends EntityAIBase
     private EntityIronGolem theGolem;
     private EntityVillager theVillager;
     private int lookTime;
-    private static final String __OBFID = "CL_00001602";
 
-    public EntityAILookAtVillager(EntityIronGolem p_i1643_1_)
+    public EntityAILookAtVillager(EntityIronGolem theGolemIn)
     {
-        this.theGolem = p_i1643_1_;
+        this.theGolem = theGolemIn;
         this.setMutexBits(3);
     }
 
@@ -31,7 +30,7 @@ public class EntityAILookAtVillager extends EntityAIBase
         }
         else
         {
-            this.theVillager = (EntityVillager)this.theGolem.worldObj.findNearestEntityWithinAABB(EntityVillager.class, this.theGolem.boundingBox.expand(6.0D, 2.0D, 6.0D), this.theGolem);
+            this.theVillager = (EntityVillager)this.theGolem.worldObj.findNearestEntityWithinAABB(EntityVillager.class, this.theGolem.getEntityBoundingBox().expand(6.0D, 2.0D, 6.0D), this.theGolem);
             return this.theVillager != null;
         }
     }

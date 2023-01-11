@@ -5,17 +5,21 @@ import net.minecraft.client.gui.GuiScreenResourcePacks;
 public class ResourcePackListEntryFound extends ResourcePackListEntry
 {
     private final ResourcePackRepository.Entry field_148319_c;
-    private static final String __OBFID = "CL_00000823";
 
-    public ResourcePackListEntryFound(GuiScreenResourcePacks p_i45053_1_, ResourcePackRepository.Entry p_i45053_2_)
+    public ResourcePackListEntryFound(GuiScreenResourcePacks resourcePacksGUIIn, ResourcePackRepository.Entry p_i45053_2_)
     {
-        super(p_i45053_1_);
+        super(resourcePacksGUIIn);
         this.field_148319_c = p_i45053_2_;
     }
 
     protected void func_148313_c()
     {
-        this.field_148319_c.bindTexturePackIcon(this.field_148317_a.getTextureManager());
+        this.field_148319_c.bindTexturePackIcon(this.mc.getTextureManager());
+    }
+
+    protected int func_183019_a()
+    {
+        return this.field_148319_c.func_183027_f();
     }
 
     protected String func_148311_a()

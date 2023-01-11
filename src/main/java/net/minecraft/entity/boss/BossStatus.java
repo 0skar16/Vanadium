@@ -6,13 +6,12 @@ public final class BossStatus
     public static int statusBarTime;
     public static String bossName;
     public static boolean hasColorModifier;
-    private static final String __OBFID = "CL_00000941";
 
-    public static void setBossStatus(IBossDisplayData p_82824_0_, boolean p_82824_1_)
+    public static void setBossStatus(IBossDisplayData displayData, boolean hasColorModifierIn)
     {
-        healthScale = p_82824_0_.getHealth() / p_82824_0_.getMaxHealth();
+        healthScale = displayData.getHealth() / displayData.getMaxHealth();
         statusBarTime = 100;
-        bossName = p_82824_0_.func_145748_c_().getFormattedText();
-        hasColorModifier = p_82824_1_;
+        bossName = displayData.getDisplayName().getFormattedText();
+        hasColorModifier = hasColorModifierIn;
     }
 }

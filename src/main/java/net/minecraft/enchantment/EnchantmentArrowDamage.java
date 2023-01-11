@@ -1,29 +1,29 @@
 package net.minecraft.enchantment;
 
+import net.minecraft.util.ResourceLocation;
+
 public class EnchantmentArrowDamage extends Enchantment
 {
-    private static final String __OBFID = "CL_00000098";
-
-    public EnchantmentArrowDamage(int p_i1919_1_, int p_i1919_2_)
+    public EnchantmentArrowDamage(int enchID, ResourceLocation enchName, int enchWeight)
     {
-        super(p_i1919_1_, p_i1919_2_, EnumEnchantmentType.bow);
+        super(enchID, enchName, enchWeight, EnumEnchantmentType.BOW);
         this.setName("arrowDamage");
     }
 
     /**
      * Returns the minimal value of enchantability needed on the enchantment level passed.
      */
-    public int getMinEnchantability(int p_77321_1_)
+    public int getMinEnchantability(int enchantmentLevel)
     {
-        return 1 + (p_77321_1_ - 1) * 10;
+        return 1 + (enchantmentLevel - 1) * 10;
     }
 
     /**
      * Returns the maximum value of enchantability nedded on the enchantment level passed.
      */
-    public int getMaxEnchantability(int p_77317_1_)
+    public int getMaxEnchantability(int enchantmentLevel)
     {
-        return this.getMinEnchantability(p_77317_1_) + 15;
+        return this.getMinEnchantability(enchantmentLevel) + 15;
     }
 
     /**

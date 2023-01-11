@@ -6,11 +6,10 @@ public class ReportedException extends RuntimeException
 {
     /** Instance of CrashReport. */
     private final CrashReport theReportedExceptionCrashReport;
-    private static final String __OBFID = "CL_00001579";
 
-    public ReportedException(CrashReport p_i1356_1_)
+    public ReportedException(CrashReport report)
     {
-        this.theReportedExceptionCrashReport = p_i1356_1_;
+        this.theReportedExceptionCrashReport = report;
     }
 
     /**

@@ -1,65 +1,69 @@
 package net.minecraft.client.particle;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.WorldRenderer;
 import net.minecraft.client.renderer.texture.TextureManager;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.client.renderer.vertex.VertexFormat;
+import net.minecraft.entity.Entity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
-import org.lwjgl.opengl.GL11;
 
 public class EntityLargeExplodeFX extends EntityFX
 {
-    private static final ResourceLocation field_110127_a = new ResourceLocation("textures/entity/explosion.png");
+    private static final ResourceLocation EXPLOSION_TEXTURE = new ResourceLocation("textures/entity/explosion.png");
+    private static final VertexFormat field_181549_az = (new VertexFormat()).addElement(DefaultVertexFormats.POSITION_3F).addElement(DefaultVertexFormats.TEX_2F).addElement(DefaultVertexFormats.COLOR_4UB).addElement(DefaultVertexFormats.TEX_2S).addElement(DefaultVertexFormats.NORMAL_3B).addElement(DefaultVertexFormats.PADDING_1B);
     private int field_70581_a;
     private int field_70584_aq;
 
     /** The Rendering Engine. */
     private TextureManager theRenderEngine;
     private float field_70582_as;
-    private static final String __OBFID = "CL_00000910";
 
-    public EntityLargeExplodeFX(TextureManager p_i1213_1_, World p_i1213_2_, double p_i1213_3_, double p_i1213_5_, double p_i1213_7_, double p_i1213_9_, double p_i1213_11_, double p_i1213_13_)
+    protected EntityLargeExplodeFX(TextureManager renderEngine, World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double p_i1213_9_, double p_i1213_11_, double p_i1213_13_)
     {
-        super(p_i1213_2_, p_i1213_3_, p_i1213_5_, p_i1213_7_, 0.0D, 0.0D, 0.0D);
-        this.theRenderEngine = p_i1213_1_;
+        super(worldIn, xCoordIn, yCoordIn, zCoordIn, 0.0D, 0.0D, 0.0D);
+        this.theRenderEngine = renderEngine;
         this.field_70584_aq = 6 + this.rand.nextInt(4);
         this.particleRed = this.particleGreen = this.particleBlue = this.rand.nextFloat() * 0.6F + 0.4F;
         this.field_70582_as = 1.0F - (float)p_i1213_9_ * 0.5F;
     }
 
-    public void renderParticle(Tessellator p_70539_1_, float p_70539_2_, float p_70539_3_, float p_70539_4_, float p_70539_5_, float p_70539_6_, float p_70539_7_)
+    /**
+     * Renders the particle
+     */
+    public void renderParticle(WorldRenderer worldRendererIn, Entity entityIn, float partialTicks, float rotationX, float rotationZ, float rotationYZ, float rotationXY, float rotationXZ)
     {
-        int var8 = (int)(((float)this.field_70581_a + p_70539_2_) * 15.0F / (float)this.field_70584_aq);
+        int i = (int)(((float)this.field_70581_a + partialTicks) * 15.0F / (float)this.field_70584_aq);
 
-        if (var8 <= 15)
+        if (i <= 15)
         {
-            this.theRenderEngine.bindTexture(field_110127_a);
-            float var9 = (float)(var8 % 4) / 4.0F;
-            float var10 = var9 + 0.24975F;
-            float var11 = (float)(var8 / 4) / 4.0F;
-            float var12 = var11 + 0.24975F;
-            float var13 = 2.0F * this.field_70582_as;
-            float var14 = (float)(this.prevPosX + (this.posX - this.prevPosX) * (double)p_70539_2_ - interpPosX);
-            float var15 = (float)(this.prevPosY + (this.posY - this.prevPosY) * (double)p_70539_2_ - interpPosY);
-            float var16 = (float)(this.prevPosZ + (this.posZ - this.prevPosZ) * (double)p_70539_2_ - interpPosZ);
-            GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-            GL11.glDisable(GL11.GL_LIGHTING);
+            this.theRenderEngine.bindTexture(EXPLOSION_TEXTURE);
+            float f = (float)(i % 4) / 4.0F;
+            float f1 = f + 0.24975F;
+            float f2 = (float)(i / 4) / 4.0F;
+            float f3 = f2 + 0.24975F;
+            float f4 = 2.0F * this.field_70582_as;
+            float f5 = (float)(this.prevPosX + (this.posX - this.prevPosX) * (double)partialTicks - interpPosX);
+            float f6 = (float)(this.prevPosY + (this.posY - this.prevPosY) * (double)partialTicks - interpPosY);
+            float f7 = (float)(this.prevPosZ + (this.posZ - this.prevPosZ) * (double)partialTicks - interpPosZ);
+            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+            GlStateManager.disableLighting();
             RenderHelper.disableStandardItemLighting();
-            p_70539_1_.startDrawingQuads();
-            p_70539_1_.setColorRGBA_F(this.particleRed, this.particleGreen, this.particleBlue, 1.0F);
-            p_70539_1_.setNormal(0.0F, 1.0F, 0.0F);
-            p_70539_1_.setBrightness(240);
-            p_70539_1_.addVertexWithUV((double)(var14 - p_70539_3_ * var13 - p_70539_6_ * var13), (double)(var15 - p_70539_4_ * var13), (double)(var16 - p_70539_5_ * var13 - p_70539_7_ * var13), (double)var10, (double)var12);
-            p_70539_1_.addVertexWithUV((double)(var14 - p_70539_3_ * var13 + p_70539_6_ * var13), (double)(var15 + p_70539_4_ * var13), (double)(var16 - p_70539_5_ * var13 + p_70539_7_ * var13), (double)var10, (double)var11);
-            p_70539_1_.addVertexWithUV((double)(var14 + p_70539_3_ * var13 + p_70539_6_ * var13), (double)(var15 + p_70539_4_ * var13), (double)(var16 + p_70539_5_ * var13 + p_70539_7_ * var13), (double)var9, (double)var11);
-            p_70539_1_.addVertexWithUV((double)(var14 + p_70539_3_ * var13 - p_70539_6_ * var13), (double)(var15 - p_70539_4_ * var13), (double)(var16 + p_70539_5_ * var13 - p_70539_7_ * var13), (double)var9, (double)var12);
-            p_70539_1_.draw();
-            GL11.glPolygonOffset(0.0F, 0.0F);
-            GL11.glEnable(GL11.GL_LIGHTING);
+            worldRendererIn.begin(7, field_181549_az);
+            worldRendererIn.pos((double)(f5 - rotationX * f4 - rotationXY * f4), (double)(f6 - rotationZ * f4), (double)(f7 - rotationYZ * f4 - rotationXZ * f4)).tex((double)f1, (double)f3).color(this.particleRed, this.particleGreen, this.particleBlue, 1.0F).lightmap(0, 240).normal(0.0F, 1.0F, 0.0F).endVertex();
+            worldRendererIn.pos((double)(f5 - rotationX * f4 + rotationXY * f4), (double)(f6 + rotationZ * f4), (double)(f7 - rotationYZ * f4 + rotationXZ * f4)).tex((double)f1, (double)f2).color(this.particleRed, this.particleGreen, this.particleBlue, 1.0F).lightmap(0, 240).normal(0.0F, 1.0F, 0.0F).endVertex();
+            worldRendererIn.pos((double)(f5 + rotationX * f4 + rotationXY * f4), (double)(f6 + rotationZ * f4), (double)(f7 + rotationYZ * f4 + rotationXZ * f4)).tex((double)f, (double)f2).color(this.particleRed, this.particleGreen, this.particleBlue, 1.0F).lightmap(0, 240).normal(0.0F, 1.0F, 0.0F).endVertex();
+            worldRendererIn.pos((double)(f5 + rotationX * f4 - rotationXY * f4), (double)(f6 - rotationZ * f4), (double)(f7 + rotationYZ * f4 - rotationXZ * f4)).tex((double)f, (double)f3).color(this.particleRed, this.particleGreen, this.particleBlue, 1.0F).lightmap(0, 240).normal(0.0F, 1.0F, 0.0F).endVertex();
+            Tessellator.getInstance().draw();
+            GlStateManager.enableLighting();
         }
     }
 
-    public int getBrightnessForRender(float p_70070_1_)
+    public int getBrightnessForRender(float partialTicks)
     {
         return 61680;
     }
@@ -83,5 +87,13 @@ public class EntityLargeExplodeFX extends EntityFX
     public int getFXLayer()
     {
         return 3;
+    }
+
+    public static class Factory implements IParticleFactory
+    {
+        public EntityFX getEntityFX(int particleID, World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double xSpeedIn, double ySpeedIn, double zSpeedIn, int... p_178902_15_)
+        {
+            return new EntityLargeExplodeFX(Minecraft.getMinecraft().getTextureManager(), worldIn, xCoordIn, yCoordIn, zCoordIn, xSpeedIn, ySpeedIn, zSpeedIn);
+        }
     }
 }

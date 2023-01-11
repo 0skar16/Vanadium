@@ -7,11 +7,10 @@ public class PositionTextureVertex
     public Vec3 vector3D;
     public float texturePositionX;
     public float texturePositionY;
-    private static final String __OBFID = "CL_00000862";
 
     public PositionTextureVertex(float p_i1158_1_, float p_i1158_2_, float p_i1158_3_, float p_i1158_4_, float p_i1158_5_)
     {
-        this(Vec3.createVectorHelper((double)p_i1158_1_, (double)p_i1158_2_, (double)p_i1158_3_), p_i1158_4_, p_i1158_5_);
+        this(new Vec3((double)p_i1158_1_, (double)p_i1158_2_, (double)p_i1158_3_), p_i1158_4_, p_i1158_5_);
     }
 
     public PositionTextureVertex setTexturePosition(float p_78240_1_, float p_78240_2_)
@@ -19,17 +18,17 @@ public class PositionTextureVertex
         return new PositionTextureVertex(this, p_78240_1_, p_78240_2_);
     }
 
-    public PositionTextureVertex(PositionTextureVertex p_i46363_1_, float p_i46363_2_, float p_i46363_3_)
+    public PositionTextureVertex(PositionTextureVertex textureVertex, float texturePositionXIn, float texturePositionYIn)
     {
-        this.vector3D = p_i46363_1_.vector3D;
-        this.texturePositionX = p_i46363_2_;
-        this.texturePositionY = p_i46363_3_;
+        this.vector3D = textureVertex.vector3D;
+        this.texturePositionX = texturePositionXIn;
+        this.texturePositionY = texturePositionYIn;
     }
 
-    public PositionTextureVertex(Vec3 p_i1160_1_, float p_i1160_2_, float p_i1160_3_)
+    public PositionTextureVertex(Vec3 vector3DIn, float texturePositionXIn, float texturePositionYIn)
     {
-        this.vector3D = p_i1160_1_;
-        this.texturePositionX = p_i1160_2_;
-        this.texturePositionY = p_i1160_3_;
+        this.vector3D = vector3DIn;
+        this.texturePositionX = texturePositionXIn;
+        this.texturePositionY = texturePositionYIn;
     }
 }

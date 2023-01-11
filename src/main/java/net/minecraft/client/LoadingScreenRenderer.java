@@ -2,209 +2,240 @@ package net.minecraft.client;
 
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.ScaledResolution;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.WorldRenderer;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.shader.Framebuffer;
 import net.minecraft.util.IProgressUpdate;
 import net.minecraft.util.MinecraftError;
-import org.lwjgl.opengl.GL11;
+import net.optifine.CustomLoadingScreen;
+import net.optifine.CustomLoadingScreens;
+import net.optifine.reflect.Reflector;
 
 public class LoadingScreenRenderer implements IProgressUpdate
 {
-    private String field_73727_a = "";
+    private String message = "";
 
     /** A reference to the Minecraft object. */
     private Minecraft mc;
 
     /**
-     * The text currently displayed (i.e. the argument to the last call to printText or func_73722_d)
+     * The text currently displayed (i.e. the argument to the last call to printText or displayString)
      */
     private String currentlyDisplayedText = "";
-    private long field_73723_d = Minecraft.getSystemTime();
-    private boolean field_73724_e;
-    private ScaledResolution field_146587_f;
-    private Framebuffer field_146588_g;
-    private static final String __OBFID = "CL_00000655";
 
-    public LoadingScreenRenderer(Minecraft p_i1017_1_)
+    /** The system's time represented in milliseconds. */
+    private long systemTime = Minecraft.getSystemTime();
+
+    /** True if the loading ended with a success */
+    private boolean loadingSuccess;
+    private ScaledResolution scaledResolution;
+    private Framebuffer framebuffer;
+
+    public LoadingScreenRenderer(Minecraft mcIn)
     {
-        this.mc = p_i1017_1_;
-        this.field_146587_f = new ScaledResolution(p_i1017_1_, p_i1017_1_.displayWidth, p_i1017_1_.displayHeight);
-        this.field_146588_g = new Framebuffer(p_i1017_1_.displayWidth, p_i1017_1_.displayHeight, false);
-        this.field_146588_g.setFramebufferFilter(9728);
+        this.mc = mcIn;
+        this.scaledResolution = new ScaledResolution(mcIn);
+        this.framebuffer = new Framebuffer(mcIn.displayWidth, mcIn.displayHeight, false);
+        this.framebuffer.setFramebufferFilter(9728);
     }
 
     /**
      * this string, followed by "working..." and then the "% complete" are the 3 lines shown. This resets progress to 0,
      * and the WorkingString to "working...".
      */
-    public void resetProgressAndMessage(String p_73721_1_)
+    public void resetProgressAndMessage(String message)
     {
-        this.field_73724_e = false;
-        this.func_73722_d(p_73721_1_);
+        this.loadingSuccess = false;
+        this.displayString(message);
     }
 
     /**
-     * "Saving level", or the loading,or downloading equivelent
+     * Shows the 'Saving level' string.
      */
-    public void displayProgressMessage(String p_73720_1_)
+    public void displaySavingString(String message)
     {
-        this.field_73724_e = true;
-        this.func_73722_d(p_73720_1_);
+        this.loadingSuccess = true;
+        this.displayString(message);
     }
 
-    public void func_73722_d(String p_73722_1_)
+    private void displayString(String message)
     {
-        this.currentlyDisplayedText = p_73722_1_;
+        this.currentlyDisplayedText = message;
 
         if (!this.mc.running)
         {
-            if (!this.field_73724_e)
+            if (!this.loadingSuccess)
             {
                 throw new MinecraftError();
             }
         }
         else
         {
-            GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
-            GL11.glMatrixMode(GL11.GL_PROJECTION);
-            GL11.glLoadIdentity();
+            GlStateManager.clear(256);
+            GlStateManager.matrixMode(5889);
+            GlStateManager.loadIdentity();
 
             if (OpenGlHelper.isFramebufferEnabled())
             {
-                int var2 = this.field_146587_f.getScaleFactor();
-                GL11.glOrtho(0.0D, (double)(this.field_146587_f.getScaledWidth() * var2), (double)(this.field_146587_f.getScaledHeight() * var2), 0.0D, 100.0D, 300.0D);
+                int i = this.scaledResolution.getScaleFactor();
+                GlStateManager.ortho(0.0D, (double)(this.scaledResolution.getScaledWidth() * i), (double)(this.scaledResolution.getScaledHeight() * i), 0.0D, 100.0D, 300.0D);
             }
             else
             {
-                ScaledResolution var3 = new ScaledResolution(this.mc, this.mc.displayWidth, this.mc.displayHeight);
-                GL11.glOrtho(0.0D, var3.getScaledWidth_double(), var3.getScaledHeight_double(), 0.0D, 100.0D, 300.0D);
+                ScaledResolution scaledresolution = new ScaledResolution(this.mc);
+                GlStateManager.ortho(0.0D, scaledresolution.getScaledWidth_double(), scaledresolution.getScaledHeight_double(), 0.0D, 100.0D, 300.0D);
             }
 
-            GL11.glMatrixMode(GL11.GL_MODELVIEW);
-            GL11.glLoadIdentity();
-            GL11.glTranslatef(0.0F, 0.0F, -200.0F);
+            GlStateManager.matrixMode(5888);
+            GlStateManager.loadIdentity();
+            GlStateManager.translate(0.0F, 0.0F, -200.0F);
         }
     }
 
     /**
-     * This is called with "Working..." by resetProgressAndMessage
+     * Displays a string on the loading screen supposed to indicate what is being done currently.
      */
-    public void resetProgresAndWorkingMessage(String p_73719_1_)
+    public void displayLoadingString(String message)
     {
         if (!this.mc.running)
         {
-            if (!this.field_73724_e)
+            if (!this.loadingSuccess)
             {
                 throw new MinecraftError();
             }
         }
         else
         {
-            this.field_73723_d = 0L;
-            this.field_73727_a = p_73719_1_;
+            this.systemTime = 0L;
+            this.message = message;
             this.setLoadingProgress(-1);
-            this.field_73723_d = 0L;
+            this.systemTime = 0L;
         }
     }
 
     /**
      * Updates the progress bar on the loading screen to the specified amount. Args: loadProgress
      */
-    public void setLoadingProgress(int p_73718_1_)
+    public void setLoadingProgress(int progress)
     {
         if (!this.mc.running)
         {
-            if (!this.field_73724_e)
+            if (!this.loadingSuccess)
             {
                 throw new MinecraftError();
             }
         }
         else
         {
-            long var2 = Minecraft.getSystemTime();
+            long i = Minecraft.getSystemTime();
 
-            if (var2 - this.field_73723_d >= 100L)
+            if (i - this.systemTime >= 100L)
             {
-                this.field_73723_d = var2;
-                ScaledResolution var4 = new ScaledResolution(this.mc, this.mc.displayWidth, this.mc.displayHeight);
-                int var5 = var4.getScaleFactor();
-                int var6 = var4.getScaledWidth();
-                int var7 = var4.getScaledHeight();
+                this.systemTime = i;
+                ScaledResolution scaledresolution = new ScaledResolution(this.mc);
+                int j = scaledresolution.getScaleFactor();
+                int k = scaledresolution.getScaledWidth();
+                int l = scaledresolution.getScaledHeight();
 
                 if (OpenGlHelper.isFramebufferEnabled())
                 {
-                    this.field_146588_g.framebufferClear();
+                    this.framebuffer.framebufferClear();
                 }
                 else
                 {
-                    GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
+                    GlStateManager.clear(256);
                 }
 
-                this.field_146588_g.bindFramebuffer(false);
-                GL11.glMatrixMode(GL11.GL_PROJECTION);
-                GL11.glLoadIdentity();
-                GL11.glOrtho(0.0D, var4.getScaledWidth_double(), var4.getScaledHeight_double(), 0.0D, 100.0D, 300.0D);
-                GL11.glMatrixMode(GL11.GL_MODELVIEW);
-                GL11.glLoadIdentity();
-                GL11.glTranslatef(0.0F, 0.0F, -200.0F);
+                this.framebuffer.bindFramebuffer(false);
+                GlStateManager.matrixMode(5889);
+                GlStateManager.loadIdentity();
+                GlStateManager.ortho(0.0D, scaledresolution.getScaledWidth_double(), scaledresolution.getScaledHeight_double(), 0.0D, 100.0D, 300.0D);
+                GlStateManager.matrixMode(5888);
+                GlStateManager.loadIdentity();
+                GlStateManager.translate(0.0F, 0.0F, -200.0F);
 
                 if (!OpenGlHelper.isFramebufferEnabled())
                 {
-                    GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+                    GlStateManager.clear(16640);
                 }
 
-                Tessellator var8 = Tessellator.instance;
-                this.mc.getTextureManager().bindTexture(Gui.optionsBackground);
-                float var9 = 32.0F;
-                var8.startDrawingQuads();
-                var8.setColorOpaque_I(4210752);
-                var8.addVertexWithUV(0.0D, (double)var7, 0.0D, 0.0D, (double)((float)var7 / var9));
-                var8.addVertexWithUV((double)var6, (double)var7, 0.0D, (double)((float)var6 / var9), (double)((float)var7 / var9));
-                var8.addVertexWithUV((double)var6, 0.0D, 0.0D, (double)((float)var6 / var9), 0.0D);
-                var8.addVertexWithUV(0.0D, 0.0D, 0.0D, 0.0D, 0.0D);
-                var8.draw();
+                boolean flag = true;
 
-                if (p_73718_1_ >= 0)
+                if (Reflector.FMLClientHandler_handleLoadingScreen.exists())
                 {
-                    byte var10 = 100;
-                    byte var11 = 2;
-                    int var12 = var6 / 2 - var10 / 2;
-                    int var13 = var7 / 2 + 16;
-                    GL11.glDisable(GL11.GL_TEXTURE_2D);
-                    var8.startDrawingQuads();
-                    var8.setColorOpaque_I(8421504);
-                    var8.addVertex((double)var12, (double)var13, 0.0D);
-                    var8.addVertex((double)var12, (double)(var13 + var11), 0.0D);
-                    var8.addVertex((double)(var12 + var10), (double)(var13 + var11), 0.0D);
-                    var8.addVertex((double)(var12 + var10), (double)var13, 0.0D);
-                    var8.setColorOpaque_I(8454016);
-                    var8.addVertex((double)var12, (double)var13, 0.0D);
-                    var8.addVertex((double)var12, (double)(var13 + var11), 0.0D);
-                    var8.addVertex((double)(var12 + p_73718_1_), (double)(var13 + var11), 0.0D);
-                    var8.addVertex((double)(var12 + p_73718_1_), (double)var13, 0.0D);
-                    var8.draw();
-                    GL11.glEnable(GL11.GL_TEXTURE_2D);
+                    Object object = Reflector.call(Reflector.FMLClientHandler_instance, new Object[0]);
+
+                    if (object != null)
+                    {
+                        flag = !Reflector.callBoolean(object, Reflector.FMLClientHandler_handleLoadingScreen, new Object[] {scaledresolution});
+                    }
                 }
 
-                GL11.glEnable(GL11.GL_BLEND);
-                OpenGlHelper.glBlendFunc(770, 771, 1, 0);
-                this.mc.fontRenderer.drawStringWithShadow(this.currentlyDisplayedText, (var6 - this.mc.fontRenderer.getStringWidth(this.currentlyDisplayedText)) / 2, var7 / 2 - 4 - 16, 16777215);
-                this.mc.fontRenderer.drawStringWithShadow(this.field_73727_a, (var6 - this.mc.fontRenderer.getStringWidth(this.field_73727_a)) / 2, var7 / 2 - 4 + 8, 16777215);
-                this.field_146588_g.unbindFramebuffer();
+                if (flag)
+                {
+                    Tessellator tessellator = Tessellator.getInstance();
+                    WorldRenderer worldrenderer = tessellator.getWorldRenderer();
+                    CustomLoadingScreen customloadingscreen = CustomLoadingScreens.getCustomLoadingScreen();
+
+                    if (customloadingscreen != null)
+                    {
+                        customloadingscreen.drawBackground(scaledresolution.getScaledWidth(), scaledresolution.getScaledHeight());
+                    }
+                    else
+                    {
+                        this.mc.getTextureManager().bindTexture(Gui.optionsBackground);
+                        float f = 32.0F;
+                        worldrenderer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
+                        worldrenderer.pos(0.0D, (double)l, 0.0D).tex(0.0D, (double)((float)l / f)).color(64, 64, 64, 255).endVertex();
+                        worldrenderer.pos((double)k, (double)l, 0.0D).tex((double)((float)k / f), (double)((float)l / f)).color(64, 64, 64, 255).endVertex();
+                        worldrenderer.pos((double)k, 0.0D, 0.0D).tex((double)((float)k / f), 0.0D).color(64, 64, 64, 255).endVertex();
+                        worldrenderer.pos(0.0D, 0.0D, 0.0D).tex(0.0D, 0.0D).color(64, 64, 64, 255).endVertex();
+                        tessellator.draw();
+                    }
+
+                    if (progress >= 0)
+                    {
+                        int l1 = 100;
+                        int i1 = 2;
+                        int j1 = k / 2 - l1 / 2;
+                        int k1 = l / 2 + 16;
+                        GlStateManager.disableTexture2D();
+                        worldrenderer.begin(7, DefaultVertexFormats.POSITION_COLOR);
+                        worldrenderer.pos((double)j1, (double)k1, 0.0D).color(128, 128, 128, 255).endVertex();
+                        worldrenderer.pos((double)j1, (double)(k1 + i1), 0.0D).color(128, 128, 128, 255).endVertex();
+                        worldrenderer.pos((double)(j1 + l1), (double)(k1 + i1), 0.0D).color(128, 128, 128, 255).endVertex();
+                        worldrenderer.pos((double)(j1 + l1), (double)k1, 0.0D).color(128, 128, 128, 255).endVertex();
+                        worldrenderer.pos((double)j1, (double)k1, 0.0D).color(128, 255, 128, 255).endVertex();
+                        worldrenderer.pos((double)j1, (double)(k1 + i1), 0.0D).color(128, 255, 128, 255).endVertex();
+                        worldrenderer.pos((double)(j1 + progress), (double)(k1 + i1), 0.0D).color(128, 255, 128, 255).endVertex();
+                        worldrenderer.pos((double)(j1 + progress), (double)k1, 0.0D).color(128, 255, 128, 255).endVertex();
+                        tessellator.draw();
+                        GlStateManager.enableTexture2D();
+                    }
+
+                    GlStateManager.enableBlend();
+                    GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
+                    this.mc.fontRendererObj.drawStringWithShadow(this.currentlyDisplayedText, (float)((k - this.mc.fontRendererObj.getStringWidth(this.currentlyDisplayedText)) / 2), (float)(l / 2 - 4 - 16), 16777215);
+                    this.mc.fontRendererObj.drawStringWithShadow(this.message, (float)((k - this.mc.fontRendererObj.getStringWidth(this.message)) / 2), (float)(l / 2 - 4 + 8), 16777215);
+                }
+
+                this.framebuffer.unbindFramebuffer();
 
                 if (OpenGlHelper.isFramebufferEnabled())
                 {
-                    this.field_146588_g.framebufferRender(var6 * var5, var7 * var5);
+                    this.framebuffer.framebufferRender(k * j, l * j);
                 }
 
-                this.mc.func_147120_f();
+                this.mc.updateDisplay();
 
                 try
                 {
                     Thread.yield();
                 }
-                catch (Exception var14)
+                catch (Exception var16)
                 {
                     ;
                 }
@@ -212,5 +243,7 @@ public class LoadingScreenRenderer implements IProgressUpdate
         }
     }
 
-    public void func_146586_a() {}
+    public void setDoneWorking()
+    {
+    }
 }

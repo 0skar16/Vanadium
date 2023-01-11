@@ -1,56 +1,73 @@
 package net.minecraft.client.gui;
 
+import com.google.common.collect.Lists;
 import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import net.minecraft.client.audio.MusicTicker;
+import net.minecraft.client.audio.SoundHandler;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.WorldRenderer;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.network.play.client.C16PacketClientStatus;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.ResourceLocation;
 import org.apache.commons.io.Charsets;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.lwjgl.opengl.GL11;
 
 public class GuiWinGame extends GuiScreen
 {
     private static final Logger logger = LogManager.getLogger();
-    private static final ResourceLocation field_146576_f = new ResourceLocation("textures/gui/title/minecraft.png");
-    private static final ResourceLocation field_146577_g = new ResourceLocation("textures/misc/vignette.png");
+    private static final ResourceLocation MINECRAFT_LOGO = new ResourceLocation("textures/gui/title/minecraft.png");
+    private static final ResourceLocation VIGNETTE_TEXTURE = new ResourceLocation("textures/misc/vignette.png");
     private int field_146581_h;
-    private List field_146582_i;
+    private List<String> field_146582_i;
     private int field_146579_r;
     private float field_146578_s = 0.5F;
-    private static final String __OBFID = "CL_00000719";
 
     /**
      * Called from the main game loop to update the screen.
      */
     public void updateScreen()
     {
-        ++this.field_146581_h;
-        float var1 = (float)(this.field_146579_r + this.height + this.height + 24) / this.field_146578_s;
+        MusicTicker musicticker = this.mc.getMusicTicker();
+        SoundHandler soundhandler = this.mc.getSoundHandler();
 
-        if ((float)this.field_146581_h > var1)
+        if (this.field_146581_h == 0)
         {
-            this.func_146574_g();
+            musicticker.func_181557_a();
+            musicticker.func_181558_a(MusicTicker.MusicType.CREDITS);
+            soundhandler.resumeSounds();
+        }
+
+        soundhandler.update();
+        ++this.field_146581_h;
+        float f = (float)(this.field_146579_r + this.height + this.height + 24) / this.field_146578_s;
+
+        if ((float)this.field_146581_h > f)
+        {
+            this.sendRespawnPacket();
         }
     }
 
     /**
-     * Fired when a key is typed. This is the equivalent of KeyListener.keyTyped(KeyEvent e).
+     * Fired when a key is typed (except F11 which toggles full screen). This is the equivalent of
+     * KeyListener.keyTyped(KeyEvent e). Args : character (character on the key), keyCode (lwjgl Keyboard key code)
      */
-    protected void keyTyped(char p_73869_1_, int p_73869_2_)
+    protected void keyTyped(char typedChar, int keyCode) throws IOException
     {
-        if (p_73869_2_ == 1)
+        if (keyCode == 1)
         {
-            this.func_146574_g();
+            this.sendRespawnPacket();
         }
     }
 
-    private void func_146574_g()
+    private void sendRespawnPacket()
     {
         this.mc.thePlayer.sendQueue.addToSendQueue(new C16PacketClientStatus(C16PacketClientStatus.EnumState.PERFORM_RESPAWN));
         this.mc.displayGuiScreen((GuiScreen)null);
@@ -65,162 +82,164 @@ public class GuiWinGame extends GuiScreen
     }
 
     /**
-     * Adds the buttons (and other controls) to the screen in question.
+     * Adds the buttons (and other controls) to the screen in question. Called when the GUI is displayed and when the
+     * window resizes, the buttonList is cleared beforehand.
      */
     public void initGui()
     {
         if (this.field_146582_i == null)
         {
-            this.field_146582_i = new ArrayList();
+            this.field_146582_i = Lists.<String>newArrayList();
 
             try
             {
-                String var1 = "";
-                String var2 = "" + EnumChatFormatting.WHITE + EnumChatFormatting.OBFUSCATED + EnumChatFormatting.GREEN + EnumChatFormatting.AQUA;
-                short var3 = 274;
-                BufferedReader var4 = new BufferedReader(new InputStreamReader(this.mc.getResourceManager().getResource(new ResourceLocation("texts/end.txt")).getInputStream(), Charsets.UTF_8));
-                Random var5 = new Random(8124371L);
-                int var6;
+                String s = "";
+                String s1 = "" + EnumChatFormatting.WHITE + EnumChatFormatting.OBFUSCATED + EnumChatFormatting.GREEN + EnumChatFormatting.AQUA;
+                int i = 274;
+                InputStream inputstream = this.mc.getResourceManager().getResource(new ResourceLocation("texts/end.txt")).getInputStream();
+                BufferedReader bufferedreader = new BufferedReader(new InputStreamReader(inputstream, Charsets.UTF_8));
+                Random random = new Random(8124371L);
 
-                while ((var1 = var4.readLine()) != null)
+                while ((s = bufferedreader.readLine()) != null)
                 {
-                    String var7;
-                    String var8;
+                    String s2;
+                    String s3;
 
-                    for (var1 = var1.replaceAll("PLAYERNAME", this.mc.getSession().getUsername()); var1.contains(var2); var1 = var7 + EnumChatFormatting.WHITE + EnumChatFormatting.OBFUSCATED + "XXXXXXXX".substring(0, var5.nextInt(4) + 3) + var8)
+                    for (s = s.replaceAll("PLAYERNAME", this.mc.getSession().getUsername()); s.contains(s1); s = s2 + EnumChatFormatting.WHITE + EnumChatFormatting.OBFUSCATED + "XXXXXXXX".substring(0, random.nextInt(4) + 3) + s3)
                     {
-                        var6 = var1.indexOf(var2);
-                        var7 = var1.substring(0, var6);
-                        var8 = var1.substring(var6 + var2.length());
+                        int j = s.indexOf(s1);
+                        s2 = s.substring(0, j);
+                        s3 = s.substring(j + s1.length());
                     }
 
-                    this.field_146582_i.addAll(this.mc.fontRenderer.listFormattedStringToWidth(var1, var3));
+                    this.field_146582_i.addAll(this.mc.fontRendererObj.listFormattedStringToWidth(s, i));
                     this.field_146582_i.add("");
                 }
 
-                for (var6 = 0; var6 < 8; ++var6)
+                inputstream.close();
+
+                for (int k = 0; k < 8; ++k)
                 {
                     this.field_146582_i.add("");
                 }
 
-                var4 = new BufferedReader(new InputStreamReader(this.mc.getResourceManager().getResource(new ResourceLocation("texts/credits.txt")).getInputStream(), Charsets.UTF_8));
+                inputstream = this.mc.getResourceManager().getResource(new ResourceLocation("texts/credits.txt")).getInputStream();
+                bufferedreader = new BufferedReader(new InputStreamReader(inputstream, Charsets.UTF_8));
 
-                while ((var1 = var4.readLine()) != null)
+                while ((s = bufferedreader.readLine()) != null)
                 {
-                    var1 = var1.replaceAll("PLAYERNAME", this.mc.getSession().getUsername());
-                    var1 = var1.replaceAll("\t", "    ");
-                    this.field_146582_i.addAll(this.mc.fontRenderer.listFormattedStringToWidth(var1, var3));
+                    s = s.replaceAll("PLAYERNAME", this.mc.getSession().getUsername());
+                    s = s.replaceAll("\t", "    ");
+                    this.field_146582_i.addAll(this.mc.fontRendererObj.listFormattedStringToWidth(s, i));
                     this.field_146582_i.add("");
                 }
 
+                inputstream.close();
                 this.field_146579_r = this.field_146582_i.size() * 12;
             }
-            catch (Exception var9)
+            catch (Exception exception)
             {
-                logger.error("Couldn\'t load credits", var9);
+                logger.error((String)"Couldn\'t load credits", (Throwable)exception);
             }
         }
     }
 
-    private void func_146575_b(int p_146575_1_, int p_146575_2_, float p_146575_3_)
+    private void drawWinGameScreen(int p_146575_1_, int p_146575_2_, float p_146575_3_)
     {
-        Tessellator var4 = Tessellator.instance;
+        Tessellator tessellator = Tessellator.getInstance();
+        WorldRenderer worldrenderer = tessellator.getWorldRenderer();
         this.mc.getTextureManager().bindTexture(Gui.optionsBackground);
-        var4.startDrawingQuads();
-        var4.setColorRGBA_F(1.0F, 1.0F, 1.0F, 1.0F);
-        int var5 = this.width;
-        float var6 = 0.0F - ((float)this.field_146581_h + p_146575_3_) * 0.5F * this.field_146578_s;
-        float var7 = (float)this.height - ((float)this.field_146581_h + p_146575_3_) * 0.5F * this.field_146578_s;
-        float var8 = 0.015625F;
-        float var9 = ((float)this.field_146581_h + p_146575_3_ - 0.0F) * 0.02F;
-        float var10 = (float)(this.field_146579_r + this.height + this.height + 24) / this.field_146578_s;
-        float var11 = (var10 - 20.0F - ((float)this.field_146581_h + p_146575_3_)) * 0.005F;
+        worldrenderer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
+        int i = this.width;
+        float f = 0.0F - ((float)this.field_146581_h + p_146575_3_) * 0.5F * this.field_146578_s;
+        float f1 = (float)this.height - ((float)this.field_146581_h + p_146575_3_) * 0.5F * this.field_146578_s;
+        float f2 = 0.015625F;
+        float f3 = ((float)this.field_146581_h + p_146575_3_ - 0.0F) * 0.02F;
+        float f4 = (float)(this.field_146579_r + this.height + this.height + 24) / this.field_146578_s;
+        float f5 = (f4 - 20.0F - ((float)this.field_146581_h + p_146575_3_)) * 0.005F;
 
-        if (var11 < var9)
+        if (f5 < f3)
         {
-            var9 = var11;
+            f3 = f5;
         }
 
-        if (var9 > 1.0F)
+        if (f3 > 1.0F)
         {
-            var9 = 1.0F;
+            f3 = 1.0F;
         }
 
-        var9 *= var9;
-        var9 = var9 * 96.0F / 255.0F;
-        var4.setColorOpaque_F(var9, var9, var9);
-        var4.addVertexWithUV(0.0D, (double)this.height, (double)this.zLevel, 0.0D, (double)(var6 * var8));
-        var4.addVertexWithUV((double)var5, (double)this.height, (double)this.zLevel, (double)((float)var5 * var8), (double)(var6 * var8));
-        var4.addVertexWithUV((double)var5, 0.0D, (double)this.zLevel, (double)((float)var5 * var8), (double)(var7 * var8));
-        var4.addVertexWithUV(0.0D, 0.0D, (double)this.zLevel, 0.0D, (double)(var7 * var8));
-        var4.draw();
+        f3 = f3 * f3;
+        f3 = f3 * 96.0F / 255.0F;
+        worldrenderer.pos(0.0D, (double)this.height, (double)this.zLevel).tex(0.0D, (double)(f * f2)).color(f3, f3, f3, 1.0F).endVertex();
+        worldrenderer.pos((double)i, (double)this.height, (double)this.zLevel).tex((double)((float)i * f2), (double)(f * f2)).color(f3, f3, f3, 1.0F).endVertex();
+        worldrenderer.pos((double)i, 0.0D, (double)this.zLevel).tex((double)((float)i * f2), (double)(f1 * f2)).color(f3, f3, f3, 1.0F).endVertex();
+        worldrenderer.pos(0.0D, 0.0D, (double)this.zLevel).tex(0.0D, (double)(f1 * f2)).color(f3, f3, f3, 1.0F).endVertex();
+        tessellator.draw();
     }
 
     /**
-     * Draws the screen and all the components in it.
+     * Draws the screen and all the components in it. Args : mouseX, mouseY, renderPartialTicks
      */
-    public void drawScreen(int p_73863_1_, int p_73863_2_, float p_73863_3_)
+    public void drawScreen(int mouseX, int mouseY, float partialTicks)
     {
-        this.func_146575_b(p_73863_1_, p_73863_2_, p_73863_3_);
-        Tessellator var4 = Tessellator.instance;
-        short var5 = 274;
-        int var6 = this.width / 2 - var5 / 2;
-        int var7 = this.height + 50;
-        float var8 = -((float)this.field_146581_h + p_73863_3_) * this.field_146578_s;
-        GL11.glPushMatrix();
-        GL11.glTranslatef(0.0F, var8, 0.0F);
-        this.mc.getTextureManager().bindTexture(field_146576_f);
-        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-        this.drawTexturedModalRect(var6, var7, 0, 0, 155, 44);
-        this.drawTexturedModalRect(var6 + 155, var7, 0, 45, 155, 44);
-        var4.setColorOpaque_I(16777215);
-        int var9 = var7 + 200;
-        int var10;
+        this.drawWinGameScreen(mouseX, mouseY, partialTicks);
+        Tessellator tessellator = Tessellator.getInstance();
+        WorldRenderer worldrenderer = tessellator.getWorldRenderer();
+        int i = 274;
+        int j = this.width / 2 - i / 2;
+        int k = this.height + 50;
+        float f = -((float)this.field_146581_h + partialTicks) * this.field_146578_s;
+        GlStateManager.pushMatrix();
+        GlStateManager.translate(0.0F, f, 0.0F);
+        this.mc.getTextureManager().bindTexture(MINECRAFT_LOGO);
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        this.drawTexturedModalRect(j, k, 0, 0, 155, 44);
+        this.drawTexturedModalRect(j + 155, k, 0, 45, 155, 44);
+        int l = k + 200;
 
-        for (var10 = 0; var10 < this.field_146582_i.size(); ++var10)
+        for (int i1 = 0; i1 < this.field_146582_i.size(); ++i1)
         {
-            if (var10 == this.field_146582_i.size() - 1)
+            if (i1 == this.field_146582_i.size() - 1)
             {
-                float var11 = (float)var9 + var8 - (float)(this.height / 2 - 6);
+                float f1 = (float)l + f - (float)(this.height / 2 - 6);
 
-                if (var11 < 0.0F)
+                if (f1 < 0.0F)
                 {
-                    GL11.glTranslatef(0.0F, -var11, 0.0F);
+                    GlStateManager.translate(0.0F, -f1, 0.0F);
                 }
             }
 
-            if ((float)var9 + var8 + 12.0F + 8.0F > 0.0F && (float)var9 + var8 < (float)this.height)
+            if ((float)l + f + 12.0F + 8.0F > 0.0F && (float)l + f < (float)this.height)
             {
-                String var12 = (String)this.field_146582_i.get(var10);
+                String s = (String)this.field_146582_i.get(i1);
 
-                if (var12.startsWith("[C]"))
+                if (s.startsWith("[C]"))
                 {
-                    this.fontRendererObj.drawStringWithShadow(var12.substring(3), var6 + (var5 - this.fontRendererObj.getStringWidth(var12.substring(3))) / 2, var9, 16777215);
+                    this.fontRendererObj.drawStringWithShadow(s.substring(3), (float)(j + (i - this.fontRendererObj.getStringWidth(s.substring(3))) / 2), (float)l, 16777215);
                 }
                 else
                 {
-                    this.fontRendererObj.fontRandom.setSeed((long)var10 * 4238972211L + (long)(this.field_146581_h / 4));
-                    this.fontRendererObj.drawStringWithShadow(var12, var6, var9, 16777215);
+                    this.fontRendererObj.fontRandom.setSeed((long)i1 * 4238972211L + (long)(this.field_146581_h / 4));
+                    this.fontRendererObj.drawStringWithShadow(s, (float)j, (float)l, 16777215);
                 }
             }
 
-            var9 += 12;
+            l += 12;
         }
 
-        GL11.glPopMatrix();
-        this.mc.getTextureManager().bindTexture(field_146577_g);
-        GL11.glEnable(GL11.GL_BLEND);
-        GL11.glBlendFunc(GL11.GL_ZERO, GL11.GL_ONE_MINUS_SRC_COLOR);
-        var4.startDrawingQuads();
-        var4.setColorRGBA_F(1.0F, 1.0F, 1.0F, 1.0F);
-        var10 = this.width;
-        int var13 = this.height;
-        var4.addVertexWithUV(0.0D, (double)var13, (double)this.zLevel, 0.0D, 1.0D);
-        var4.addVertexWithUV((double)var10, (double)var13, (double)this.zLevel, 1.0D, 1.0D);
-        var4.addVertexWithUV((double)var10, 0.0D, (double)this.zLevel, 1.0D, 0.0D);
-        var4.addVertexWithUV(0.0D, 0.0D, (double)this.zLevel, 0.0D, 0.0D);
-        var4.draw();
-        GL11.glDisable(GL11.GL_BLEND);
-        super.drawScreen(p_73863_1_, p_73863_2_, p_73863_3_);
+        GlStateManager.popMatrix();
+        this.mc.getTextureManager().bindTexture(VIGNETTE_TEXTURE);
+        GlStateManager.enableBlend();
+        GlStateManager.blendFunc(0, 769);
+        int j1 = this.width;
+        int k1 = this.height;
+        worldrenderer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
+        worldrenderer.pos(0.0D, (double)k1, (double)this.zLevel).tex(0.0D, 1.0D).color(1.0F, 1.0F, 1.0F, 1.0F).endVertex();
+        worldrenderer.pos((double)j1, (double)k1, (double)this.zLevel).tex(1.0D, 1.0D).color(1.0F, 1.0F, 1.0F, 1.0F).endVertex();
+        worldrenderer.pos((double)j1, 0.0D, (double)this.zLevel).tex(1.0D, 0.0D).color(1.0F, 1.0F, 1.0F, 1.0F).endVertex();
+        worldrenderer.pos(0.0D, 0.0D, (double)this.zLevel).tex(0.0D, 0.0D).color(1.0F, 1.0F, 1.0F, 1.0F).endVertex();
+        tessellator.draw();
+        GlStateManager.disableBlend();
+        super.drawScreen(mouseX, mouseY, partialTicks);
     }
 }

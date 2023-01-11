@@ -12,11 +12,10 @@ public class EntityAICreeperSwell extends EntityAIBase
      * The creeper's attack target. This is used for the changing of the creeper's state.
      */
     EntityLivingBase creeperAttackTarget;
-    private static final String __OBFID = "CL_00001614";
 
-    public EntityAICreeperSwell(EntityCreeper p_i1655_1_)
+    public EntityAICreeperSwell(EntityCreeper entitycreeperIn)
     {
-        this.swellingCreeper = p_i1655_1_;
+        this.swellingCreeper = entitycreeperIn;
         this.setMutexBits(1);
     }
 
@@ -25,8 +24,8 @@ public class EntityAICreeperSwell extends EntityAIBase
      */
     public boolean shouldExecute()
     {
-        EntityLivingBase var1 = this.swellingCreeper.getAttackTarget();
-        return this.swellingCreeper.getCreeperState() > 0 || var1 != null && this.swellingCreeper.getDistanceSqToEntity(var1) < 9.0D;
+        EntityLivingBase entitylivingbase = this.swellingCreeper.getAttackTarget();
+        return this.swellingCreeper.getCreeperState() > 0 || entitylivingbase != null && this.swellingCreeper.getDistanceSqToEntity(entitylivingbase) < 9.0D;
     }
 
     /**

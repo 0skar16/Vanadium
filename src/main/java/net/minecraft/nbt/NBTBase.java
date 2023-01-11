@@ -6,15 +6,14 @@ import java.io.IOException;
 
 public abstract class NBTBase
 {
-    public static final String[] NBTTypes = new String[] {"END", "BYTE", "SHORT", "INT", "LONG", "FLOAT", "DOUBLE", "BYTE[]", "STRING", "LIST", "COMPOUND", "INT[]"};
-    private static final String __OBFID = "CL_00001229";
+    public static final String[] NBT_TYPES = new String[] {"END", "BYTE", "SHORT", "INT", "LONG", "FLOAT", "DOUBLE", "BYTE[]", "STRING", "LIST", "COMPOUND", "INT[]"};
 
     /**
      * Write the actual data contents of the tag, implemented in NBT extension classes
      */
-    abstract void write(DataOutput p_74734_1_) throws IOException;
+    abstract void write(DataOutput output) throws IOException;
 
-    abstract void func_152446_a(DataInput p_152446_1_, int p_152446_2_, NBTSizeTracker p_152446_3_) throws IOException;
+    abstract void read(DataInput input, int depth, NBTSizeTracker sizeTracker) throws IOException;
 
     public abstract String toString();
 
@@ -23,9 +22,12 @@ public abstract class NBTBase
      */
     public abstract byte getId();
 
-    protected static NBTBase func_150284_a(byte p_150284_0_)
+    /**
+     * Creates a new NBTBase object that corresponds with the passed in id.
+     */
+    protected static NBTBase createNewByType(byte id)
     {
-        switch (p_150284_0_)
+        switch (id)
         {
             case 0:
                 return new NBTTagEnd();
@@ -73,6 +75,14 @@ public abstract class NBTBase
      */
     public abstract NBTBase copy();
 
+    /**
+     * Return whether this compound has no tags.
+     */
+    public boolean hasNoTags()
+    {
+        return false;
+    }
+
     public boolean equals(Object p_equals_1_)
     {
         if (!(p_equals_1_ instanceof NBTBase))
@@ -81,8 +91,8 @@ public abstract class NBTBase
         }
         else
         {
-            NBTBase var2 = (NBTBase)p_equals_1_;
-            return this.getId() == var2.getId();
+            NBTBase nbtbase = (NBTBase)p_equals_1_;
+            return this.getId() == nbtbase.getId();
         }
     }
 
@@ -91,25 +101,23 @@ public abstract class NBTBase
         return this.getId();
     }
 
-    protected String func_150285_a_()
+    protected String getString()
     {
         return this.toString();
     }
 
     public abstract static class NBTPrimitive extends NBTBase
     {
-        private static final String __OBFID = "CL_00001230";
+        public abstract long getLong();
 
-        public abstract long func_150291_c();
+        public abstract int getInt();
 
-        public abstract int func_150287_d();
+        public abstract short getShort();
 
-        public abstract short func_150289_e();
+        public abstract byte getByte();
 
-        public abstract byte func_150290_f();
+        public abstract double getDouble();
 
-        public abstract double func_150286_g();
-
-        public abstract float func_150288_h();
+        public abstract float getFloat();
     }
 }

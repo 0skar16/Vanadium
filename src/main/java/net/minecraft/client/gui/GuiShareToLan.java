@@ -1,5 +1,6 @@
 package net.minecraft.client.gui;
 
+import java.io.IOException;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.ChatComponentTranslation;
@@ -13,7 +14,6 @@ public class GuiShareToLan extends GuiScreen
     private GuiButton field_146597_g;
     private String field_146599_h = "survival";
     private boolean field_146600_i;
-    private static final String __OBFID = "CL_00000713";
 
     public GuiShareToLan(GuiScreen p_i1055_1_)
     {
@@ -21,7 +21,8 @@ public class GuiShareToLan extends GuiScreen
     }
 
     /**
-     * Adds the buttons (and other controls) to the screen in question.
+     * Adds the buttons (and other controls) to the screen in question. Called when the GUI is displayed and when the
+     * window resizes, the buttonList is cleared beforehand.
      */
     public void initGui()
     {
@@ -48,15 +49,18 @@ public class GuiShareToLan extends GuiScreen
         }
     }
 
-    protected void actionPerformed(GuiButton p_146284_1_)
+    /**
+     * Called by the controls from the buttonList when activated. (Mouse pressed for buttons)
+     */
+    protected void actionPerformed(GuiButton button) throws IOException
     {
-        if (p_146284_1_.id == 102)
+        if (button.id == 102)
         {
             this.mc.displayGuiScreen(this.field_146598_a);
         }
-        else if (p_146284_1_.id == 104)
+        else if (button.id == 104)
         {
-            if (this.field_146599_h.equals("survival"))
+            if (this.field_146599_h.equals("spectator"))
             {
                 this.field_146599_h = "creative";
             }
@@ -64,45 +68,49 @@ public class GuiShareToLan extends GuiScreen
             {
                 this.field_146599_h = "adventure";
             }
-            else
+            else if (this.field_146599_h.equals("adventure"))
             {
                 this.field_146599_h = "survival";
+            }
+            else
+            {
+                this.field_146599_h = "spectator";
             }
 
             this.func_146595_g();
         }
-        else if (p_146284_1_.id == 103)
+        else if (button.id == 103)
         {
             this.field_146600_i = !this.field_146600_i;
             this.func_146595_g();
         }
-        else if (p_146284_1_.id == 101)
+        else if (button.id == 101)
         {
             this.mc.displayGuiScreen((GuiScreen)null);
-            String var2 = this.mc.getIntegratedServer().shareToLAN(WorldSettings.GameType.getByName(this.field_146599_h), this.field_146600_i);
-            Object var3;
+            String s = this.mc.getIntegratedServer().shareToLAN(WorldSettings.GameType.getByName(this.field_146599_h), this.field_146600_i);
+            IChatComponent ichatcomponent;
 
-            if (var2 != null)
+            if (s != null)
             {
-                var3 = new ChatComponentTranslation("commands.publish.started", new Object[] {var2});
+                ichatcomponent = new ChatComponentTranslation("commands.publish.started", new Object[] {s});
             }
             else
             {
-                var3 = new ChatComponentText("commands.publish.failed");
+                ichatcomponent = new ChatComponentText("commands.publish.failed");
             }
 
-            this.mc.ingameGUI.getChatGUI().func_146227_a((IChatComponent)var3);
+            this.mc.ingameGUI.getChatGUI().printChatMessage(ichatcomponent);
         }
     }
 
     /**
-     * Draws the screen and all the components in it.
+     * Draws the screen and all the components in it. Args : mouseX, mouseY, renderPartialTicks
      */
-    public void drawScreen(int p_73863_1_, int p_73863_2_, float p_73863_3_)
+    public void drawScreen(int mouseX, int mouseY, float partialTicks)
     {
         this.drawDefaultBackground();
         this.drawCenteredString(this.fontRendererObj, I18n.format("lanServer.title", new Object[0]), this.width / 2, 50, 16777215);
         this.drawCenteredString(this.fontRendererObj, I18n.format("lanServer.otherPlayers", new Object[0]), this.width / 2, 82, 16777215);
-        super.drawScreen(p_73863_1_, p_73863_2_, p_73863_3_);
+        super.drawScreen(mouseX, mouseY, partialTicks);
     }
 }

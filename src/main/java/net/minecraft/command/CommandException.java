@@ -1,17 +1,16 @@
 package net.minecraft.command;
 
-public class CommandException extends RuntimeException
+public class CommandException extends Exception
 {
-    private Object[] errorObjects;
-    private static final String __OBFID = "CL_00001187";
+    private final Object[] errorObjects;
 
-    public CommandException(String p_i1359_1_, Object ... p_i1359_2_)
+    public CommandException(String message, Object... objects)
     {
-        super(p_i1359_1_);
-        this.errorObjects = p_i1359_2_;
+        super(message);
+        this.errorObjects = objects;
     }
 
-    public Object[] getErrorOjbects()
+    public Object[] getErrorObjects()
     {
         return this.errorObjects;
     }

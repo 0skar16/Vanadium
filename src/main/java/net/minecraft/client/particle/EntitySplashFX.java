@@ -4,19 +4,25 @@ import net.minecraft.world.World;
 
 public class EntitySplashFX extends EntityRainFX
 {
-    private static final String __OBFID = "CL_00000927";
-
-    public EntitySplashFX(World p_i1230_1_, double p_i1230_2_, double p_i1230_4_, double p_i1230_6_, double p_i1230_8_, double p_i1230_10_, double p_i1230_12_)
+    protected EntitySplashFX(World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double xSpeedIn, double ySpeedIn, double zSpeedIn)
     {
-        super(p_i1230_1_, p_i1230_2_, p_i1230_4_, p_i1230_6_);
+        super(worldIn, xCoordIn, yCoordIn, zCoordIn);
         this.particleGravity = 0.04F;
         this.nextTextureIndexX();
 
-        if (p_i1230_10_ == 0.0D && (p_i1230_8_ != 0.0D || p_i1230_12_ != 0.0D))
+        if (ySpeedIn == 0.0D && (xSpeedIn != 0.0D || zSpeedIn != 0.0D))
         {
-            this.motionX = p_i1230_8_;
-            this.motionY = p_i1230_10_ + 0.1D;
-            this.motionZ = p_i1230_12_;
+            this.motionX = xSpeedIn;
+            this.motionY = ySpeedIn + 0.1D;
+            this.motionZ = zSpeedIn;
+        }
+    }
+
+    public static class Factory implements IParticleFactory
+    {
+        public EntityFX getEntityFX(int particleID, World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double xSpeedIn, double ySpeedIn, double zSpeedIn, int... p_178902_15_)
+        {
+            return new EntitySplashFX(worldIn, xCoordIn, yCoordIn, zCoordIn, xSpeedIn, ySpeedIn, zSpeedIn);
         }
     }
 }

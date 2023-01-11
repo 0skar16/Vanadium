@@ -1,5 +1,6 @@
 package net.minecraft.client.gui;
 
+import java.io.IOException;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.settings.GameSettings;
@@ -7,153 +8,169 @@ import net.minecraft.client.settings.KeyBinding;
 
 public class GuiControls extends GuiScreen
 {
-    private static final GameSettings.Options[] field_146492_g = new GameSettings.Options[] {GameSettings.Options.INVERT_MOUSE, GameSettings.Options.SENSITIVITY, GameSettings.Options.TOUCHSCREEN};
-    private GuiScreen field_146496_h;
-    protected String field_146495_a = "Controls";
-    private GameSettings field_146497_i;
-    public KeyBinding field_146491_f = null;
-    public long field_152177_g;
-    private GuiKeyBindingList field_146494_r;
-    private GuiButton field_146493_s;
-    private static final String __OBFID = "CL_00000736";
+    private static final GameSettings.Options[] optionsArr = new GameSettings.Options[] {GameSettings.Options.INVERT_MOUSE, GameSettings.Options.SENSITIVITY, GameSettings.Options.TOUCHSCREEN};
 
-    public GuiControls(GuiScreen p_i1027_1_, GameSettings p_i1027_2_)
+    /**
+     * A reference to the screen object that created this. Used for navigating between screens.
+     */
+    private GuiScreen parentScreen;
+    protected String screenTitle = "Controls";
+
+    /** Reference to the GameSettings object. */
+    private GameSettings options;
+
+    /** The ID of the button that has been pressed. */
+    public KeyBinding buttonId = null;
+    public long time;
+    private GuiKeyBindingList keyBindingList;
+    private GuiButton buttonReset;
+
+    public GuiControls(GuiScreen screen, GameSettings settings)
     {
-        this.field_146496_h = p_i1027_1_;
-        this.field_146497_i = p_i1027_2_;
+        this.parentScreen = screen;
+        this.options = settings;
     }
 
     /**
-     * Adds the buttons (and other controls) to the screen in question.
+     * Adds the buttons (and other controls) to the screen in question. Called when the GUI is displayed and when the
+     * window resizes, the buttonList is cleared beforehand.
      */
     public void initGui()
     {
-        this.field_146494_r = new GuiKeyBindingList(this, this.mc);
+        this.keyBindingList = new GuiKeyBindingList(this, this.mc);
         this.buttonList.add(new GuiButton(200, this.width / 2 - 155, this.height - 29, 150, 20, I18n.format("gui.done", new Object[0])));
-        this.buttonList.add(this.field_146493_s = new GuiButton(201, this.width / 2 - 155 + 160, this.height - 29, 150, 20, I18n.format("controls.resetAll", new Object[0])));
-        this.field_146495_a = I18n.format("controls.title", new Object[0]);
-        int var1 = 0;
-        GameSettings.Options[] var2 = field_146492_g;
-        int var3 = var2.length;
+        this.buttonList.add(this.buttonReset = new GuiButton(201, this.width / 2 - 155 + 160, this.height - 29, 150, 20, I18n.format("controls.resetAll", new Object[0])));
+        this.screenTitle = I18n.format("controls.title", new Object[0]);
+        int i = 0;
 
-        for (int var4 = 0; var4 < var3; ++var4)
+        for (GameSettings.Options gamesettings$options : optionsArr)
         {
-            GameSettings.Options var5 = var2[var4];
-
-            if (var5.getEnumFloat())
+            if (gamesettings$options.getEnumFloat())
             {
-                this.buttonList.add(new GuiOptionSlider(var5.returnEnumOrdinal(), this.width / 2 - 155 + var1 % 2 * 160, 18 + 24 * (var1 >> 1), var5));
+                this.buttonList.add(new GuiOptionSlider(gamesettings$options.returnEnumOrdinal(), this.width / 2 - 155 + i % 2 * 160, 18 + 24 * (i >> 1), gamesettings$options));
             }
             else
             {
-                this.buttonList.add(new GuiOptionButton(var5.returnEnumOrdinal(), this.width / 2 - 155 + var1 % 2 * 160, 18 + 24 * (var1 >> 1), var5, this.field_146497_i.getKeyBinding(var5)));
+                this.buttonList.add(new GuiOptionButton(gamesettings$options.returnEnumOrdinal(), this.width / 2 - 155 + i % 2 * 160, 18 + 24 * (i >> 1), gamesettings$options, this.options.getKeyBinding(gamesettings$options)));
             }
 
-            ++var1;
-        }
-    }
-
-    protected void actionPerformed(GuiButton p_146284_1_)
-    {
-        if (p_146284_1_.id == 200)
-        {
-            this.mc.displayGuiScreen(this.field_146496_h);
-        }
-        else if (p_146284_1_.id == 201)
-        {
-            KeyBinding[] var2 = this.mc.gameSettings.keyBindings;
-            int var3 = var2.length;
-
-            for (int var4 = 0; var4 < var3; ++var4)
-            {
-                KeyBinding var5 = var2[var4];
-                var5.setKeyCode(var5.getKeyCodeDefault());
-            }
-
-            KeyBinding.resetKeyBindingArrayAndHash();
-        }
-        else if (p_146284_1_.id < 100 && p_146284_1_ instanceof GuiOptionButton)
-        {
-            this.field_146497_i.setOptionValue(((GuiOptionButton)p_146284_1_).func_146136_c(), 1);
-            p_146284_1_.displayString = this.field_146497_i.getKeyBinding(GameSettings.Options.getEnumOptions(p_146284_1_.id));
+            ++i;
         }
     }
 
     /**
-     * Called when the mouse is clicked.
+     * Handles mouse input.
      */
-    protected void mouseClicked(int p_73864_1_, int p_73864_2_, int p_73864_3_)
+    public void handleMouseInput() throws IOException
     {
-        if (this.field_146491_f != null)
-        {
-            this.field_146497_i.setKeyCodeSave(this.field_146491_f, -100 + p_73864_3_);
-            this.field_146491_f = null;
-            KeyBinding.resetKeyBindingArrayAndHash();
-        }
-        else if (p_73864_3_ != 0 || !this.field_146494_r.func_148179_a(p_73864_1_, p_73864_2_, p_73864_3_))
-        {
-            super.mouseClicked(p_73864_1_, p_73864_2_, p_73864_3_);
-        }
+        super.handleMouseInput();
+        this.keyBindingList.handleMouseInput();
     }
 
-    protected void mouseMovedOrUp(int p_146286_1_, int p_146286_2_, int p_146286_3_)
+    /**
+     * Called by the controls from the buttonList when activated. (Mouse pressed for buttons)
+     */
+    protected void actionPerformed(GuiButton button) throws IOException
     {
-        if (p_146286_3_ != 0 || !this.field_146494_r.func_148181_b(p_146286_1_, p_146286_2_, p_146286_3_))
+        if (button.id == 200)
         {
-            super.mouseMovedOrUp(p_146286_1_, p_146286_2_, p_146286_3_);
+            this.mc.displayGuiScreen(this.parentScreen);
+        }
+        else if (button.id == 201)
+        {
+            for (KeyBinding keybinding : this.mc.gameSettings.mc)
+            {
+                keybinding.setKeyCode(keybinding.getKeyCodeDefault());
+            }
+
+            KeyBinding.resetKeyBindingArrayAndHash();
+        }
+        else if (button.id < 100 && button instanceof GuiOptionButton)
+        {
+            this.options.setOptionValue(((GuiOptionButton)button).returnEnumOptions(), 1);
+            button.displayString = this.options.getKeyBinding(GameSettings.Options.getEnumOptions(button.id));
         }
     }
 
     /**
-     * Fired when a key is typed. This is the equivalent of KeyListener.keyTyped(KeyEvent e).
+     * Called when the mouse is clicked. Args : mouseX, mouseY, clickedButton
      */
-    protected void keyTyped(char p_73869_1_, int p_73869_2_)
+    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException
     {
-        if (this.field_146491_f != null)
+        if (this.buttonId != null)
         {
-            if (p_73869_2_ == 1)
+            this.options.setOptionKeyBinding(this.buttonId, -100 + mouseButton);
+            this.buttonId = null;
+            KeyBinding.resetKeyBindingArrayAndHash();
+        }
+        else if (mouseButton != 0 || !this.keyBindingList.mouseClicked(mouseX, mouseY, mouseButton))
+        {
+            super.mouseClicked(mouseX, mouseY, mouseButton);
+        }
+    }
+
+    /**
+     * Called when a mouse button is released.  Args : mouseX, mouseY, releaseButton
+     */
+    protected void mouseReleased(int mouseX, int mouseY, int state)
+    {
+        if (state != 0 || !this.keyBindingList.mouseReleased(mouseX, mouseY, state))
+        {
+            super.mouseReleased(mouseX, mouseY, state);
+        }
+    }
+
+    /**
+     * Fired when a key is typed (except F11 which toggles full screen). This is the equivalent of
+     * KeyListener.keyTyped(KeyEvent e). Args : character (character on the key), keyCode (lwjgl Keyboard key code)
+     */
+    protected void keyTyped(char typedChar, int keyCode) throws IOException
+    {
+        if (this.buttonId != null)
+        {
+            if (keyCode == 1)
             {
-                this.field_146497_i.setKeyCodeSave(this.field_146491_f, 0);
+                this.options.setOptionKeyBinding(this.buttonId, 0);
             }
-            else
+            else if (keyCode != 0)
             {
-                this.field_146497_i.setKeyCodeSave(this.field_146491_f, p_73869_2_);
+                this.options.setOptionKeyBinding(this.buttonId, keyCode);
+            }
+            else if (typedChar > 0)
+            {
+                this.options.setOptionKeyBinding(this.buttonId, typedChar + 256);
             }
 
-            this.field_146491_f = null;
-            this.field_152177_g = Minecraft.getSystemTime();
+            this.buttonId = null;
+            this.time = Minecraft.getSystemTime();
             KeyBinding.resetKeyBindingArrayAndHash();
         }
         else
         {
-            super.keyTyped(p_73869_1_, p_73869_2_);
+            super.keyTyped(typedChar, keyCode);
         }
     }
 
     /**
-     * Draws the screen and all the components in it.
+     * Draws the screen and all the components in it. Args : mouseX, mouseY, renderPartialTicks
      */
-    public void drawScreen(int p_73863_1_, int p_73863_2_, float p_73863_3_)
+    public void drawScreen(int mouseX, int mouseY, float partialTicks)
     {
         this.drawDefaultBackground();
-        this.field_146494_r.func_148128_a(p_73863_1_, p_73863_2_, p_73863_3_);
-        this.drawCenteredString(this.fontRendererObj, this.field_146495_a, this.width / 2, 8, 16777215);
-        boolean var4 = true;
-        KeyBinding[] var5 = this.field_146497_i.keyBindings;
-        int var6 = var5.length;
+        this.keyBindingList.drawScreen(mouseX, mouseY, partialTicks);
+        this.drawCenteredString(this.fontRendererObj, this.screenTitle, this.width / 2, 8, 16777215);
+        boolean flag = true;
 
-        for (int var7 = 0; var7 < var6; ++var7)
+        for (KeyBinding keybinding : this.options.mc)
         {
-            KeyBinding var8 = var5[var7];
-
-            if (var8.getKeyCode() != var8.getKeyCodeDefault())
+            if (keybinding.getKeyCode() != keybinding.getKeyCodeDefault())
             {
-                var4 = false;
+                flag = false;
                 break;
             }
         }
 
-        this.field_146493_s.enabled = !var4;
-        super.drawScreen(p_73863_1_, p_73863_2_, p_73863_3_);
+        this.buttonReset.enabled = !flag;
+        super.drawScreen(mouseX, mouseY, partialTicks);
     }
 }

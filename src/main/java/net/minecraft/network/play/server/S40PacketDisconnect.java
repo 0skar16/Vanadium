@@ -1,61 +1,50 @@
 package net.minecraft.network.play.server;
 
 import java.io.IOException;
-import net.minecraft.network.INetHandler;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 import net.minecraft.util.IChatComponent;
 
-public class S40PacketDisconnect extends Packet
+public class S40PacketDisconnect implements Packet<INetHandlerPlayClient>
 {
-    private IChatComponent field_149167_a;
-    private static final String __OBFID = "CL_00001298";
+    private IChatComponent reason;
 
-    public S40PacketDisconnect() {}
-
-    public S40PacketDisconnect(IChatComponent p_i46336_1_)
+    public S40PacketDisconnect()
     {
-        this.field_149167_a = p_i46336_1_;
+    }
+
+    public S40PacketDisconnect(IChatComponent reasonIn)
+    {
+        this.reason = reasonIn;
     }
 
     /**
      * Reads the raw packet data from the data stream.
      */
-    public void readPacketData(PacketBuffer p_148837_1_) throws IOException
+    public void readPacketData(PacketBuffer buf) throws IOException
     {
-        this.field_149167_a = IChatComponent.Serializer.func_150699_a(p_148837_1_.readStringFromBuffer(32767));
+        this.reason = buf.readChatComponent();
     }
 
     /**
      * Writes the raw packet data to the data stream.
      */
-    public void writePacketData(PacketBuffer p_148840_1_) throws IOException
+    public void writePacketData(PacketBuffer buf) throws IOException
     {
-        p_148840_1_.writeStringToBuffer(IChatComponent.Serializer.func_150696_a(this.field_149167_a));
-    }
-
-    public void processPacket(INetHandlerPlayClient p_148833_1_)
-    {
-        p_148833_1_.handleDisconnect(this);
+        buf.writeChatComponent(this.reason);
     }
 
     /**
-     * If true, the network manager will process the packet immediately when received, otherwise it will queue it for
-     * processing. Currently true for: Disconnect, LoginSuccess, KeepAlive, ServerQuery/Info, Ping/Pong
+     * Passes this Packet on to the NetHandler for processing.
      */
-    public boolean hasPriority()
+    public void processPacket(INetHandlerPlayClient handler)
     {
-        return true;
+        handler.handleDisconnect(this);
     }
 
-    public IChatComponent func_149165_c()
+    public IChatComponent getReason()
     {
-        return this.field_149167_a;
-    }
-
-    public void processPacket(INetHandler p_148833_1_)
-    {
-        this.processPacket((INetHandlerPlayClient)p_148833_1_);
+        return this.reason;
     }
 }

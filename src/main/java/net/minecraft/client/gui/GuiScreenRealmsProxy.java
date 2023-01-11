@@ -1,8 +1,8 @@
 package net.minecraft.client.gui;
 
-import java.util.ArrayList;
+import com.google.common.collect.Lists;
+import java.io.IOException;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import net.minecraft.item.ItemStack;
 import net.minecraft.realms.RealmsButton;
@@ -11,12 +11,11 @@ import net.minecraft.realms.RealmsScreen;
 public class GuiScreenRealmsProxy extends GuiScreen
 {
     private RealmsScreen field_154330_a;
-    private static final String __OBFID = "CL_00001847";
 
     public GuiScreenRealmsProxy(RealmsScreen p_i1087_1_)
     {
         this.field_154330_a = p_i1087_1_;
-        super.buttonList = Collections.synchronizedList(new ArrayList());
+        super.buttonList = Collections.<GuiButton>synchronizedList(Lists.<GuiButton>newArrayList());
     }
 
     public RealmsScreen func_154321_a()
@@ -25,7 +24,8 @@ public class GuiScreenRealmsProxy extends GuiScreen
     }
 
     /**
-     * Adds the buttons (and other controls) to the screen in question.
+     * Adds the buttons (and other controls) to the screen in question. Called when the GUI is displayed and when the
+     * window resizes, the buttonList is cleared beforehand.
      */
     public void initGui()
     {
@@ -38,28 +38,39 @@ public class GuiScreenRealmsProxy extends GuiScreen
         super.drawCenteredString(this.fontRendererObj, p_154325_1_, p_154325_2_, p_154325_3_, p_154325_4_);
     }
 
-    public void func_154322_b(String p_154322_1_, int p_154322_2_, int p_154322_3_, int p_154322_4_)
+    public void a(String p_a_1_, int p_a_2_, int p_a_3_, int p_a_4_, boolean p_a_5_)
     {
-        super.drawString(this.fontRendererObj, p_154322_1_, p_154322_2_, p_154322_3_, p_154322_4_);
+        if (p_a_5_)
+        {
+            super.drawString(this.fontRendererObj, p_a_1_, p_a_2_, p_a_3_, p_a_4_);
+        }
+        else
+        {
+            this.fontRendererObj.drawString(p_a_1_, p_a_2_, p_a_3_, p_a_4_);
+        }
     }
 
     /**
      * Draws a textured rectangle at the stored z-value. Args: x, y, u, v, width, height
      */
-    public void drawTexturedModalRect(int x, int y, int texX, int texY, int width, int height)
+    public void drawTexturedModalRect(int x, int y, int textureX, int textureY, int width, int height)
     {
-        this.field_154330_a.blit(x, y, texX, texY, width, height);
-        super.drawTexturedModalRect(x, y, texX, texY, width, height);
+        this.field_154330_a.blit(x, y, textureX, textureY, width, height);
+        super.drawTexturedModalRect(x, y, textureX, textureY, width, height);
     }
 
     /**
-     * Draws a rectangle with a vertical gradient between the specified colors.
+     * Draws a rectangle with a vertical gradient between the specified colors (ARGB format). Args : x1, y1, x2, y2,
+     * topColor, bottomColor
      */
-    public void drawGradientRect(int x, int y, int width, int height, int startColor, int endColor)
+    public void drawGradientRect(int left, int top, int right, int bottom, int startColor, int endColor)
     {
-        super.drawGradientRect(x, y, width, height, startColor, endColor);
+        super.drawGradientRect(left, top, right, bottom, startColor, endColor);
     }
 
+    /**
+     * Draws either a gradient over the background screen (when it exists) or a flat gradient over background.png
+     */
     public void drawDefaultBackground()
     {
         super.drawDefaultBackground();
@@ -73,32 +84,39 @@ public class GuiScreenRealmsProxy extends GuiScreen
         return super.doesGuiPauseGame();
     }
 
-    public void func_146270_b(int p_146270_1_)
+    public void drawWorldBackground(int tint)
     {
-        super.func_146270_b(p_146270_1_);
+        super.drawWorldBackground(tint);
     }
 
     /**
-     * Draws the screen and all the components in it.
+     * Draws the screen and all the components in it. Args : mouseX, mouseY, renderPartialTicks
      */
-    public void drawScreen(int p_73863_1_, int p_73863_2_, float p_73863_3_)
+    public void drawScreen(int mouseX, int mouseY, float partialTicks)
     {
-        this.field_154330_a.render(p_73863_1_, p_73863_2_, p_73863_3_);
+        this.field_154330_a.render(mouseX, mouseY, partialTicks);
     }
 
-    public void func_146285_a(ItemStack p_146285_1_, int p_146285_2_, int p_146285_3_)
+    public void renderToolTip(ItemStack stack, int x, int y)
     {
-        super.func_146285_a(p_146285_1_, p_146285_2_, p_146285_3_);
+        super.renderToolTip(stack, x, y);
     }
 
-    public void func_146279_a(String p_146279_1_, int p_146279_2_, int p_146279_3_)
+    /**
+     * Draws the text when mouse is over creative inventory tab. Params: current creative tab to be checked, current
+     * mouse x position, current mouse y position.
+     */
+    public void drawCreativeTabHoveringText(String tabName, int mouseX, int mouseY)
     {
-        super.func_146279_a(p_146279_1_, p_146279_2_, p_146279_3_);
+        super.drawCreativeTabHoveringText(tabName, mouseX, mouseY);
     }
 
-    public void func_146283_a(List p_146283_1_, int p_146283_2_, int p_146283_3_)
+    /**
+     * Draws a List of strings as a tooltip. Every entry is drawn on a seperate line.
+     */
+    public void drawHoveringText(List<String> textLines, int x, int y)
     {
-        super.func_146283_a(p_146283_1_, p_146283_2_, p_146283_3_);
+        super.drawHoveringText(textLines, x, y);
     }
 
     /**
@@ -120,19 +138,22 @@ public class GuiScreenRealmsProxy extends GuiScreen
         return this.fontRendererObj.getStringWidth(p_154326_1_);
     }
 
-    public void func_154319_c(String p_154319_1_, int p_154319_2_, int p_154319_3_, int p_154319_4_)
+    public void func_154322_b(String p_154322_1_, int p_154322_2_, int p_154322_3_, int p_154322_4_)
     {
-        this.fontRendererObj.drawStringWithShadow(p_154319_1_, p_154319_2_, p_154319_3_, p_154319_4_);
+        this.fontRendererObj.drawStringWithShadow(p_154322_1_, (float)p_154322_2_, (float)p_154322_3_, p_154322_4_);
     }
 
-    public List func_154323_a(String p_154323_1_, int p_154323_2_)
+    public List<String> func_154323_a(String p_154323_1_, int p_154323_2_)
     {
         return this.fontRendererObj.listFormattedStringToWidth(p_154323_1_, p_154323_2_);
     }
 
-    public final void actionPerformed(GuiButton p_146284_1_)
+    /**
+     * Called by the controls from the buttonList when activated. (Mouse pressed for buttons)
+     */
+    public final void actionPerformed(GuiButton button) throws IOException
     {
-        this.field_154330_a.buttonClicked(((GuiButtonRealmsProxy)p_146284_1_).func_154317_g());
+        this.field_154330_a.buttonClicked(((GuiButtonRealmsProxy)button).getRealmsButton());
     }
 
     public void func_154324_i()
@@ -145,38 +166,36 @@ public class GuiScreenRealmsProxy extends GuiScreen
         super.buttonList.add(p_154327_1_.getProxy());
     }
 
-    public List func_154320_j()
+    public List<RealmsButton> func_154320_j()
     {
-        ArrayList var1 = new ArrayList(super.buttonList.size());
-        Iterator var2 = super.buttonList.iterator();
+        List<RealmsButton> list = Lists.<RealmsButton>newArrayListWithExpectedSize(super.buttonList.size());
 
-        while (var2.hasNext())
+        for (GuiButton guibutton : super.buttonList)
         {
-            GuiButton var3 = (GuiButton)var2.next();
-            var1.add(((GuiButtonRealmsProxy)var3).func_154317_g());
+            list.add(((GuiButtonRealmsProxy)guibutton).getRealmsButton());
         }
 
-        return var1;
+        return list;
     }
 
     public void func_154328_b(RealmsButton p_154328_1_)
     {
-        super.buttonList.remove(p_154328_1_);
+        super.buttonList.remove(p_154328_1_.getProxy());
     }
 
     /**
-     * Called when the mouse is clicked.
+     * Called when the mouse is clicked. Args : mouseX, mouseY, clickedButton
      */
-    public void mouseClicked(int p_73864_1_, int p_73864_2_, int p_73864_3_)
+    public void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException
     {
-        this.field_154330_a.mouseClicked(p_73864_1_, p_73864_2_, p_73864_3_);
-        super.mouseClicked(p_73864_1_, p_73864_2_, p_73864_3_);
+        this.field_154330_a.mouseClicked(mouseX, mouseY, mouseButton);
+        super.mouseClicked(mouseX, mouseY, mouseButton);
     }
 
     /**
      * Handles mouse input.
      */
-    public void handleMouseInput()
+    public void handleMouseInput() throws IOException
     {
         this.field_154330_a.mouseEvent();
         super.handleMouseInput();
@@ -185,37 +204,45 @@ public class GuiScreenRealmsProxy extends GuiScreen
     /**
      * Handles keyboard input.
      */
-    public void handleKeyboardInput()
+    public void handleKeyboardInput() throws IOException
     {
         this.field_154330_a.keyboardEvent();
         super.handleKeyboardInput();
     }
 
-    public void mouseMovedOrUp(int p_146286_1_, int p_146286_2_, int p_146286_3_)
-    {
-        this.field_154330_a.mouseReleased(p_146286_1_, p_146286_2_, p_146286_3_);
-    }
-
-    public void mouseClickMove(int p_146273_1_, int p_146273_2_, int p_146273_3_, long p_146273_4_)
-    {
-        this.field_154330_a.mouseDragged(p_146273_1_, p_146273_2_, p_146273_3_, p_146273_4_);
-    }
-
     /**
-     * Fired when a key is typed. This is the equivalent of KeyListener.keyTyped(KeyEvent e).
+     * Called when a mouse button is released.  Args : mouseX, mouseY, releaseButton
      */
-    public void keyTyped(char p_73869_1_, int p_73869_2_)
+    public void mouseReleased(int mouseX, int mouseY, int state)
     {
-        this.field_154330_a.keyPressed(p_73869_1_, p_73869_2_);
-    }
-
-    public void confirmClicked(boolean p_73878_1_, int p_73878_2_)
-    {
-        this.field_154330_a.confirmResult(p_73878_1_, p_73878_2_);
+        this.field_154330_a.mouseReleased(mouseX, mouseY, state);
     }
 
     /**
-     * "Called when the screen is unloaded. Used to disable keyboard repeat events."
+     * Called when a mouse button is pressed and the mouse is moved around. Parameters are : mouseX, mouseY,
+     * lastButtonClicked & timeSinceMouseClick.
+     */
+    public void mouseClickMove(int mouseX, int mouseY, int clickedMouseButton, long timeSinceLastClick)
+    {
+        this.field_154330_a.mouseDragged(mouseX, mouseY, clickedMouseButton, timeSinceLastClick);
+    }
+
+    /**
+     * Fired when a key is typed (except F11 which toggles full screen). This is the equivalent of
+     * KeyListener.keyTyped(KeyEvent e). Args : character (character on the key), keyCode (lwjgl Keyboard key code)
+     */
+    public void keyTyped(char typedChar, int keyCode) throws IOException
+    {
+        this.field_154330_a.keyPressed(typedChar, keyCode);
+    }
+
+    public void confirmClicked(boolean result, int id)
+    {
+        this.field_154330_a.confirmResult(result, id);
+    }
+
+    /**
+     * Called when the screen is unloaded. Used to disable keyboard repeat events
      */
     public void onGuiClosed()
     {

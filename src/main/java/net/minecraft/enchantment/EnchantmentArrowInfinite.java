@@ -1,19 +1,19 @@
 package net.minecraft.enchantment;
 
+import net.minecraft.util.ResourceLocation;
+
 public class EnchantmentArrowInfinite extends Enchantment
 {
-    private static final String __OBFID = "CL_00000100";
-
-    public EnchantmentArrowInfinite(int p_i1921_1_, int p_i1921_2_)
+    public EnchantmentArrowInfinite(int enchID, ResourceLocation enchName, int enchWeight)
     {
-        super(p_i1921_1_, p_i1921_2_, EnumEnchantmentType.bow);
+        super(enchID, enchName, enchWeight, EnumEnchantmentType.BOW);
         this.setName("arrowInfinite");
     }
 
     /**
      * Returns the minimal value of enchantability needed on the enchantment level passed.
      */
-    public int getMinEnchantability(int p_77321_1_)
+    public int getMinEnchantability(int enchantmentLevel)
     {
         return 20;
     }
@@ -21,7 +21,7 @@ public class EnchantmentArrowInfinite extends Enchantment
     /**
      * Returns the maximum value of enchantability nedded on the enchantment level passed.
      */
-    public int getMaxEnchantability(int p_77317_1_)
+    public int getMaxEnchantability(int enchantmentLevel)
     {
         return 50;
     }

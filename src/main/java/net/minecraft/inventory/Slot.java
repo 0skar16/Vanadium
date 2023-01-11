@@ -2,7 +2,6 @@ package net.minecraft.inventory;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.IIcon;
 
 public class Slot
 {
@@ -20,14 +19,13 @@ public class Slot
 
     /** display position of the inventory slot on the screen y axis */
     public int yDisplayPosition;
-    private static final String __OBFID = "CL_00001762";
 
-    public Slot(IInventory p_i1824_1_, int p_i1824_2_, int p_i1824_3_, int p_i1824_4_)
+    public Slot(IInventory inventoryIn, int index, int xPosition, int yPosition)
     {
-        this.inventory = p_i1824_1_;
-        this.slotIndex = p_i1824_2_;
-        this.xDisplayPosition = p_i1824_3_;
-        this.yDisplayPosition = p_i1824_4_;
+        this.inventory = inventoryIn;
+        this.slotIndex = index;
+        this.xDisplayPosition = xPosition;
+        this.yDisplayPosition = yPosition;
     }
 
     /**
@@ -39,11 +37,11 @@ public class Slot
         {
             if (p_75220_1_.getItem() == p_75220_2_.getItem())
             {
-                int var3 = p_75220_2_.stackSize - p_75220_1_.stackSize;
+                int i = p_75220_2_.stackSize - p_75220_1_.stackSize;
 
-                if (var3 > 0)
+                if (i > 0)
                 {
-                    this.onCrafting(p_75220_1_, var3);
+                    this.onCrafting(p_75220_1_, i);
                 }
             }
         }
@@ -53,14 +51,18 @@ public class Slot
      * the itemStack passed in is the output - ie, iron ingots, and pickaxes, not ore and wood. Typically increases an
      * internal count then calls onCrafting(item).
      */
-    protected void onCrafting(ItemStack p_75210_1_, int p_75210_2_) {}
+    protected void onCrafting(ItemStack stack, int amount)
+    {
+    }
 
     /**
      * the itemStack passed in is the output - ie, iron ingots, and pickaxes, not ore and wood.
      */
-    protected void onCrafting(ItemStack p_75208_1_) {}
+    protected void onCrafting(ItemStack stack)
+    {
+    }
 
-    public void onPickupFromSlot(EntityPlayer p_82870_1_, ItemStack p_82870_2_)
+    public void onPickupFromSlot(EntityPlayer playerIn, ItemStack stack)
     {
         this.onSlotChanged();
     }
@@ -68,7 +70,7 @@ public class Slot
     /**
      * Check if the stack is a valid item for this slot. Always true beside for the armor slots.
      */
-    public boolean isItemValid(ItemStack p_75214_1_)
+    public boolean isItemValid(ItemStack stack)
     {
         return true;
     }
@@ -92,9 +94,9 @@ public class Slot
     /**
      * Helper method to put a stack in the slot.
      */
-    public void putStack(ItemStack p_75215_1_)
+    public void putStack(ItemStack stack)
     {
-        this.inventory.setInventorySlotContents(this.slotIndex, p_75215_1_);
+        this.inventory.setInventorySlotContents(this.slotIndex, stack);
         this.onSlotChanged();
     }
 
@@ -103,7 +105,7 @@ public class Slot
      */
     public void onSlotChanged()
     {
-        this.inventory.onInventoryChanged();
+        this.inventory.markDirty();
     }
 
     /**
@@ -115,10 +117,12 @@ public class Slot
         return this.inventory.getInventoryStackLimit();
     }
 
-    /**
-     * Returns the icon index on items.png that is used as background image of the slot.
-     */
-    public IIcon getBackgroundIconIndex()
+    public int getItemStackLimit(ItemStack stack)
+    {
+        return this.getSlotStackLimit();
+    }
+
+    public String getSlotTexture()
     {
         return null;
     }
@@ -127,28 +131,32 @@ public class Slot
      * Decrease the size of the stack in slot (first int arg) by the amount of the second int arg. Returns the new
      * stack.
      */
-    public ItemStack decrStackSize(int p_75209_1_)
+    public ItemStack decrStackSize(int amount)
     {
-        return this.inventory.decrStackSize(this.slotIndex, p_75209_1_);
+        return this.inventory.decrStackSize(this.slotIndex, amount);
     }
 
     /**
-     * returns true if this slot is in par2 of par1
+     * returns true if the slot exists in the given inventory and location
      */
-    public boolean isSlotInInventory(IInventory p_75217_1_, int p_75217_2_)
+    public boolean isHere(IInventory inv, int slotIn)
     {
-        return p_75217_1_ == this.inventory && p_75217_2_ == this.slotIndex;
+        return inv == this.inventory && slotIn == this.slotIndex;
     }
 
     /**
      * Return whether this slot's stack can be taken from this slot.
      */
-    public boolean canTakeStack(EntityPlayer p_82869_1_)
+    public boolean canTakeStack(EntityPlayer playerIn)
     {
         return true;
     }
 
-    public boolean func_111238_b()
+    /**
+     * Actualy only call when we want to render the white square effect over the slots. Return always True, except for
+     * the armor slot of the Donkey/Mule (we can't interact with the Undead and Skeleton horses)
+     */
+    public boolean canBeHovered()
     {
         return true;
     }

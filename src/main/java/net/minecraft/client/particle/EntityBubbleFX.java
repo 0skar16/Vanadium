@@ -1,25 +1,23 @@
 package net.minecraft.client.particle;
 
 import net.minecraft.block.material.Material;
-import net.minecraft.util.MathHelper;
+import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
 
 public class EntityBubbleFX extends EntityFX
 {
-    private static final String __OBFID = "CL_00000898";
-
-    public EntityBubbleFX(World p_i1198_1_, double p_i1198_2_, double p_i1198_4_, double p_i1198_6_, double p_i1198_8_, double p_i1198_10_, double p_i1198_12_)
+    protected EntityBubbleFX(World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double xSpeedIn, double ySpeedIn, double zSpeedIn)
     {
-        super(p_i1198_1_, p_i1198_2_, p_i1198_4_, p_i1198_6_, p_i1198_8_, p_i1198_10_, p_i1198_12_);
+        super(worldIn, xCoordIn, yCoordIn, zCoordIn, xSpeedIn, ySpeedIn, zSpeedIn);
         this.particleRed = 1.0F;
         this.particleGreen = 1.0F;
         this.particleBlue = 1.0F;
         this.setParticleTextureIndex(32);
         this.setSize(0.02F, 0.02F);
         this.particleScale *= this.rand.nextFloat() * 0.6F + 0.2F;
-        this.motionX = p_i1198_8_ * 0.20000000298023224D + (double)((float)(Math.random() * 2.0D - 1.0D) * 0.02F);
-        this.motionY = p_i1198_10_ * 0.20000000298023224D + (double)((float)(Math.random() * 2.0D - 1.0D) * 0.02F);
-        this.motionZ = p_i1198_12_ * 0.20000000298023224D + (double)((float)(Math.random() * 2.0D - 1.0D) * 0.02F);
+        this.motionX = xSpeedIn * 0.20000000298023224D + (Math.random() * 2.0D - 1.0D) * 0.019999999552965164D;
+        this.motionY = ySpeedIn * 0.20000000298023224D + (Math.random() * 2.0D - 1.0D) * 0.019999999552965164D;
+        this.motionZ = zSpeedIn * 0.20000000298023224D + (Math.random() * 2.0D - 1.0D) * 0.019999999552965164D;
         this.particleMaxAge = (int)(8.0D / (Math.random() * 0.8D + 0.2D));
     }
 
@@ -37,7 +35,7 @@ public class EntityBubbleFX extends EntityFX
         this.motionY *= 0.8500000238418579D;
         this.motionZ *= 0.8500000238418579D;
 
-        if (this.worldObj.getBlock(MathHelper.floor_double(this.posX), MathHelper.floor_double(this.posY), MathHelper.floor_double(this.posZ)).getMaterial() != Material.water)
+        if (this.worldObj.getBlockState(new BlockPos(this)).getBlock().getMaterial() != Material.water)
         {
             this.setDead();
         }
@@ -45,6 +43,14 @@ public class EntityBubbleFX extends EntityFX
         if (this.particleMaxAge-- <= 0)
         {
             this.setDead();
+        }
+    }
+
+    public static class Factory implements IParticleFactory
+    {
+        public EntityFX getEntityFX(int particleID, World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double xSpeedIn, double ySpeedIn, double zSpeedIn, int... p_178902_15_)
+        {
+            return new EntityBubbleFX(worldIn, xCoordIn, yCoordIn, zCoordIn, xSpeedIn, ySpeedIn, zSpeedIn);
         }
     }
 }

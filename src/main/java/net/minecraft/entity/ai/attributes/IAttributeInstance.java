@@ -12,18 +12,22 @@ public interface IAttributeInstance
 
     double getBaseValue();
 
-    void setBaseValue(double p_111128_1_);
+    void setBaseValue(double baseValue);
 
-    Collection func_111122_c();
+    Collection<AttributeModifier> getModifiersByOperation(int operation);
+
+    Collection<AttributeModifier> func_111122_c();
+
+    boolean hasModifier(AttributeModifier modifier);
 
     /**
      * Returns attribute modifier, if any, by the given UUID
      */
-    AttributeModifier getModifier(UUID p_111127_1_);
+    AttributeModifier getModifier(UUID uuid);
 
-    void applyModifier(AttributeModifier p_111121_1_);
+    void applyModifier(AttributeModifier modifier);
 
-    void removeModifier(AttributeModifier p_111124_1_);
+    void removeModifier(AttributeModifier modifier);
 
     void removeAllModifiers();
 

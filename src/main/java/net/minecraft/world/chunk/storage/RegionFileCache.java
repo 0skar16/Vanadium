@@ -1,34 +1,31 @@
 package net.minecraft.world.chunk.storage;
 
+import com.google.common.collect.Maps;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 public class RegionFileCache
 {
-    /** A map containing Files as keys and RegionFiles as values */
-    private static final Map regionsByFilename = new HashMap();
-    private static final String __OBFID = "CL_00000383";
+    private static final Map<File, RegionFile> regionsByFilename = Maps.<File, RegionFile>newHashMap();
 
-    public static synchronized RegionFile createOrLoadRegionFile(File p_76550_0_, int p_76550_1_, int p_76550_2_)
+    public static synchronized RegionFile createOrLoadRegionFile(File worldDir, int chunkX, int chunkZ)
     {
-        File var3 = new File(p_76550_0_, "region");
-        File var4 = new File(var3, "r." + (p_76550_1_ >> 5) + "." + (p_76550_2_ >> 5) + ".mca");
-        RegionFile var5 = (RegionFile)regionsByFilename.get(var4);
+        File file1 = new File(worldDir, "region");
+        File file2 = new File(file1, "r." + (chunkX >> 5) + "." + (chunkZ >> 5) + ".mca");
+        RegionFile regionfile = (RegionFile)regionsByFilename.get(file2);
 
-        if (var5 != null)
+        if (regionfile != null)
         {
-            return var5;
+            return regionfile;
         }
         else
         {
-            if (!var3.exists())
+            if (!file1.exists())
             {
-                var3.mkdirs();
+                file1.mkdirs();
             }
 
             if (regionsByFilename.size() >= 256)
@@ -36,33 +33,29 @@ public class RegionFileCache
                 clearRegionFileReferences();
             }
 
-            RegionFile var6 = new RegionFile(var4);
-            regionsByFilename.put(var4, var6);
-            return var6;
+            RegionFile regionfile1 = new RegionFile(file2);
+            regionsByFilename.put(file2, regionfile1);
+            return regionfile1;
         }
     }
 
     /**
-     * Saves the current Chunk Map Cache
+     * clears region file references
      */
     public static synchronized void clearRegionFileReferences()
     {
-        Iterator var0 = regionsByFilename.values().iterator();
-
-        while (var0.hasNext())
+        for (RegionFile regionfile : regionsByFilename.values())
         {
-            RegionFile var1 = (RegionFile)var0.next();
-
             try
             {
-                if (var1 != null)
+                if (regionfile != null)
                 {
-                    var1.close();
+                    regionfile.close();
                 }
             }
-            catch (IOException var3)
+            catch (IOException ioexception)
             {
-                var3.printStackTrace();
+                ioexception.printStackTrace();
             }
         }
 
@@ -72,18 +65,18 @@ public class RegionFileCache
     /**
      * Returns an input stream for the specified chunk. Args: worldDir, chunkX, chunkZ
      */
-    public static DataInputStream getChunkInputStream(File p_76549_0_, int p_76549_1_, int p_76549_2_)
+    public static DataInputStream getChunkInputStream(File worldDir, int chunkX, int chunkZ)
     {
-        RegionFile var3 = createOrLoadRegionFile(p_76549_0_, p_76549_1_, p_76549_2_);
-        return var3.getChunkDataInputStream(p_76549_1_ & 31, p_76549_2_ & 31);
+        RegionFile regionfile = createOrLoadRegionFile(worldDir, chunkX, chunkZ);
+        return regionfile.getChunkDataInputStream(chunkX & 31, chunkZ & 31);
     }
 
     /**
      * Returns an output stream for the specified chunk. Args: worldDir, chunkX, chunkZ
      */
-    public static DataOutputStream getChunkOutputStream(File p_76552_0_, int p_76552_1_, int p_76552_2_)
+    public static DataOutputStream getChunkOutputStream(File worldDir, int chunkX, int chunkZ)
     {
-        RegionFile var3 = createOrLoadRegionFile(p_76552_0_, p_76552_1_, p_76552_2_);
-        return var3.getChunkDataOutputStream(p_76552_1_ & 31, p_76552_2_ & 31);
+        RegionFile regionfile = createOrLoadRegionFile(worldDir, chunkX, chunkZ);
+        return regionfile.getChunkDataOutputStream(chunkX & 31, chunkZ & 31);
     }
 }

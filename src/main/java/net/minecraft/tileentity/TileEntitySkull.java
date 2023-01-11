@@ -13,109 +13,135 @@ import net.minecraft.util.StringUtils;
 
 public class TileEntitySkull extends TileEntity
 {
-    private int field_145908_a;
-    private int field_145910_i;
-    private GameProfile field_152110_j = null;
-    private static final String __OBFID = "CL_00000364";
+    private int skullType;
+    private int skullRotation;
+    private GameProfile playerProfile = null;
 
-    public void writeToNBT(NBTTagCompound p_145841_1_)
+    public void writeToNBT(NBTTagCompound compound)
     {
-        super.writeToNBT(p_145841_1_);
-        p_145841_1_.setByte("SkullType", (byte)(this.field_145908_a & 255));
-        p_145841_1_.setByte("Rot", (byte)(this.field_145910_i & 255));
+        super.writeToNBT(compound);
+        compound.setByte("SkullType", (byte)(this.skullType & 255));
+        compound.setByte("Rot", (byte)(this.skullRotation & 255));
 
-        if (this.field_152110_j != null)
+        if (this.playerProfile != null)
         {
-            NBTTagCompound var2 = new NBTTagCompound();
-            NBTUtil.func_152460_a(var2, this.field_152110_j);
-            p_145841_1_.setTag("Owner", var2);
+            NBTTagCompound nbttagcompound = new NBTTagCompound();
+            NBTUtil.writeGameProfile(nbttagcompound, this.playerProfile);
+            compound.setTag("Owner", nbttagcompound);
         }
     }
 
-    public void readFromNBT(NBTTagCompound p_145839_1_)
+    public void readFromNBT(NBTTagCompound compound)
     {
-        super.readFromNBT(p_145839_1_);
-        this.field_145908_a = p_145839_1_.getByte("SkullType");
-        this.field_145910_i = p_145839_1_.getByte("Rot");
+        super.readFromNBT(compound);
+        this.skullType = compound.getByte("SkullType");
+        this.skullRotation = compound.getByte("Rot");
 
-        if (this.field_145908_a == 3)
+        if (this.skullType == 3)
         {
-            if (p_145839_1_.func_150297_b("Owner", 10))
+            if (compound.hasKey("Owner", 10))
             {
-                this.field_152110_j = NBTUtil.func_152459_a(p_145839_1_.getCompoundTag("Owner"));
+                this.playerProfile = NBTUtil.readGameProfileFromNBT(compound.getCompoundTag("Owner"));
             }
-            else if (p_145839_1_.func_150297_b("ExtraType", 8) && !StringUtils.isNullOrEmpty(p_145839_1_.getString("ExtraType")))
+            else if (compound.hasKey("ExtraType", 8))
             {
-                this.field_152110_j = new GameProfile((UUID)null, p_145839_1_.getString("ExtraType"));
-                this.func_152109_d();
-            }
-        }
-    }
+                String s = compound.getString("ExtraType");
 
-    public GameProfile func_152108_a()
-    {
-        return this.field_152110_j;
-    }
-
-    /**
-     * Overriden in a sign to provide the text.
-     */
-    public Packet getDescriptionPacket()
-    {
-        NBTTagCompound var1 = new NBTTagCompound();
-        this.writeToNBT(var1);
-        return new S35PacketUpdateTileEntity(this.field_145851_c, this.field_145848_d, this.field_145849_e, 4, var1);
-    }
-
-    public void func_152107_a(int p_152107_1_)
-    {
-        this.field_145908_a = p_152107_1_;
-        this.field_152110_j = null;
-    }
-
-    public void func_152106_a(GameProfile p_152106_1_)
-    {
-        this.field_145908_a = 3;
-        this.field_152110_j = p_152106_1_;
-        this.func_152109_d();
-    }
-
-    private void func_152109_d()
-    {
-        if (this.field_152110_j != null && !StringUtils.isNullOrEmpty(this.field_152110_j.getName()))
-        {
-            if (!this.field_152110_j.isComplete() || !this.field_152110_j.getProperties().containsKey("textures"))
-            {
-                GameProfile var1 = MinecraftServer.getServer().func_152358_ax().func_152655_a(this.field_152110_j.getName());
-
-                if (var1 != null)
+                if (!StringUtils.isNullOrEmpty(s))
                 {
-                    Property var2 = (Property)Iterables.getFirst(var1.getProperties().get("textures"), (Object)null);
-
-                    if (var2 == null)
-                    {
-                        var1 = MinecraftServer.getServer().func_147130_as().fillProfileProperties(var1, true);
-                    }
-
-                    this.field_152110_j = var1;
-                    this.onInventoryChanged();
+                    this.playerProfile = new GameProfile((UUID)null, s);
+                    this.updatePlayerProfile();
                 }
             }
         }
     }
 
-    public int func_145904_a()
+    public GameProfile getPlayerProfile()
     {
-        return this.field_145908_a;
+        return this.playerProfile;
     }
 
-    public int func_145906_b()
+    /**
+     * Allows for a specialized description packet to be created. This is often used to sync tile entity data from the
+     * server to the client easily. For example this is used by signs to synchronise the text to be displayed.
+     */
+    public Packet getDescriptionPacket()
     {
-        return this.field_145910_i;
+        NBTTagCompound nbttagcompound = new NBTTagCompound();
+        this.writeToNBT(nbttagcompound);
+        return new S35PacketUpdateTileEntity(this.pos, 4, nbttagcompound);
     }
 
-    public void func_145903_a(int p_145903_1_)
+    public void setType(int type)
     {
-        this.field_145910_i = p_145903_1_;
+        this.skullType = type;
+        this.playerProfile = null;
+    }
+
+    public void setPlayerProfile(GameProfile playerProfile)
+    {
+        this.skullType = 3;
+        this.playerProfile = playerProfile;
+        this.updatePlayerProfile();
+    }
+
+    private void updatePlayerProfile()
+    {
+        this.playerProfile = updateGameprofile(this.playerProfile);
+        this.markDirty();
+    }
+
+    public static GameProfile updateGameprofile(GameProfile input)
+    {
+        if (input != null && !StringUtils.isNullOrEmpty(input.getName()))
+        {
+            if (input.isComplete() && input.getProperties().containsKey("textures"))
+            {
+                return input;
+            }
+            else if (MinecraftServer.getServer() == null)
+            {
+                return input;
+            }
+            else
+            {
+                GameProfile gameprofile = MinecraftServer.getServer().getPlayerProfileCache().getGameProfileForUsername(input.getName());
+
+                if (gameprofile == null)
+                {
+                    return input;
+                }
+                else
+                {
+                    Property property = (Property)Iterables.getFirst(gameprofile.getProperties().get("textures"), null);
+
+                    if (property == null)
+                    {
+                        gameprofile = MinecraftServer.getServer().getMinecraftSessionService().fillProfileProperties(gameprofile, true);
+                    }
+
+                    return gameprofile;
+                }
+            }
+        }
+        else
+        {
+            return input;
+        }
+    }
+
+    public int getSkullType()
+    {
+        return this.skullType;
+    }
+
+    public int getSkullRotation()
+    {
+        return this.skullRotation;
+    }
+
+    public void setSkullRotation(int rotation)
+    {
+        this.skullRotation = rotation;
     }
 }

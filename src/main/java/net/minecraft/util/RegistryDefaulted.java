@@ -1,21 +1,20 @@
 package net.minecraft.util;
 
-public class RegistryDefaulted extends RegistrySimple
+public class RegistryDefaulted<K, V> extends RegistrySimple<K, V>
 {
     /**
      * Default object for this registry, returned when an object is not found.
      */
-    private final Object defaultObject;
-    private static final String __OBFID = "CL_00001198";
+    private final V defaultObject;
 
-    public RegistryDefaulted(Object p_i1366_1_)
+    public RegistryDefaulted(V defaultObjectIn)
     {
-        this.defaultObject = p_i1366_1_;
+        this.defaultObject = defaultObjectIn;
     }
 
-    public Object getObject(Object p_82594_1_)
+    public V getObject(K name)
     {
-        Object var2 = super.getObject(p_82594_1_);
-        return var2 == null ? this.defaultObject : var2;
+        V v = super.getObject(name);
+        return (V)(v == null ? this.defaultObject : v);
     }
 }

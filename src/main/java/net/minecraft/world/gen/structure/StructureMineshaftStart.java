@@ -5,17 +5,17 @@ import net.minecraft.world.World;
 
 public class StructureMineshaftStart extends StructureStart
 {
-    private static final String __OBFID = "CL_00000450";
-
-    public StructureMineshaftStart() {}
-
-    public StructureMineshaftStart(World p_i2039_1_, Random p_i2039_2_, int p_i2039_3_, int p_i2039_4_)
+    public StructureMineshaftStart()
     {
-        super(p_i2039_3_, p_i2039_4_);
-        StructureMineshaftPieces.Room var5 = new StructureMineshaftPieces.Room(0, p_i2039_2_, (p_i2039_3_ << 4) + 2, (p_i2039_4_ << 4) + 2);
-        this.components.add(var5);
-        var5.buildComponent(var5, this.components, p_i2039_2_);
+    }
+
+    public StructureMineshaftStart(World worldIn, Random rand, int chunkX, int chunkZ)
+    {
+        super(chunkX, chunkZ);
+        StructureMineshaftPieces.Room structuremineshaftpieces$room = new StructureMineshaftPieces.Room(0, rand, (chunkX << 4) + 2, (chunkZ << 4) + 2);
+        this.components.add(structuremineshaftpieces$room);
+        structuremineshaftpieces$room.buildComponent(structuremineshaftpieces$room, this.components, rand);
         this.updateBoundingBox();
-        this.markAvailableHeight(p_i2039_1_, p_i2039_2_, 10);
+        this.markAvailableHeight(worldIn, rand, 10);
     }
 }

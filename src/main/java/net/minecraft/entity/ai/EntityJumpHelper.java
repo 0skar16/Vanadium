@@ -5,12 +5,11 @@ import net.minecraft.entity.EntityLiving;
 public class EntityJumpHelper
 {
     private EntityLiving entity;
-    private boolean isJumping;
-    private static final String __OBFID = "CL_00001571";
+    protected boolean isJumping;
 
-    public EntityJumpHelper(EntityLiving p_i1612_1_)
+    public EntityJumpHelper(EntityLiving entityIn)
     {
-        this.entity = p_i1612_1_;
+        this.entity = entityIn;
     }
 
     public void setJumping()

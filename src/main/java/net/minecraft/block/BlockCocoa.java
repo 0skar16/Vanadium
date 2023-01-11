@@ -2,244 +2,228 @@ package net.minecraft.block;
 
 import java.util.Random;
 import net.minecraft.block.material.Material;
-import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.block.properties.IProperty;
+import net.minecraft.block.properties.PropertyInteger;
+import net.minecraft.block.state.BlockState;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
+import net.minecraft.item.EnumDyeColor;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.AxisAlignedBB;
-import net.minecraft.util.Direction;
-import net.minecraft.util.IIcon;
-import net.minecraft.util.MathHelper;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.EnumWorldBlockLayer;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 
 public class BlockCocoa extends BlockDirectional implements IGrowable
 {
-    private IIcon[] field_149989_a;
-    private static final String __OBFID = "CL_00000216";
+    public static final PropertyInteger AGE = PropertyInteger.create("age", 0, 2);
 
     public BlockCocoa()
     {
         super(Material.plants);
+        this.setDefaultState(this.blockState.getBaseState().withProperty(FACING, EnumFacing.NORTH).withProperty(AGE, Integer.valueOf(0)));
         this.setTickRandomly(true);
     }
 
-    /**
-     * Gets the block's texture. Args: side, meta
-     */
-    public IIcon getIcon(int p_149691_1_, int p_149691_2_)
+    public void updateTick(World worldIn, BlockPos pos, IBlockState state, Random rand)
     {
-        return this.field_149989_a[2];
-    }
-
-    public IIcon func_149988_b(int p_149988_1_)
-    {
-        if (p_149988_1_ < 0 || p_149988_1_ >= this.field_149989_a.length)
+        if (!this.canBlockStay(worldIn, pos, state))
         {
-            p_149988_1_ = this.field_149989_a.length - 1;
+            this.dropBlock(worldIn, pos, state);
         }
-
-        return this.field_149989_a[p_149988_1_];
-    }
-
-    /**
-     * Ticks the block if it's been scheduled
-     */
-    public void updateTick(World p_149674_1_, int p_149674_2_, int p_149674_3_, int p_149674_4_, Random p_149674_5_)
-    {
-        if (!this.canBlockStay(p_149674_1_, p_149674_2_, p_149674_3_, p_149674_4_))
+        else if (worldIn.rand.nextInt(5) == 0)
         {
-            this.dropBlockAsItem(p_149674_1_, p_149674_2_, p_149674_3_, p_149674_4_, p_149674_1_.getBlockMetadata(p_149674_2_, p_149674_3_, p_149674_4_), 0);
-            p_149674_1_.setBlock(p_149674_2_, p_149674_3_, p_149674_4_, getBlockById(0), 0, 2);
-        }
-        else if (p_149674_1_.rand.nextInt(5) == 0)
-        {
-            int var6 = p_149674_1_.getBlockMetadata(p_149674_2_, p_149674_3_, p_149674_4_);
-            int var7 = func_149987_c(var6);
+            int i = ((Integer)state.getValue(AGE)).intValue();
 
-            if (var7 < 2)
+            if (i < 2)
             {
-                ++var7;
-                p_149674_1_.setBlockMetadataWithNotify(p_149674_2_, p_149674_3_, p_149674_4_, var7 << 2 | func_149895_l(var6), 2);
+                worldIn.setBlockState(pos, state.withProperty(AGE, Integer.valueOf(i + 1)), 2);
             }
         }
     }
 
-    /**
-     * Can this block stay at this position.  Similar to canPlaceBlockAt except gets checked often with plants.
-     */
-    public boolean canBlockStay(World p_149718_1_, int p_149718_2_, int p_149718_3_, int p_149718_4_)
+    public boolean canBlockStay(World worldIn, BlockPos pos, IBlockState state)
     {
-        int var5 = func_149895_l(p_149718_1_.getBlockMetadata(p_149718_2_, p_149718_3_, p_149718_4_));
-        p_149718_2_ += Direction.offsetX[var5];
-        p_149718_4_ += Direction.offsetZ[var5];
-        Block var6 = p_149718_1_.getBlock(p_149718_2_, p_149718_3_, p_149718_4_);
-        return var6 == Blocks.log && BlockLog.func_150165_c(p_149718_1_.getBlockMetadata(p_149718_2_, p_149718_3_, p_149718_4_)) == 3;
+        pos = pos.offset((EnumFacing)state.getValue(FACING));
+        IBlockState iblockstate = worldIn.getBlockState(pos);
+        return iblockstate.getBlock() == Blocks.log && iblockstate.getValue(BlockPlanks.VARIANT) == BlockPlanks.EnumType.JUNGLE;
     }
 
-    /**
-     * The type of render function that is called for this block
-     */
-    public int getRenderType()
-    {
-        return 28;
-    }
-
-    public boolean renderAsNormalBlock()
+    public boolean isFullCube()
     {
         return false;
     }
 
+    /**
+     * Used to determine ambient occlusion and culling when rebuilding chunks for render
+     */
     public boolean isOpaqueCube()
     {
         return false;
     }
 
-    /**
-     * Returns a bounding box from the pool of bounding boxes (this means this box can change after the pool has been
-     * cleared to be reused)
-     */
-    public AxisAlignedBB getCollisionBoundingBoxFromPool(World p_149668_1_, int p_149668_2_, int p_149668_3_, int p_149668_4_)
+    public AxisAlignedBB getCollisionBoundingBox(World worldIn, BlockPos pos, IBlockState state)
     {
-        this.setBlockBoundsBasedOnState(p_149668_1_, p_149668_2_, p_149668_3_, p_149668_4_);
-        return super.getCollisionBoundingBoxFromPool(p_149668_1_, p_149668_2_, p_149668_3_, p_149668_4_);
+        this.setBlockBoundsBasedOnState(worldIn, pos);
+        return super.getCollisionBoundingBox(worldIn, pos, state);
     }
 
-    /**
-     * Returns the bounding box of the wired rectangular prism to render.
-     */
-    public AxisAlignedBB getSelectedBoundingBoxFromPool(World p_149633_1_, int p_149633_2_, int p_149633_3_, int p_149633_4_)
+    public AxisAlignedBB getSelectedBoundingBox(World worldIn, BlockPos pos)
     {
-        this.setBlockBoundsBasedOnState(p_149633_1_, p_149633_2_, p_149633_3_, p_149633_4_);
-        return super.getSelectedBoundingBoxFromPool(p_149633_1_, p_149633_2_, p_149633_3_, p_149633_4_);
+        this.setBlockBoundsBasedOnState(worldIn, pos);
+        return super.getSelectedBoundingBox(worldIn, pos);
     }
 
-    public void setBlockBoundsBasedOnState(IBlockAccess p_149719_1_, int p_149719_2_, int p_149719_3_, int p_149719_4_)
+    @SuppressWarnings("incomplete-switch")
+    public void setBlockBoundsBasedOnState(IBlockAccess worldIn, BlockPos pos)
     {
-        int var5 = p_149719_1_.getBlockMetadata(p_149719_2_, p_149719_3_, p_149719_4_);
-        int var6 = func_149895_l(var5);
-        int var7 = func_149987_c(var5);
-        int var8 = 4 + var7 * 2;
-        int var9 = 5 + var7 * 2;
-        float var10 = (float)var8 / 2.0F;
+        IBlockState iblockstate = worldIn.getBlockState(pos);
+        EnumFacing enumfacing = (EnumFacing)iblockstate.getValue(FACING);
+        int i = ((Integer)iblockstate.getValue(AGE)).intValue();
+        int j = 4 + i * 2;
+        int k = 5 + i * 2;
+        float f = (float)j / 2.0F;
 
-        switch (var6)
+        switch (enumfacing)
         {
-            case 0:
-                this.setBlockBounds((8.0F - var10) / 16.0F, (12.0F - (float)var9) / 16.0F, (15.0F - (float)var8) / 16.0F, (8.0F + var10) / 16.0F, 0.75F, 0.9375F);
+            case SOUTH:
+                this.setBlockBounds((8.0F - f) / 16.0F, (12.0F - (float)k) / 16.0F, (15.0F - (float)j) / 16.0F, (8.0F + f) / 16.0F, 0.75F, 0.9375F);
                 break;
 
-            case 1:
-                this.setBlockBounds(0.0625F, (12.0F - (float)var9) / 16.0F, (8.0F - var10) / 16.0F, (1.0F + (float)var8) / 16.0F, 0.75F, (8.0F + var10) / 16.0F);
+            case NORTH:
+                this.setBlockBounds((8.0F - f) / 16.0F, (12.0F - (float)k) / 16.0F, 0.0625F, (8.0F + f) / 16.0F, 0.75F, (1.0F + (float)j) / 16.0F);
                 break;
 
-            case 2:
-                this.setBlockBounds((8.0F - var10) / 16.0F, (12.0F - (float)var9) / 16.0F, 0.0625F, (8.0F + var10) / 16.0F, 0.75F, (1.0F + (float)var8) / 16.0F);
+            case WEST:
+                this.setBlockBounds(0.0625F, (12.0F - (float)k) / 16.0F, (8.0F - f) / 16.0F, (1.0F + (float)j) / 16.0F, 0.75F, (8.0F + f) / 16.0F);
                 break;
 
-            case 3:
-                this.setBlockBounds((15.0F - (float)var8) / 16.0F, (12.0F - (float)var9) / 16.0F, (8.0F - var10) / 16.0F, 0.9375F, 0.75F, (8.0F + var10) / 16.0F);
+            case EAST:
+                this.setBlockBounds((15.0F - (float)j) / 16.0F, (12.0F - (float)k) / 16.0F, (8.0F - f) / 16.0F, 0.9375F, 0.75F, (8.0F + f) / 16.0F);
         }
     }
 
     /**
-     * Called when the block is placed in the world.
+     * Called by ItemBlocks after a block is set in the world, to allow post-place logic
      */
-    public void onBlockPlacedBy(World p_149689_1_, int p_149689_2_, int p_149689_3_, int p_149689_4_, EntityLivingBase p_149689_5_, ItemStack p_149689_6_)
+    public void onBlockPlacedBy(World worldIn, BlockPos pos, IBlockState state, EntityLivingBase placer, ItemStack stack)
     {
-        int var7 = ((MathHelper.floor_double((double)(p_149689_5_.rotationYaw * 4.0F / 360.0F) + 0.5D) & 3) + 0) % 4;
-        p_149689_1_.setBlockMetadataWithNotify(p_149689_2_, p_149689_3_, p_149689_4_, var7, 2);
-    }
-
-    public int onBlockPlaced(World p_149660_1_, int p_149660_2_, int p_149660_3_, int p_149660_4_, int p_149660_5_, float p_149660_6_, float p_149660_7_, float p_149660_8_, int p_149660_9_)
-    {
-        if (p_149660_5_ == 1 || p_149660_5_ == 0)
-        {
-            p_149660_5_ = 2;
-        }
-
-        return Direction.rotateOpposite[Direction.facingToDirection[p_149660_5_]];
-    }
-
-    public void onNeighborBlockChange(World p_149695_1_, int p_149695_2_, int p_149695_3_, int p_149695_4_, Block p_149695_5_)
-    {
-        if (!this.canBlockStay(p_149695_1_, p_149695_2_, p_149695_3_, p_149695_4_))
-        {
-            this.dropBlockAsItem(p_149695_1_, p_149695_2_, p_149695_3_, p_149695_4_, p_149695_1_.getBlockMetadata(p_149695_2_, p_149695_3_, p_149695_4_), 0);
-            p_149695_1_.setBlock(p_149695_2_, p_149695_3_, p_149695_4_, getBlockById(0), 0, 2);
-        }
-    }
-
-    public static int func_149987_c(int p_149987_0_)
-    {
-        return (p_149987_0_ & 12) >> 2;
+        EnumFacing enumfacing = EnumFacing.fromAngle((double)placer.rotationYaw);
+        worldIn.setBlockState(pos, state.withProperty(FACING, enumfacing), 2);
     }
 
     /**
-     * Drops the block items with a specified chance of dropping the specified items
+     * Called by ItemBlocks just before a block is actually set in the world, to allow for adjustments to the
+     * IBlockstate
      */
-    public void dropBlockAsItemWithChance(World p_149690_1_, int p_149690_2_, int p_149690_3_, int p_149690_4_, int p_149690_5_, float p_149690_6_, int p_149690_7_)
+    public IBlockState onBlockPlaced(World worldIn, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta, EntityLivingBase placer)
     {
-        int var8 = func_149987_c(p_149690_5_);
-        byte var9 = 1;
-
-        if (var8 >= 2)
+        if (!facing.getAxis().isHorizontal())
         {
-            var9 = 3;
+            facing = EnumFacing.NORTH;
         }
 
-        for (int var10 = 0; var10 < var9; ++var10)
-        {
-            this.dropBlockAsItem_do(p_149690_1_, p_149690_2_, p_149690_3_, p_149690_4_, new ItemStack(Items.dye, 1, 3));
-        }
+        return this.getDefaultState().withProperty(FACING, facing.getOpposite()).withProperty(AGE, Integer.valueOf(0));
     }
 
     /**
-     * Gets an item for the block being called on. Args: world, x, y, z
+     * Called when a neighboring block changes.
      */
-    public Item getItem(World p_149694_1_, int p_149694_2_, int p_149694_3_, int p_149694_4_)
+    public void onNeighborBlockChange(World worldIn, BlockPos pos, IBlockState state, Block neighborBlock)
+    {
+        if (!this.canBlockStay(worldIn, pos, state))
+        {
+            this.dropBlock(worldIn, pos, state);
+        }
+    }
+
+    private void dropBlock(World worldIn, BlockPos pos, IBlockState state)
+    {
+        worldIn.setBlockState(pos, Blocks.air.getDefaultState(), 3);
+        this.dropBlockAsItem(worldIn, pos, state, 0);
+    }
+
+    /**
+     * Spawns this Block's drops into the World as EntityItems.
+     */
+    public void dropBlockAsItemWithChance(World worldIn, BlockPos pos, IBlockState state, float chance, int fortune)
+    {
+        int i = ((Integer)state.getValue(AGE)).intValue();
+        int j = 1;
+
+        if (i >= 2)
+        {
+            j = 3;
+        }
+
+        for (int k = 0; k < j; ++k)
+        {
+            spawnAsEntity(worldIn, pos, new ItemStack(Items.dye, 1, EnumDyeColor.BROWN.getDyeDamage()));
+        }
+    }
+
+    public Item getItem(World worldIn, BlockPos pos)
     {
         return Items.dye;
     }
 
     /**
-     * Get the block's damage value (for use with pick block).
+     * Gets the meta to use for the Pick Block ItemStack result
      */
-    public int getDamageValue(World p_149643_1_, int p_149643_2_, int p_149643_3_, int p_149643_4_)
+    public int getDamageValue(World worldIn, BlockPos pos)
     {
-        return 3;
+        return EnumDyeColor.BROWN.getDyeDamage();
     }
 
-    public void registerBlockIcons(IIconRegister p_149651_1_)
+    /**
+     * Whether this IGrowable can grow
+     */
+    public boolean canGrow(World worldIn, BlockPos pos, IBlockState state, boolean isClient)
     {
-        this.field_149989_a = new IIcon[3];
-
-        for (int var2 = 0; var2 < this.field_149989_a.length; ++var2)
-        {
-            this.field_149989_a[var2] = p_149651_1_.registerIcon(this.getTextureName() + "_stage_" + var2);
-        }
+        return ((Integer)state.getValue(AGE)).intValue() < 2;
     }
 
-    public boolean func_149851_a(World p_149851_1_, int p_149851_2_, int p_149851_3_, int p_149851_4_, boolean p_149851_5_)
-    {
-        int var6 = p_149851_1_.getBlockMetadata(p_149851_2_, p_149851_3_, p_149851_4_);
-        int var7 = func_149987_c(var6);
-        return var7 < 2;
-    }
-
-    public boolean func_149852_a(World p_149852_1_, Random p_149852_2_, int p_149852_3_, int p_149852_4_, int p_149852_5_)
+    public boolean canUseBonemeal(World worldIn, Random rand, BlockPos pos, IBlockState state)
     {
         return true;
     }
 
-    public void func_149853_b(World p_149853_1_, Random p_149853_2_, int p_149853_3_, int p_149853_4_, int p_149853_5_)
+    public void grow(World worldIn, Random rand, BlockPos pos, IBlockState state)
     {
-        int var6 = p_149853_1_.getBlockMetadata(p_149853_3_, p_149853_4_, p_149853_5_);
-        int var7 = BlockDirectional.func_149895_l(var6);
-        int var8 = func_149987_c(var6);
-        ++var8;
-        p_149853_1_.setBlockMetadataWithNotify(p_149853_3_, p_149853_4_, p_149853_5_, var8 << 2 | var7, 2);
+        worldIn.setBlockState(pos, state.withProperty(AGE, Integer.valueOf(((Integer)state.getValue(AGE)).intValue() + 1)), 2);
+    }
+
+    public EnumWorldBlockLayer getBlockLayer()
+    {
+        return EnumWorldBlockLayer.CUTOUT;
+    }
+
+    /**
+     * Convert the given metadata into a BlockState for this Block
+     */
+    public IBlockState getStateFromMeta(int meta)
+    {
+        return this.getDefaultState().withProperty(FACING, EnumFacing.getHorizontal(meta)).withProperty(AGE, Integer.valueOf((meta & 15) >> 2));
+    }
+
+    /**
+     * Convert the BlockState into the correct metadata value
+     */
+    public int getMetaFromState(IBlockState state)
+    {
+        int i = 0;
+        i = i | ((EnumFacing)state.getValue(FACING)).getHorizontalIndex();
+        i = i | ((Integer)state.getValue(AGE)).intValue() << 2;
+        return i;
+    }
+
+    protected BlockState createBlockState()
+    {
+        return new BlockState(this, new IProperty[] {FACING, AGE});
     }
 }

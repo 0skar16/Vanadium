@@ -8,36 +8,30 @@ public class ModelBlaze extends ModelBase
     /** The sticks that fly around the Blaze. */
     private ModelRenderer[] blazeSticks = new ModelRenderer[12];
     private ModelRenderer blazeHead;
-    private static final String __OBFID = "CL_00000831";
 
     public ModelBlaze()
     {
-        for (int var1 = 0; var1 < this.blazeSticks.length; ++var1)
+        for (int i = 0; i < this.blazeSticks.length; ++i)
         {
-            this.blazeSticks[var1] = new ModelRenderer(this, 0, 16);
-            this.blazeSticks[var1].addBox(0.0F, 0.0F, 0.0F, 2, 8, 2);
+            this.blazeSticks[i] = new ModelRenderer(this, 0, 16);
+            this.blazeSticks[i].addBox(0.0F, 0.0F, 0.0F, 2, 8, 2);
         }
 
         this.blazeHead = new ModelRenderer(this, 0, 0);
         this.blazeHead.addBox(-4.0F, -4.0F, -4.0F, 8, 8, 8);
     }
 
-    public int func_78104_a()
-    {
-        return 8;
-    }
-
     /**
      * Sets the models various rotation angles then renders the model.
      */
-    public void render(Entity p_78088_1_, float p_78088_2_, float p_78088_3_, float p_78088_4_, float p_78088_5_, float p_78088_6_, float p_78088_7_)
+    public void render(Entity entityIn, float p_78088_2_, float p_78088_3_, float p_78088_4_, float p_78088_5_, float p_78088_6_, float scale)
     {
-        this.setRotationAngles(p_78088_2_, p_78088_3_, p_78088_4_, p_78088_5_, p_78088_6_, p_78088_7_, p_78088_1_);
-        this.blazeHead.render(p_78088_7_);
+        this.setRotationAngles(p_78088_2_, p_78088_3_, p_78088_4_, p_78088_5_, p_78088_6_, scale, entityIn);
+        this.blazeHead.render(scale);
 
-        for (int var8 = 0; var8 < this.blazeSticks.length; ++var8)
+        for (int i = 0; i < this.blazeSticks.length; ++i)
         {
-            this.blazeSticks[var8].render(p_78088_7_);
+            this.blazeSticks[i].render(scale);
         }
     }
 
@@ -46,40 +40,39 @@ public class ModelBlaze extends ModelBase
      * and legs, where par1 represents the time(so that arms and legs swing back and forth) and par2 represents how
      * "far" arms and legs can swing at most.
      */
-    public void setRotationAngles(float p_78087_1_, float p_78087_2_, float p_78087_3_, float p_78087_4_, float p_78087_5_, float p_78087_6_, Entity p_78087_7_)
+    public void setRotationAngles(float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch, float scaleFactor, Entity entityIn)
     {
-        float var8 = p_78087_3_ * (float)Math.PI * -0.1F;
-        int var9;
+        float f = ageInTicks * (float)Math.PI * -0.1F;
 
-        for (var9 = 0; var9 < 4; ++var9)
+        for (int i = 0; i < 4; ++i)
         {
-            this.blazeSticks[var9].rotationPointY = -2.0F + MathHelper.cos(((float)(var9 * 2) + p_78087_3_) * 0.25F);
-            this.blazeSticks[var9].rotationPointX = MathHelper.cos(var8) * 9.0F;
-            this.blazeSticks[var9].rotationPointZ = MathHelper.sin(var8) * 9.0F;
-            ++var8;
+            this.blazeSticks[i].rotationPointY = -2.0F + MathHelper.cos(((float)(i * 2) + ageInTicks) * 0.25F);
+            this.blazeSticks[i].rotationPointX = MathHelper.cos(f) * 9.0F;
+            this.blazeSticks[i].rotationPointZ = MathHelper.sin(f) * 9.0F;
+            ++f;
         }
 
-        var8 = ((float)Math.PI / 4F) + p_78087_3_ * (float)Math.PI * 0.03F;
+        f = ((float)Math.PI / 4F) + ageInTicks * (float)Math.PI * 0.03F;
 
-        for (var9 = 4; var9 < 8; ++var9)
+        for (int j = 4; j < 8; ++j)
         {
-            this.blazeSticks[var9].rotationPointY = 2.0F + MathHelper.cos(((float)(var9 * 2) + p_78087_3_) * 0.25F);
-            this.blazeSticks[var9].rotationPointX = MathHelper.cos(var8) * 7.0F;
-            this.blazeSticks[var9].rotationPointZ = MathHelper.sin(var8) * 7.0F;
-            ++var8;
+            this.blazeSticks[j].rotationPointY = 2.0F + MathHelper.cos(((float)(j * 2) + ageInTicks) * 0.25F);
+            this.blazeSticks[j].rotationPointX = MathHelper.cos(f) * 7.0F;
+            this.blazeSticks[j].rotationPointZ = MathHelper.sin(f) * 7.0F;
+            ++f;
         }
 
-        var8 = 0.47123894F + p_78087_3_ * (float)Math.PI * -0.05F;
+        f = 0.47123894F + ageInTicks * (float)Math.PI * -0.05F;
 
-        for (var9 = 8; var9 < 12; ++var9)
+        for (int k = 8; k < 12; ++k)
         {
-            this.blazeSticks[var9].rotationPointY = 11.0F + MathHelper.cos(((float)var9 * 1.5F + p_78087_3_) * 0.5F);
-            this.blazeSticks[var9].rotationPointX = MathHelper.cos(var8) * 5.0F;
-            this.blazeSticks[var9].rotationPointZ = MathHelper.sin(var8) * 5.0F;
-            ++var8;
+            this.blazeSticks[k].rotationPointY = 11.0F + MathHelper.cos(((float)k * 1.5F + ageInTicks) * 0.5F);
+            this.blazeSticks[k].rotationPointX = MathHelper.cos(f) * 5.0F;
+            this.blazeSticks[k].rotationPointZ = MathHelper.sin(f) * 5.0F;
+            ++f;
         }
 
-        this.blazeHead.rotateAngleY = p_78087_4_ / (180F / (float)Math.PI);
-        this.blazeHead.rotateAngleX = p_78087_5_ / (180F / (float)Math.PI);
+        this.blazeHead.rotateAngleY = netHeadYaw / (180F / (float)Math.PI);
+        this.blazeHead.rotateAngleX = headPitch / (180F / (float)Math.PI);
     }
 }

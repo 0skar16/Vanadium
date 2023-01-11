@@ -7,54 +7,52 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.util.JsonUtils;
 
-public class TextureMetadataSectionSerializer extends BaseMetadataSectionSerializer
+public class TextureMetadataSectionSerializer extends BaseMetadataSectionSerializer<TextureMetadataSection>
 {
-    private static final String __OBFID = "CL_00001115";
-
-    public TextureMetadataSection deserialize(JsonElement p_deserialize_1_, Type p_deserialize_2_, JsonDeserializationContext p_deserialize_3_)
+    public TextureMetadataSection deserialize(JsonElement p_deserialize_1_, Type p_deserialize_2_, JsonDeserializationContext p_deserialize_3_) throws JsonParseException
     {
-        JsonObject var4 = p_deserialize_1_.getAsJsonObject();
-        boolean var5 = JsonUtils.getJsonObjectBooleanFieldValueOrDefault(var4, "blur", false);
-        boolean var6 = JsonUtils.getJsonObjectBooleanFieldValueOrDefault(var4, "clamp", false);
-        ArrayList var7 = Lists.newArrayList();
+        JsonObject jsonobject = p_deserialize_1_.getAsJsonObject();
+        boolean flag = JsonUtils.getBoolean(jsonobject, "blur", false);
+        boolean flag1 = JsonUtils.getBoolean(jsonobject, "clamp", false);
+        List<Integer> list = Lists.<Integer>newArrayList();
 
-        if (var4.has("mipmaps"))
+        if (jsonobject.has("mipmaps"))
         {
             try
             {
-                JsonArray var8 = var4.getAsJsonArray("mipmaps");
+                JsonArray jsonarray = jsonobject.getAsJsonArray("mipmaps");
 
-                for (int var9 = 0; var9 < var8.size(); ++var9)
+                for (int i = 0; i < jsonarray.size(); ++i)
                 {
-                    JsonElement var10 = var8.get(var9);
+                    JsonElement jsonelement = jsonarray.get(i);
 
-                    if (var10.isJsonPrimitive())
+                    if (jsonelement.isJsonPrimitive())
                     {
                         try
                         {
-                            var7.add(Integer.valueOf(var10.getAsInt()));
+                            list.add(Integer.valueOf(jsonelement.getAsInt()));
                         }
-                        catch (NumberFormatException var12)
+                        catch (NumberFormatException numberformatexception)
                         {
-                            throw new JsonParseException("Invalid texture->mipmap->" + var9 + ": expected number, was " + var10, var12);
+                            throw new JsonParseException("Invalid texture->mipmap->" + i + ": expected number, was " + jsonelement, numberformatexception);
                         }
                     }
-                    else if (var10.isJsonObject())
+                    else if (jsonelement.isJsonObject())
                     {
-                        throw new JsonParseException("Invalid texture->mipmap->" + var9 + ": expected number, was " + var10);
+                        throw new JsonParseException("Invalid texture->mipmap->" + i + ": expected number, was " + jsonelement);
                     }
                 }
             }
-            catch (ClassCastException var13)
+            catch (ClassCastException classcastexception)
             {
-                throw new JsonParseException("Invalid texture->mipmaps: expected array, was " + var4.get("mipmaps"), var13);
+                throw new JsonParseException("Invalid texture->mipmaps: expected array, was " + jsonobject.get("mipmaps"), classcastexception);
             }
         }
 
-        return new TextureMetadataSection(var5, var6, var7);
+        return new TextureMetadataSection(flag, flag1, list);
     }
 
     /**

@@ -1,23 +1,21 @@
 package net.minecraft.crash;
 
+import com.google.common.collect.Lists;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.Writer;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
-
 import net.minecraft.util.ReportedException;
 import net.minecraft.world.gen.layer.IntCache;
-import optifine.CrashReporter;
-import optifine.Reflector;
-
+import net.optifine.CrashReporter;
+import net.optifine.reflect.Reflector;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.logging.log4j.LogManager;
@@ -35,21 +33,20 @@ public class CrashReport
 
     /** Category of crash */
     private final CrashReportCategory theReportCategory = new CrashReportCategory(this, "System Details");
-
-    /** Holds the keys and values of all crash report sections. */
-    private final List crashReportSections = new ArrayList();
+    private final List<CrashReportCategory> crashReportSections = Lists.<CrashReportCategory>newArrayList();
 
     /** File of crash report. */
     private File crashReportFile;
-    private boolean field_85059_f = true;
+
+    /** Is true when the current category is the first in the crash report */
+    private boolean firstCategoryInCrashReport = true;
     private StackTraceElement[] stacktrace = new StackTraceElement[0];
-    private static final String __OBFID = "CL_00000990";
     private boolean reported = false;
 
-    public CrashReport(String par1Str, Throwable par2Throwable)
+    public CrashReport(String descriptionIn, Throwable causeThrowable)
     {
-        this.description = par1Str;
-        this.cause = par2Throwable;
+        this.description = descriptionIn;
+        this.cause = causeThrowable;
         this.populateEnvironment();
     }
 
@@ -59,141 +56,85 @@ public class CrashReport
      */
     private void populateEnvironment()
     {
-        this.theReportCategory.addCrashSectionCallable("Minecraft Version", new Callable()
+        this.theReportCategory.addCrashSectionCallable("Minecraft Version", new Callable<String>()
         {
-            private static final String __OBFID = "CL_00001197";
-            public String call1()
+            public String call()
             {
-                return "1.7.10";
-            }
-            public Object call() throws Exception
-            {
-                return this.call1();
+                return "1.8.9";
             }
         });
-        this.theReportCategory.addCrashSectionCallable("Operating System", new Callable()
+        this.theReportCategory.addCrashSectionCallable("Operating System", new Callable<String>()
         {
-            private static final String __OBFID = "CL_00001222";
-            public String call1()
+            public String call()
             {
                 return System.getProperty("os.name") + " (" + System.getProperty("os.arch") + ") version " + System.getProperty("os.version");
             }
-            public Object call() throws Exception
-            {
-                return this.call1();
-            }
         });
-        this.theReportCategory.addCrashSectionCallable("Java Version", new Callable()
+        this.theReportCategory.addCrashSectionCallable("Java Version", new Callable<String>()
         {
-            private static final String __OBFID = "CL_00001248";
-            public String call1()
+            public String call()
             {
                 return System.getProperty("java.version") + ", " + System.getProperty("java.vendor");
             }
-            public Object call() throws Exception
-            {
-                return this.call1();
-            }
         });
-        this.theReportCategory.addCrashSectionCallable("Java VM Version", new Callable()
+        this.theReportCategory.addCrashSectionCallable("Java VM Version", new Callable<String>()
         {
-            private static final String __OBFID = "CL_00001275";
-            public String call1()
+            public String call()
             {
                 return System.getProperty("java.vm.name") + " (" + System.getProperty("java.vm.info") + "), " + System.getProperty("java.vm.vendor");
             }
-            public Object call() throws Exception
+        });
+        this.theReportCategory.addCrashSectionCallable("Memory", new Callable<String>()
+        {
+            public String call()
             {
-                return this.call1();
+                Runtime runtime = Runtime.getRuntime();
+                long i = runtime.maxMemory();
+                long j = runtime.totalMemory();
+                long k = runtime.freeMemory();
+                long l = i / 1024L / 1024L;
+                long i1 = j / 1024L / 1024L;
+                long j1 = k / 1024L / 1024L;
+                return k + " bytes (" + j1 + " MB) / " + j + " bytes (" + i1 + " MB) up to " + i + " bytes (" + l + " MB)";
             }
         });
-        this.theReportCategory.addCrashSectionCallable("Memory", new Callable()
+        this.theReportCategory.addCrashSectionCallable("JVM Flags", new Callable<String>()
         {
-            private static final String __OBFID = "CL_00001302";
-            public String call1()
+            public String call()
             {
-                Runtime var1 = Runtime.getRuntime();
-                long var2 = var1.maxMemory();
-                long var4 = var1.totalMemory();
-                long var6 = var1.freeMemory();
-                long var8 = var2 / 1024L / 1024L;
-                long var10 = var4 / 1024L / 1024L;
-                long var12 = var6 / 1024L / 1024L;
-                return var6 + " bytes (" + var12 + " MB) / " + var4 + " bytes (" + var10 + " MB) up to " + var2 + " bytes (" + var8 + " MB)";
-            }
-            public Object call() throws Exception
-            {
-                return this.call1();
-            }
-        });
-        this.theReportCategory.addCrashSectionCallable("JVM Flags", new Callable()
-        {
-            private static final String __OBFID = "CL_00001329";
-            public String call1()
-            {
-                RuntimeMXBean var1 = ManagementFactory.getRuntimeMXBean();
-                List var2 = var1.getInputArguments();
-                int var3 = 0;
-                StringBuilder var4 = new StringBuilder();
-                Iterator var5 = var2.iterator();
+                RuntimeMXBean runtimemxbean = ManagementFactory.getRuntimeMXBean();
+                List<String> list = runtimemxbean.getInputArguments();
+                int i = 0;
+                StringBuilder stringbuilder = new StringBuilder();
 
-                while (var5.hasNext())
+                for (String s : list)
                 {
-                    String var6 = (String)var5.next();
-
-                    if (var6.startsWith("-X"))
+                    if (s.startsWith("-X"))
                     {
-                        if (var3++ > 0)
+                        if (i++ > 0)
                         {
-                            var4.append(" ");
+                            stringbuilder.append(" ");
                         }
 
-                        var4.append(var6);
+                        stringbuilder.append(s);
                     }
                 }
 
-                return String.format("%d total; %s", new Object[] {Integer.valueOf(var3), var4.toString()});
-            }
-            public Object call() throws Exception
-            {
-                return this.call1();
+                return String.format("%d total; %s", new Object[] {Integer.valueOf(i), stringbuilder.toString()});
             }
         });
-        this.theReportCategory.addCrashSectionCallable("AABB Pool Size", new Callable()
+        this.theReportCategory.addCrashSectionCallable("IntCache", new Callable<String>()
         {
-            private static final String __OBFID = "CL_00001355";
-            public String call1()
-            {
-                byte var1 = 0;
-                int var2 = 56 * var1;
-                int var3 = var2 / 1024 / 1024;
-                byte var4 = 0;
-                int var5 = 56 * var4;
-                int var6 = var5 / 1024 / 1024;
-                return var1 + " (" + var2 + " bytes; " + var3 + " MB) allocated, " + var4 + " (" + var5 + " bytes; " + var6 + " MB) used";
-            }
-            public Object call() throws Exception
-            {
-                return this.call1();
-            }
-        });
-        this.theReportCategory.addCrashSectionCallable("IntCache", new Callable()
-        {
-            private static final String __OBFID = "CL_00001382";
-            public String call1() throws SecurityException, NoSuchFieldException, IllegalAccessException, IllegalArgumentException
+            public String call() throws Exception
             {
                 return IntCache.getCacheSizes();
-            }
-            public Object call() throws Exception
-            {
-                return this.call1();
             }
         });
 
         if (Reflector.FMLCommonHandler_enhanceCrashReport.exists())
         {
-            Object instance = Reflector.call(Reflector.FMLCommonHandler_instance, new Object[0]);
-            Reflector.callString(instance, Reflector.FMLCommonHandler_enhanceCrashReport, new Object[] {this, this.theReportCategory});
+            Object object = Reflector.call(Reflector.FMLCommonHandler_instance, new Object[0]);
+            Reflector.callString(object, Reflector.FMLCommonHandler_enhanceCrashReport, new Object[] {this, this.theReportCategory});
         }
     }
 
@@ -216,40 +157,34 @@ public class CrashReport
     /**
      * Gets the various sections of the crash report into the given StringBuilder
      */
-    public void getSectionsInStringBuilder(StringBuilder par1StringBuilder)
+    public void getSectionsInStringBuilder(StringBuilder builder)
     {
         if ((this.stacktrace == null || this.stacktrace.length <= 0) && this.crashReportSections.size() > 0)
         {
-            this.stacktrace = (StackTraceElement[])((StackTraceElement[])ArrayUtils.subarray(((CrashReportCategory)this.crashReportSections.get(0)).func_147152_a(), 0, 1));
+            this.stacktrace = (StackTraceElement[])((StackTraceElement[])ArrayUtils.subarray(((CrashReportCategory)this.crashReportSections.get(0)).getStackTrace(), 0, 1));
         }
 
         if (this.stacktrace != null && this.stacktrace.length > 0)
         {
-            par1StringBuilder.append("-- Head --\n");
-            par1StringBuilder.append("Stacktrace:\n");
-            StackTraceElement[] var6 = this.stacktrace;
-            int var7 = var6.length;
+            builder.append("-- Head --\n");
+            builder.append("Stacktrace:\n");
 
-            for (int var4 = 0; var4 < var7; ++var4)
+            for (StackTraceElement stacktraceelement : this.stacktrace)
             {
-                StackTraceElement var5 = var6[var4];
-                par1StringBuilder.append("\t").append("at ").append(var5.toString());
-                par1StringBuilder.append("\n");
+                builder.append("\t").append("at ").append(stacktraceelement.toString());
+                builder.append("\n");
             }
 
-            par1StringBuilder.append("\n");
+            builder.append("\n");
         }
 
-        Iterator var61 = this.crashReportSections.iterator();
-
-        while (var61.hasNext())
+        for (CrashReportCategory crashreportcategory : this.crashReportSections)
         {
-            CrashReportCategory var71 = (CrashReportCategory)var61.next();
-            var71.appendToStringBuilder(par1StringBuilder);
-            par1StringBuilder.append("\n\n");
+            crashreportcategory.appendToStringBuilder(builder);
+            builder.append("\n\n");
         }
 
-        this.theReportCategory.appendToStringBuilder(par1StringBuilder);
+        this.theReportCategory.appendToStringBuilder(builder);
     }
 
     /**
@@ -257,44 +192,44 @@ public class CrashReport
      */
     public String getCauseStackTraceOrString()
     {
-        StringWriter var1 = null;
-        PrintWriter var2 = null;
-        Object var3 = this.cause;
+        StringWriter stringwriter = null;
+        PrintWriter printwriter = null;
+        Throwable throwable = this.cause;
 
-        if (((Throwable)var3).getMessage() == null)
+        if (throwable.getMessage() == null)
         {
-            if (var3 instanceof NullPointerException)
+            if (throwable instanceof NullPointerException)
             {
-                var3 = new NullPointerException(this.description);
+                throwable = new NullPointerException(this.description);
             }
-            else if (var3 instanceof StackOverflowError)
+            else if (throwable instanceof StackOverflowError)
             {
-                var3 = new StackOverflowError(this.description);
+                throwable = new StackOverflowError(this.description);
             }
-            else if (var3 instanceof OutOfMemoryError)
+            else if (throwable instanceof OutOfMemoryError)
             {
-                var3 = new OutOfMemoryError(this.description);
+                throwable = new OutOfMemoryError(this.description);
             }
 
-            ((Throwable)var3).setStackTrace(this.cause.getStackTrace());
+            throwable.setStackTrace(this.cause.getStackTrace());
         }
 
-        String var4 = ((Throwable)var3).toString();
+        String s = throwable.toString();
 
         try
         {
-            var1 = new StringWriter();
-            var2 = new PrintWriter(var1);
-            ((Throwable)var3).printStackTrace(var2);
-            var4 = var1.toString();
+            stringwriter = new StringWriter();
+            printwriter = new PrintWriter(stringwriter);
+            throwable.printStackTrace(printwriter);
+            s = stringwriter.toString();
         }
         finally
         {
-            IOUtils.closeQuietly(var1);
-            IOUtils.closeQuietly(var2);
+            IOUtils.closeQuietly((Writer)stringwriter);
+            IOUtils.closeQuietly((Writer)printwriter);
         }
 
-        return var4;
+        return s;
     }
 
     /**
@@ -308,28 +243,30 @@ public class CrashReport
             CrashReporter.onCrashReport(this, this.theReportCategory);
         }
 
-        StringBuilder var1 = new StringBuilder();
-        var1.append("---- Minecraft Crash Report ----\n");
-        var1.append("// ");
-        var1.append(getWittyComment());
-        var1.append("\n\n");
-        var1.append("Time: ");
-        var1.append((new SimpleDateFormat()).format(new Date()));
-        var1.append("\n");
-        var1.append("Description: ");
-        var1.append(this.description);
-        var1.append("\n\n");
-        var1.append(this.getCauseStackTraceOrString());
-        var1.append("\n\nA detailed walkthrough of the error, its code path and all known details is as follows:\n");
+        StringBuilder stringbuilder = new StringBuilder();
+        stringbuilder.append("---- Minecraft Crash Report ----\n");
+        Reflector.call(Reflector.BlamingTransformer_onCrash, new Object[] {stringbuilder});
+        Reflector.call(Reflector.CoreModManager_onCrash, new Object[] {stringbuilder});
+        stringbuilder.append("// ");
+        stringbuilder.append(getWittyComment());
+        stringbuilder.append("\n\n");
+        stringbuilder.append("Time: ");
+        stringbuilder.append((new SimpleDateFormat()).format(new Date()));
+        stringbuilder.append("\n");
+        stringbuilder.append("Description: ");
+        stringbuilder.append(this.description);
+        stringbuilder.append("\n\n");
+        stringbuilder.append(this.getCauseStackTraceOrString());
+        stringbuilder.append("\n\nA detailed walkthrough of the error, its code path and all known details is as follows:\n");
 
-        for (int var2 = 0; var2 < 87; ++var2)
+        for (int i = 0; i < 87; ++i)
         {
-            var1.append("-");
+            stringbuilder.append("-");
         }
 
-        var1.append("\n\n");
-        this.getSectionsInStringBuilder(var1);
-        return var1.toString();
+        stringbuilder.append("\n\n");
+        this.getSectionsInStringBuilder(stringbuilder);
+        return stringbuilder.toString();
     }
 
     /**
@@ -343,7 +280,7 @@ public class CrashReport
     /**
      * Saves this CrashReport to the given file and returns a value indicating whether we were successful at doing so.
      */
-    public boolean saveToFile(File p_147149_1_)
+    public boolean saveToFile(File toFile)
     {
         if (this.crashReportFile != null)
         {
@@ -351,22 +288,22 @@ public class CrashReport
         }
         else
         {
-            if (p_147149_1_.getParentFile() != null)
+            if (toFile.getParentFile() != null)
             {
-                p_147149_1_.getParentFile().mkdirs();
+                toFile.getParentFile().mkdirs();
             }
 
             try
             {
-                FileWriter var3 = new FileWriter(p_147149_1_);
-                var3.write(this.getCompleteReport());
-                var3.close();
-                this.crashReportFile = p_147149_1_;
+                FileWriter filewriter = new FileWriter(toFile);
+                filewriter.write(this.getCompleteReport());
+                filewriter.close();
+                this.crashReportFile = toFile;
                 return true;
             }
-            catch (Throwable var31)
+            catch (Throwable throwable)
             {
-                logger.error("Could not save crash report to " + p_147149_1_, var31);
+                logger.error("Could not save crash report to " + toFile, throwable);
                 return false;
             }
         }
@@ -380,61 +317,61 @@ public class CrashReport
     /**
      * Creates a CrashReportCategory
      */
-    public CrashReportCategory makeCategory(String par1Str)
+    public CrashReportCategory makeCategory(String name)
     {
-        return this.makeCategoryDepth(par1Str, 1);
+        return this.makeCategoryDepth(name, 1);
     }
 
     /**
      * Creates a CrashReportCategory for the given stack trace depth
      */
-    public CrashReportCategory makeCategoryDepth(String par1Str, int par2)
+    public CrashReportCategory makeCategoryDepth(String categoryName, int stacktraceLength)
     {
-        CrashReportCategory var3 = new CrashReportCategory(this, par1Str);
+        CrashReportCategory crashreportcategory = new CrashReportCategory(this, categoryName);
 
-        if (this.field_85059_f)
+        if (this.firstCategoryInCrashReport)
         {
-            int var4 = var3.getPrunedStackTrace(par2);
-            StackTraceElement[] var5 = this.cause.getStackTrace();
-            StackTraceElement var6 = null;
-            StackTraceElement var7 = null;
-            int var8 = var5.length - var4;
+            int i = crashreportcategory.getPrunedStackTrace(stacktraceLength);
+            StackTraceElement[] astacktraceelement = this.cause.getStackTrace();
+            StackTraceElement stacktraceelement = null;
+            StackTraceElement stacktraceelement1 = null;
+            int j = astacktraceelement.length - i;
 
-            if (var8 < 0)
+            if (j < 0)
             {
-                System.out.println("Negative index in crash report handler (" + var5.length + "/" + var4 + ")");
+                System.out.println("Negative index in crash report handler (" + astacktraceelement.length + "/" + i + ")");
             }
 
-            if (var5 != null && 0 <= var8 && var8 < var5.length)
+            if (astacktraceelement != null && 0 <= j && j < astacktraceelement.length)
             {
-                var6 = var5[var8];
+                stacktraceelement = astacktraceelement[j];
 
-                if (var5.length + 1 - var4 < var5.length)
+                if (astacktraceelement.length + 1 - i < astacktraceelement.length)
                 {
-                    var7 = var5[var5.length + 1 - var4];
+                    stacktraceelement1 = astacktraceelement[astacktraceelement.length + 1 - i];
                 }
             }
 
-            this.field_85059_f = var3.firstTwoElementsOfStackTraceMatch(var6, var7);
+            this.firstCategoryInCrashReport = crashreportcategory.firstTwoElementsOfStackTraceMatch(stacktraceelement, stacktraceelement1);
 
-            if (var4 > 0 && !this.crashReportSections.isEmpty())
+            if (i > 0 && !this.crashReportSections.isEmpty())
             {
-                CrashReportCategory var9 = (CrashReportCategory)this.crashReportSections.get(this.crashReportSections.size() - 1);
-                var9.trimStackTraceEntriesFromBottom(var4);
+                CrashReportCategory crashreportcategory1 = (CrashReportCategory)this.crashReportSections.get(this.crashReportSections.size() - 1);
+                crashreportcategory1.trimStackTraceEntriesFromBottom(i);
             }
-            else if (var5 != null && var5.length >= var4 && 0 <= var8 && var8 < var5.length)
+            else if (astacktraceelement != null && astacktraceelement.length >= i && 0 <= j && j < astacktraceelement.length)
             {
-                this.stacktrace = new StackTraceElement[var8];
-                System.arraycopy(var5, 0, this.stacktrace, 0, this.stacktrace.length);
+                this.stacktrace = new StackTraceElement[j];
+                System.arraycopy(astacktraceelement, 0, this.stacktrace, 0, this.stacktrace.length);
             }
             else
             {
-                this.field_85059_f = false;
+                this.firstCategoryInCrashReport = false;
             }
         }
 
-        this.crashReportSections.add(var3);
-        return var3;
+        this.crashReportSections.add(crashreportcategory);
+        return crashreportcategory;
     }
 
     /**
@@ -442,11 +379,11 @@ public class CrashReport
      */
     private static String getWittyComment()
     {
-        String[] var0 = new String[] {"Who set us up the TNT?", "Everything\'s going to plan. No, really, that was supposed to happen.", "Uh... Did I do that?", "Oops.", "Why did you do that?", "I feel sad now :(", "My bad.", "I\'m sorry, Dave.", "I let you down. Sorry :(", "On the bright side, I bought you a teddy bear!", "Daisy, daisy...", "Oh - I know what I did wrong!", "Hey, that tickles! Hehehe!", "I blame Dinnerbone.", "You should try our sister game, Minceraft!", "Don\'t be sad. I\'ll do better next time, I promise!", "Don\'t be sad, have a hug! <3", "I just don\'t know what went wrong :(", "Shall we play a game?", "Quite honestly, I wouldn\'t worry myself about that.", "I bet Cylons wouldn\'t have this problem.", "Sorry :(", "Surprise! Haha. Well, this is awkward.", "Would you like a cupcake?", "Hi. I\'m Minecraft, and I\'m a crashaholic.", "Ooh. Shiny.", "This doesn\'t make any sense!", "Why is it breaking :(", "Don\'t do that.", "Ouch. That hurt :(", "You\'re mean.", "This is a token for 1 free hug. Redeem at your nearest Mojangsta: [~~HUG~~]", "There are four lights!", "But it works on my machine."};
+        String[] astring = new String[] {"Who set us up the TNT?", "Everything\'s going to plan. No, really, that was supposed to happen.", "Uh... Did I do that?", "Oops.", "Why did you do that?", "I feel sad now :(", "My bad.", "I\'m sorry, Dave.", "I let you down. Sorry :(", "On the bright side, I bought you a teddy bear!", "Daisy, daisy...", "Oh - I know what I did wrong!", "Hey, that tickles! Hehehe!", "I blame Dinnerbone.", "You should try our sister game, Minceraft!", "Don\'t be sad. I\'ll do better next time, I promise!", "Don\'t be sad, have a hug! <3", "I just don\'t know what went wrong :(", "Shall we play a game?", "Quite honestly, I wouldn\'t worry myself about that.", "I bet Cylons wouldn\'t have this problem.", "Sorry :(", "Surprise! Haha. Well, this is awkward.", "Would you like a cupcake?", "Hi. I\'m Minecraft, and I\'m a crashaholic.", "Ooh. Shiny.", "This doesn\'t make any sense!", "Why is it breaking :(", "Don\'t do that.", "Ouch. That hurt :(", "You\'re mean.", "This is a token for 1 free hug. Redeem at your nearest Mojangsta: [~~HUG~~]", "There are four lights!", "But it works on my machine."};
 
         try
         {
-            return var0[(int)(System.nanoTime() % (long)var0.length)];
+            return astring[(int)(System.nanoTime() % (long)astring.length)];
         }
         catch (Throwable var2)
         {
@@ -457,19 +394,19 @@ public class CrashReport
     /**
      * Creates a crash report for the exception
      */
-    public static CrashReport makeCrashReport(Throwable par0Throwable, String par1Str)
+    public static CrashReport makeCrashReport(Throwable causeIn, String descriptionIn)
     {
-        CrashReport var2;
+        CrashReport crashreport;
 
-        if (par0Throwable instanceof ReportedException)
+        if (causeIn instanceof ReportedException)
         {
-            var2 = ((ReportedException)par0Throwable).getCrashReport();
+            crashreport = ((ReportedException)causeIn).getCrashReport();
         }
         else
         {
-            var2 = new CrashReport(par1Str, par0Throwable);
+            crashreport = new CrashReport(descriptionIn, causeIn);
         }
 
-        return var2;
+        return crashreport;
     }
 }

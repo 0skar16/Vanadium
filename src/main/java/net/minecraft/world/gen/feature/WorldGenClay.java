@@ -4,49 +4,49 @@ import java.util.Random;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.init.Blocks;
+import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
 
 public class WorldGenClay extends WorldGenerator
 {
-    private Block field_150546_a;
+    private Block field_150546_a = Blocks.clay;
 
     /** The number of blocks to generate. */
     private int numberOfBlocks;
-    private static final String __OBFID = "CL_00000405";
 
     public WorldGenClay(int p_i2011_1_)
     {
-        this.field_150546_a = Blocks.clay;
         this.numberOfBlocks = p_i2011_1_;
     }
 
-    public boolean generate(World p_76484_1_, Random p_76484_2_, int p_76484_3_, int p_76484_4_, int p_76484_5_)
+    public boolean generate(World worldIn, Random rand, BlockPos position)
     {
-        if (p_76484_1_.getBlock(p_76484_3_, p_76484_4_, p_76484_5_).getMaterial() != Material.water)
+        if (worldIn.getBlockState(position).getBlock().getMaterial() != Material.water)
         {
             return false;
         }
         else
         {
-            int var6 = p_76484_2_.nextInt(this.numberOfBlocks - 2) + 2;
-            byte var7 = 1;
+            int i = rand.nextInt(this.numberOfBlocks - 2) + 2;
+            int j = 1;
 
-            for (int var8 = p_76484_3_ - var6; var8 <= p_76484_3_ + var6; ++var8)
+            for (int k = position.getX() - i; k <= position.getX() + i; ++k)
             {
-                for (int var9 = p_76484_5_ - var6; var9 <= p_76484_5_ + var6; ++var9)
+                for (int l = position.getZ() - i; l <= position.getZ() + i; ++l)
                 {
-                    int var10 = var8 - p_76484_3_;
-                    int var11 = var9 - p_76484_5_;
+                    int i1 = k - position.getX();
+                    int j1 = l - position.getZ();
 
-                    if (var10 * var10 + var11 * var11 <= var6 * var6)
+                    if (i1 * i1 + j1 * j1 <= i * i)
                     {
-                        for (int var12 = p_76484_4_ - var7; var12 <= p_76484_4_ + var7; ++var12)
+                        for (int k1 = position.getY() - j; k1 <= position.getY() + j; ++k1)
                         {
-                            Block var13 = p_76484_1_.getBlock(var8, var12, var9);
+                            BlockPos blockpos = new BlockPos(k, k1, l);
+                            Block block = worldIn.getBlockState(blockpos).getBlock();
 
-                            if (var13 == Blocks.dirt || var13 == Blocks.clay)
+                            if (block == Blocks.dirt || block == Blocks.clay)
                             {
-                                p_76484_1_.setBlock(var8, var12, var9, this.field_150546_a, 0, 2);
+                                worldIn.setBlockState(blockpos, this.field_150546_a.getDefaultState(), 2);
                             }
                         }
                     }

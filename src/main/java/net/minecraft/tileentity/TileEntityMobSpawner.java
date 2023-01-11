@@ -4,81 +4,81 @@ import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.Packet;
 import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.ITickable;
 import net.minecraft.world.World;
 
-public class TileEntityMobSpawner extends TileEntity
+public class TileEntityMobSpawner extends TileEntity implements ITickable
 {
-    private final MobSpawnerBaseLogic field_145882_a = new MobSpawnerBaseLogic()
+    private final MobSpawnerBaseLogic spawnerLogic = new MobSpawnerBaseLogic()
     {
-        private static final String __OBFID = "CL_00000361";
-        public void func_98267_a(int p_98267_1_)
+        public void func_98267_a(int id)
         {
-            TileEntityMobSpawner.this.worldObj.func_147452_c(TileEntityMobSpawner.this.field_145851_c, TileEntityMobSpawner.this.field_145848_d, TileEntityMobSpawner.this.field_145849_e, Blocks.mob_spawner, p_98267_1_, 0);
+            TileEntityMobSpawner.this.worldObj.addBlockEvent(TileEntityMobSpawner.this.pos, Blocks.mob_spawner, id, 0);
         }
         public World getSpawnerWorld()
         {
             return TileEntityMobSpawner.this.worldObj;
         }
-        public int getSpawnerX()
+        public BlockPos getSpawnerPosition()
         {
-            return TileEntityMobSpawner.this.field_145851_c;
+            return TileEntityMobSpawner.this.pos;
         }
-        public int getSpawnerY()
+        public void setRandomEntity(MobSpawnerBaseLogic.WeightedRandomMinecart p_98277_1_)
         {
-            return TileEntityMobSpawner.this.field_145848_d;
-        }
-        public int getSpawnerZ()
-        {
-            return TileEntityMobSpawner.this.field_145849_e;
-        }
-        public void setRandomMinecart(MobSpawnerBaseLogic.WeightedRandomMinecart p_98277_1_)
-        {
-            super.setRandomMinecart(p_98277_1_);
+            super.setRandomEntity(p_98277_1_);
 
             if (this.getSpawnerWorld() != null)
             {
-                this.getSpawnerWorld().func_147471_g(TileEntityMobSpawner.this.field_145851_c, TileEntityMobSpawner.this.field_145848_d, TileEntityMobSpawner.this.field_145849_e);
+                this.getSpawnerWorld().markBlockForUpdate(TileEntityMobSpawner.this.pos);
             }
         }
     };
-    private static final String __OBFID = "CL_00000360";
 
-    public void readFromNBT(NBTTagCompound p_145839_1_)
+    public void readFromNBT(NBTTagCompound compound)
     {
-        super.readFromNBT(p_145839_1_);
-        this.field_145882_a.readFromNBT(p_145839_1_);
+        super.readFromNBT(compound);
+        this.spawnerLogic.readFromNBT(compound);
     }
 
-    public void writeToNBT(NBTTagCompound p_145841_1_)
+    public void writeToNBT(NBTTagCompound compound)
     {
-        super.writeToNBT(p_145841_1_);
-        this.field_145882_a.writeToNBT(p_145841_1_);
-    }
-
-    public void updateEntity()
-    {
-        this.field_145882_a.updateSpawner();
-        super.updateEntity();
+        super.writeToNBT(compound);
+        this.spawnerLogic.writeToNBT(compound);
     }
 
     /**
-     * Overriden in a sign to provide the text.
+     * Like the old updateEntity(), except more generic.
+     */
+    public void update()
+    {
+        this.spawnerLogic.updateSpawner();
+    }
+
+    /**
+     * Allows for a specialized description packet to be created. This is often used to sync tile entity data from the
+     * server to the client easily. For example this is used by signs to synchronise the text to be displayed.
      */
     public Packet getDescriptionPacket()
     {
-        NBTTagCompound var1 = new NBTTagCompound();
-        this.writeToNBT(var1);
-        var1.removeTag("SpawnPotentials");
-        return new S35PacketUpdateTileEntity(this.field_145851_c, this.field_145848_d, this.field_145849_e, 1, var1);
+        NBTTagCompound nbttagcompound = new NBTTagCompound();
+        this.writeToNBT(nbttagcompound);
+        nbttagcompound.removeTag("SpawnPotentials");
+        return new S35PacketUpdateTileEntity(this.pos, 1, nbttagcompound);
     }
 
-    public boolean receiveClientEvent(int p_145842_1_, int p_145842_2_)
+    public boolean receiveClientEvent(int id, int type)
     {
-        return this.field_145882_a.setDelayToMin(p_145842_1_) ? true : super.receiveClientEvent(p_145842_1_, p_145842_2_);
+        return this.spawnerLogic.setDelayToMin(id) ? true : super.receiveClientEvent(id, type);
     }
 
-    public MobSpawnerBaseLogic func_145881_a()
+    public boolean func_183000_F()
     {
-        return this.field_145882_a;
+        return true;
+    }
+
+    public MobSpawnerBaseLogic getSpawnerBaseLogic()
+    {
+        return this.spawnerLogic;
     }
 }

@@ -2,7 +2,7 @@ package net.minecraft.entity.ai;
 
 import java.util.Random;
 import net.minecraft.entity.EntityCreature;
-import net.minecraft.util.MathHelper;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 
@@ -14,13 +14,12 @@ public class EntityAIFleeSun extends EntityAIBase
     private double shelterZ;
     private double movementSpeed;
     private World theWorld;
-    private static final String __OBFID = "CL_00001583";
 
-    public EntityAIFleeSun(EntityCreature p_i1623_1_, double p_i1623_2_)
+    public EntityAIFleeSun(EntityCreature theCreatureIn, double movementSpeedIn)
     {
-        this.theCreature = p_i1623_1_;
-        this.movementSpeed = p_i1623_2_;
-        this.theWorld = p_i1623_1_.worldObj;
+        this.theCreature = theCreatureIn;
+        this.movementSpeed = movementSpeedIn;
+        this.theWorld = theCreatureIn.worldObj;
         this.setMutexBits(1);
     }
 
@@ -37,23 +36,23 @@ public class EntityAIFleeSun extends EntityAIBase
         {
             return false;
         }
-        else if (!this.theWorld.canBlockSeeTheSky(MathHelper.floor_double(this.theCreature.posX), (int)this.theCreature.boundingBox.minY, MathHelper.floor_double(this.theCreature.posZ)))
+        else if (!this.theWorld.canSeeSky(new BlockPos(this.theCreature.posX, this.theCreature.getEntityBoundingBox().minY, this.theCreature.posZ)))
         {
             return false;
         }
         else
         {
-            Vec3 var1 = this.findPossibleShelter();
+            Vec3 vec3 = this.findPossibleShelter();
 
-            if (var1 == null)
+            if (vec3 == null)
             {
                 return false;
             }
             else
             {
-                this.shelterX = var1.xCoord;
-                this.shelterY = var1.yCoord;
-                this.shelterZ = var1.zCoord;
+                this.shelterX = vec3.xCoord;
+                this.shelterY = vec3.yCoord;
+                this.shelterZ = vec3.zCoord;
                 return true;
             }
         }
@@ -77,17 +76,16 @@ public class EntityAIFleeSun extends EntityAIBase
 
     private Vec3 findPossibleShelter()
     {
-        Random var1 = this.theCreature.getRNG();
+        Random random = this.theCreature.getRNG();
+        BlockPos blockpos = new BlockPos(this.theCreature.posX, this.theCreature.getEntityBoundingBox().minY, this.theCreature.posZ);
 
-        for (int var2 = 0; var2 < 10; ++var2)
+        for (int i = 0; i < 10; ++i)
         {
-            int var3 = MathHelper.floor_double(this.theCreature.posX + (double)var1.nextInt(20) - 10.0D);
-            int var4 = MathHelper.floor_double(this.theCreature.boundingBox.minY + (double)var1.nextInt(6) - 3.0D);
-            int var5 = MathHelper.floor_double(this.theCreature.posZ + (double)var1.nextInt(20) - 10.0D);
+            BlockPos blockpos1 = blockpos.add(random.nextInt(20) - 10, random.nextInt(6) - 3, random.nextInt(20) - 10);
 
-            if (!this.theWorld.canBlockSeeTheSky(var3, var4, var5) && this.theCreature.getBlockPathWeight(var3, var4, var5) < 0.0F)
+            if (!this.theWorld.canSeeSky(blockpos1) && this.theCreature.getBlockPathWeight(blockpos1) < 0.0F)
             {
-                return Vec3.createVectorHelper((double)var3, (double)var4, (double)var5);
+                return new Vec3((double)blockpos1.getX(), (double)blockpos1.getY(), (double)blockpos1.getZ());
             }
         }
 

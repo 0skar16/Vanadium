@@ -1,14 +1,19 @@
 package net.minecraft.command.server;
 
+import java.util.List;
 import net.minecraft.command.CommandBase;
+import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.command.WrongUsageException;
-import net.minecraft.util.ChunkCoordinates;
+import net.minecraft.network.play.server.S05PacketSpawnPosition;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.BlockPos;
 
 public class CommandSetDefaultSpawnpoint extends CommandBase
 {
-    private static final String __OBFID = "CL_00000973";
-
+    /**
+     * Gets the name of the command
+     */
     public String getCommandName()
     {
         return "setworldspawn";
@@ -22,38 +27,42 @@ public class CommandSetDefaultSpawnpoint extends CommandBase
         return 2;
     }
 
-    public String getCommandUsage(ICommandSender p_71518_1_)
+    /**
+     * Gets the usage string for the command.
+     */
+    public String getCommandUsage(ICommandSender sender)
     {
         return "commands.setworldspawn.usage";
     }
 
-    public void processCommand(ICommandSender p_71515_1_, String[] p_71515_2_)
+    /**
+     * Callback when the command is invoked
+     */
+    public void processCommand(ICommandSender sender, String[] args) throws CommandException
     {
-        if (p_71515_2_.length == 3)
-        {
-            if (p_71515_1_.getEntityWorld() == null)
-            {
-                throw new WrongUsageException("commands.setworldspawn.usage", new Object[0]);
-            }
+        BlockPos blockpos;
 
-            byte var3 = 0;
-            int var7 = var3 + 1;
-            int var4 = parseIntBounded(p_71515_1_, p_71515_2_[var3], -30000000, 30000000);
-            int var5 = parseIntBounded(p_71515_1_, p_71515_2_[var7++], 0, 256);
-            int var6 = parseIntBounded(p_71515_1_, p_71515_2_[var7++], -30000000, 30000000);
-            p_71515_1_.getEntityWorld().setSpawnLocation(var4, var5, var6);
-            func_152373_a(p_71515_1_, this, "commands.setworldspawn.success", new Object[] {Integer.valueOf(var4), Integer.valueOf(var5), Integer.valueOf(var6)});
+        if (args.length == 0)
+        {
+            blockpos = getCommandSenderAsPlayer(sender).getPosition();
         }
         else
         {
-            if (p_71515_2_.length != 0)
+            if (args.length != 3 || sender.getEntityWorld() == null)
             {
                 throw new WrongUsageException("commands.setworldspawn.usage", new Object[0]);
             }
 
-            ChunkCoordinates var8 = getCommandSenderAsPlayer(p_71515_1_).getPlayerCoordinates();
-            p_71515_1_.getEntityWorld().setSpawnLocation(var8.posX, var8.posY, var8.posZ);
-            func_152373_a(p_71515_1_, this, "commands.setworldspawn.success", new Object[] {Integer.valueOf(var8.posX), Integer.valueOf(var8.posY), Integer.valueOf(var8.posZ)});
+            blockpos = parseBlockPos(sender, args, 0, true);
         }
+
+        sender.getEntityWorld().setSpawnPoint(blockpos);
+        MinecraftServer.getServer().getConfigurationManager().sendPacketToAllPlayers(new S05PacketSpawnPosition(blockpos));
+        notifyOperators(sender, this, "commands.setworldspawn.success", new Object[] {Integer.valueOf(blockpos.getX()), Integer.valueOf(blockpos.getY()), Integer.valueOf(blockpos.getZ())});
+    }
+
+    public List<String> addTabCompletionOptions(ICommandSender sender, String[] args, BlockPos pos)
+    {
+        return args.length > 0 && args.length <= 3 ? func_175771_a(args, 0, pos) : null;
     }
 }

@@ -11,206 +11,266 @@ import java.net.UnknownHostException;
 import java.util.List;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
-import javax.imageio.ImageIO;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ServerData;
-import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.texture.DynamicTexture;
+import net.minecraft.client.renderer.texture.TextureUtil;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.ResourceLocation;
 import org.apache.commons.lang3.Validate;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.lwjgl.opengl.GL11;
 
 public class ServerListEntryNormal implements GuiListExtended.IGuiListEntry
 {
     private static final Logger logger = LogManager.getLogger();
     private static final ThreadPoolExecutor field_148302_b = new ScheduledThreadPoolExecutor(5, (new ThreadFactoryBuilder()).setNameFormat("Server Pinger #%d").setDaemon(true).build());
-    private final GuiMultiplayer field_148303_c;
-    private final Minecraft field_148300_d;
-    private final ServerData field_148301_e;
-    private long field_148298_f;
+    private static final ResourceLocation UNKNOWN_SERVER = new ResourceLocation("textures/misc/unknown_server.png");
+    private static final ResourceLocation SERVER_SELECTION_BUTTONS = new ResourceLocation("textures/gui/server_selection.png");
+    private final GuiMultiplayer owner;
+    private final Minecraft mc;
+    private final ServerData server;
+    private final ResourceLocation serverIcon;
     private String field_148299_g;
     private DynamicTexture field_148305_h;
-    private ResourceLocation field_148306_i;
-    private static final String __OBFID = "CL_00000817";
+    private long field_148298_f;
 
-    protected ServerListEntryNormal(GuiMultiplayer p_i45048_1_, ServerData p_i45048_2_)
+    protected ServerListEntryNormal(GuiMultiplayer p_i45048_1_, ServerData serverIn)
     {
-        this.field_148303_c = p_i45048_1_;
-        this.field_148301_e = p_i45048_2_;
-        this.field_148300_d = Minecraft.getMinecraft();
-        this.field_148306_i = new ResourceLocation("servers/" + p_i45048_2_.serverIP + "/icon");
-        this.field_148305_h = (DynamicTexture)this.field_148300_d.getTextureManager().getTexture(this.field_148306_i);
+        this.owner = p_i45048_1_;
+        this.server = serverIn;
+        this.mc = Minecraft.getMinecraft();
+        this.serverIcon = new ResourceLocation("servers/" + serverIn.serverIP + "/icon");
+        this.field_148305_h = (DynamicTexture)this.mc.getTextureManager().getTexture(this.serverIcon);
     }
 
-    public void func_148279_a(int p_148279_1_, int p_148279_2_, int p_148279_3_, int p_148279_4_, int p_148279_5_, Tessellator p_148279_6_, int p_148279_7_, int p_148279_8_, boolean p_148279_9_)
+    public void drawEntry(int slotIndex, int x, int y, int listWidth, int slotHeight, int mouseX, int mouseY, boolean isSelected)
     {
-        if (!this.field_148301_e.field_78841_f)
+        if (!this.server.field_78841_f)
         {
-            this.field_148301_e.field_78841_f = true;
-            this.field_148301_e.pingToServer = -2L;
-            this.field_148301_e.serverMOTD = "";
-            this.field_148301_e.populationInfo = "";
+            this.server.field_78841_f = true;
+            this.server.pingToServer = -2L;
+            this.server.serverMOTD = "";
+            this.server.populationInfo = "";
             field_148302_b.submit(new Runnable()
             {
-                private static final String __OBFID = "CL_00000818";
                 public void run()
                 {
                     try
                     {
-                        ServerListEntryNormal.this.field_148303_c.func_146789_i().func_147224_a(ServerListEntryNormal.this.field_148301_e);
+                        ServerListEntryNormal.this.owner.getOldServerPinger().ping(ServerListEntryNormal.this.server);
                     }
                     catch (UnknownHostException var2)
                     {
-                        ServerListEntryNormal.this.field_148301_e.pingToServer = -1L;
-                        ServerListEntryNormal.this.field_148301_e.serverMOTD = EnumChatFormatting.DARK_RED + "Can\'t resolve hostname";
+                        ServerListEntryNormal.this.server.pingToServer = -1L;
+                        ServerListEntryNormal.this.server.serverMOTD = EnumChatFormatting.DARK_RED + "Can\'t resolve hostname";
                     }
                     catch (Exception var3)
                     {
-                        ServerListEntryNormal.this.field_148301_e.pingToServer = -1L;
-                        ServerListEntryNormal.this.field_148301_e.serverMOTD = EnumChatFormatting.DARK_RED + "Can\'t connect to server.";
+                        ServerListEntryNormal.this.server.pingToServer = -1L;
+                        ServerListEntryNormal.this.server.serverMOTD = EnumChatFormatting.DARK_RED + "Can\'t connect to server.";
                     }
                 }
             });
         }
 
-        boolean var10 = this.field_148301_e.field_82821_f > 5;
-        boolean var11 = this.field_148301_e.field_82821_f < 5;
-        boolean var12 = var10 || var11;
-        this.field_148300_d.fontRenderer.drawString(this.field_148301_e.serverName, p_148279_2_ + 32 + 3, p_148279_3_ + 1, 16777215);
-        List var13 = this.field_148300_d.fontRenderer.listFormattedStringToWidth(this.field_148301_e.serverMOTD, p_148279_4_ - 32 - 2);
+        boolean flag = this.server.version > 47;
+        boolean flag1 = this.server.version < 47;
+        boolean flag2 = flag || flag1;
+        this.mc.fontRendererObj.drawString(this.server.serverName, x + 32 + 3, y + 1, 16777215);
+        List<String> list = this.mc.fontRendererObj.listFormattedStringToWidth(this.server.serverMOTD, listWidth - 32 - 2);
 
-        for (int var14 = 0; var14 < Math.min(var13.size(), 2); ++var14)
+        for (int i = 0; i < Math.min(list.size(), 2); ++i)
         {
-            this.field_148300_d.fontRenderer.drawString((String)var13.get(var14), p_148279_2_ + 32 + 3, p_148279_3_ + 12 + this.field_148300_d.fontRenderer.FONT_HEIGHT * var14, 8421504);
+            this.mc.fontRendererObj.drawString((String)list.get(i), x + 32 + 3, y + 12 + this.mc.fontRendererObj.FONT_HEIGHT * i, 8421504);
         }
 
-        String var22 = var12 ? EnumChatFormatting.DARK_RED + this.field_148301_e.gameVersion : this.field_148301_e.populationInfo;
-        int var15 = this.field_148300_d.fontRenderer.getStringWidth(var22);
-        this.field_148300_d.fontRenderer.drawString(var22, p_148279_2_ + p_148279_4_ - var15 - 15 - 2, p_148279_3_ + 1, 8421504);
-        byte var16 = 0;
-        String var18 = null;
-        int var17;
-        String var19;
+        String s2 = flag2 ? EnumChatFormatting.DARK_RED + this.server.gameVersion : this.server.populationInfo;
+        int j = this.mc.fontRendererObj.getStringWidth(s2);
+        this.mc.fontRendererObj.drawString(s2, x + listWidth - j - 15 - 2, y + 1, 8421504);
+        int k = 0;
+        String s = null;
+        int l;
+        String s1;
 
-        if (var12)
+        if (flag2)
         {
-            var17 = 5;
-            var19 = var10 ? "Client out of date!" : "Server out of date!";
-            var18 = this.field_148301_e.field_147412_i;
+            l = 5;
+            s1 = flag ? "Client out of date!" : "Server out of date!";
+            s = this.server.playerList;
         }
-        else if (this.field_148301_e.field_78841_f && this.field_148301_e.pingToServer != -2L)
+        else if (this.server.field_78841_f && this.server.pingToServer != -2L)
         {
-            if (this.field_148301_e.pingToServer < 0L)
+            if (this.server.pingToServer < 0L)
             {
-                var17 = 5;
+                l = 5;
             }
-            else if (this.field_148301_e.pingToServer < 150L)
+            else if (this.server.pingToServer < 150L)
             {
-                var17 = 0;
+                l = 0;
             }
-            else if (this.field_148301_e.pingToServer < 300L)
+            else if (this.server.pingToServer < 300L)
             {
-                var17 = 1;
+                l = 1;
             }
-            else if (this.field_148301_e.pingToServer < 600L)
+            else if (this.server.pingToServer < 600L)
             {
-                var17 = 2;
+                l = 2;
             }
-            else if (this.field_148301_e.pingToServer < 1000L)
+            else if (this.server.pingToServer < 1000L)
             {
-                var17 = 3;
+                l = 3;
             }
             else
             {
-                var17 = 4;
+                l = 4;
             }
 
-            if (this.field_148301_e.pingToServer < 0L)
+            if (this.server.pingToServer < 0L)
             {
-                var19 = "(no connection)";
+                s1 = "(no connection)";
             }
             else
             {
-                var19 = this.field_148301_e.pingToServer + "ms";
-                var18 = this.field_148301_e.field_147412_i;
+                s1 = this.server.pingToServer + "ms";
+                s = this.server.playerList;
             }
         }
         else
         {
-            var16 = 1;
-            var17 = (int)(Minecraft.getSystemTime() / 100L + (long)(p_148279_1_ * 2) & 7L);
+            k = 1;
+            l = (int)(Minecraft.getSystemTime() / 100L + (long)(slotIndex * 2) & 7L);
 
-            if (var17 > 4)
+            if (l > 4)
             {
-                var17 = 8 - var17;
+                l = 8 - l;
             }
 
-            var19 = "Pinging...";
+            s1 = "Pinging...";
         }
 
-        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-        this.field_148300_d.getTextureManager().bindTexture(Gui.icons);
-        Gui.func_146110_a(p_148279_2_ + p_148279_4_ - 15, p_148279_3_, (float)(var16 * 10), (float)(176 + var17 * 8), 10, 8, 256.0F, 256.0F);
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        this.mc.getTextureManager().bindTexture(Gui.icons);
+        Gui.drawModalRectWithCustomSizedTexture(x + listWidth - 15, y, (float)(k * 10), (float)(176 + l * 8), 10, 8, 256.0F, 256.0F);
 
-        if (this.field_148301_e.func_147409_e() != null && !this.field_148301_e.func_147409_e().equals(this.field_148299_g))
+        if (this.server.getBase64EncodedIconData() != null && !this.server.getBase64EncodedIconData().equals(this.field_148299_g))
         {
-            this.field_148299_g = this.field_148301_e.func_147409_e();
-            this.func_148297_b();
-            this.field_148303_c.func_146795_p().saveServerList();
+            this.field_148299_g = this.server.getBase64EncodedIconData();
+            this.prepareServerIcon();
+            this.owner.getServerList().saveServerList();
         }
 
         if (this.field_148305_h != null)
         {
-            this.field_148300_d.getTextureManager().bindTexture(this.field_148306_i);
-            Gui.func_146110_a(p_148279_2_, p_148279_3_, 0.0F, 0.0F, 32, 32, 32.0F, 32.0F);
+            this.drawTextureAt(x, y, this.serverIcon);
+        }
+        else
+        {
+            this.drawTextureAt(x, y, UNKNOWN_SERVER);
         }
 
-        int var20 = p_148279_7_ - p_148279_2_;
-        int var21 = p_148279_8_ - p_148279_3_;
+        int i1 = mouseX - x;
+        int j1 = mouseY - y;
 
-        if (var20 >= p_148279_4_ - 15 && var20 <= p_148279_4_ - 5 && var21 >= 0 && var21 <= 8)
+        if (i1 >= listWidth - 15 && i1 <= listWidth - 5 && j1 >= 0 && j1 <= 8)
         {
-            this.field_148303_c.func_146793_a(var19);
+            this.owner.setHoveringText(s1);
         }
-        else if (var20 >= p_148279_4_ - var15 - 15 - 2 && var20 <= p_148279_4_ - 15 - 2 && var21 >= 0 && var21 <= 8)
+        else if (i1 >= listWidth - j - 15 - 2 && i1 <= listWidth - 15 - 2 && j1 >= 0 && j1 <= 8)
         {
-            this.field_148303_c.func_146793_a(var18);
+            this.owner.setHoveringText(s);
+        }
+
+        if (this.mc.gameSettings.touchscreen || isSelected)
+        {
+            this.mc.getTextureManager().bindTexture(SERVER_SELECTION_BUTTONS);
+            Gui.drawRect(x, y, x + 32, y + 32, -1601138544);
+            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+            int k1 = mouseX - x;
+            int l1 = mouseY - y;
+
+            if (this.func_178013_b())
+            {
+                if (k1 < 32 && k1 > 16)
+                {
+                    Gui.drawModalRectWithCustomSizedTexture(x, y, 0.0F, 32.0F, 32, 32, 256.0F, 256.0F);
+                }
+                else
+                {
+                    Gui.drawModalRectWithCustomSizedTexture(x, y, 0.0F, 0.0F, 32, 32, 256.0F, 256.0F);
+                }
+            }
+
+            if (this.owner.func_175392_a(this, slotIndex))
+            {
+                if (k1 < 16 && l1 < 16)
+                {
+                    Gui.drawModalRectWithCustomSizedTexture(x, y, 96.0F, 32.0F, 32, 32, 256.0F, 256.0F);
+                }
+                else
+                {
+                    Gui.drawModalRectWithCustomSizedTexture(x, y, 96.0F, 0.0F, 32, 32, 256.0F, 256.0F);
+                }
+            }
+
+            if (this.owner.func_175394_b(this, slotIndex))
+            {
+                if (k1 < 16 && l1 > 16)
+                {
+                    Gui.drawModalRectWithCustomSizedTexture(x, y, 64.0F, 32.0F, 32, 32, 256.0F, 256.0F);
+                }
+                else
+                {
+                    Gui.drawModalRectWithCustomSizedTexture(x, y, 64.0F, 0.0F, 32, 32, 256.0F, 256.0F);
+                }
+            }
         }
     }
 
-    private void func_148297_b()
+    protected void drawTextureAt(int p_178012_1_, int p_178012_2_, ResourceLocation p_178012_3_)
     {
-        if (this.field_148301_e.func_147409_e() == null)
+        this.mc.getTextureManager().bindTexture(p_178012_3_);
+        GlStateManager.enableBlend();
+        Gui.drawModalRectWithCustomSizedTexture(p_178012_1_, p_178012_2_, 0.0F, 0.0F, 32, 32, 32.0F, 32.0F);
+        GlStateManager.disableBlend();
+    }
+
+    private boolean func_178013_b()
+    {
+        return true;
+    }
+
+    private void prepareServerIcon()
+    {
+        if (this.server.getBase64EncodedIconData() == null)
         {
-            this.field_148300_d.getTextureManager().func_147645_c(this.field_148306_i);
+            this.mc.getTextureManager().deleteTexture(this.serverIcon);
             this.field_148305_h = null;
         }
         else
         {
-            ByteBuf var2 = Unpooled.copiedBuffer(this.field_148301_e.func_147409_e(), Charsets.UTF_8);
-            ByteBuf var3 = Base64.decode(var2);
-            BufferedImage var1;
-            label74:
+            ByteBuf bytebuf = Unpooled.copiedBuffer((CharSequence)this.server.getBase64EncodedIconData(), Charsets.UTF_8);
+            ByteBuf bytebuf1 = Base64.decode(bytebuf);
+            BufferedImage bufferedimage;
+            label101:
             {
                 try
                 {
-                    var1 = ImageIO.read(new ByteBufInputStream(var3));
-                    Validate.validState(var1.getWidth() == 64, "Must be 64 pixels wide", new Object[0]);
-                    Validate.validState(var1.getHeight() == 64, "Must be 64 pixels high", new Object[0]);
-                    break label74;
+                    bufferedimage = TextureUtil.readBufferedImage(new ByteBufInputStream(bytebuf1));
+                    Validate.validState(bufferedimage.getWidth() == 64, "Must be 64 pixels wide", new Object[0]);
+                    Validate.validState(bufferedimage.getHeight() == 64, "Must be 64 pixels high", new Object[0]);
+                    break label101;
                 }
-                catch (Exception var8)
+                catch (Throwable throwable)
                 {
-                    logger.error("Invalid icon for server " + this.field_148301_e.serverName + " (" + this.field_148301_e.serverIP + ")", var8);
-                    this.field_148301_e.func_147407_a((String)null);
+                    logger.error("Invalid icon for server " + this.server.serverName + " (" + this.server.serverIP + ")", throwable);
+                    this.server.setBase64EncodedIconData((String)null);
                 }
                 finally
                 {
-                    var2.release();
-                    var3.release();
+                    bytebuf.release();
+                    bytebuf1.release();
                 }
 
                 return;
@@ -218,32 +278,66 @@ public class ServerListEntryNormal implements GuiListExtended.IGuiListEntry
 
             if (this.field_148305_h == null)
             {
-                this.field_148305_h = new DynamicTexture(var1.getWidth(), var1.getHeight());
-                this.field_148300_d.getTextureManager().loadTexture(this.field_148306_i, this.field_148305_h);
+                this.field_148305_h = new DynamicTexture(bufferedimage.getWidth(), bufferedimage.getHeight());
+                this.mc.getTextureManager().loadTexture(this.serverIcon, this.field_148305_h);
             }
 
-            var1.getRGB(0, 0, var1.getWidth(), var1.getHeight(), this.field_148305_h.getTextureData(), 0, var1.getWidth());
+            bufferedimage.getRGB(0, 0, bufferedimage.getWidth(), bufferedimage.getHeight(), this.field_148305_h.getTextureData(), 0, bufferedimage.getWidth());
             this.field_148305_h.updateDynamicTexture();
         }
     }
 
-    public boolean func_148278_a(int p_148278_1_, int p_148278_2_, int p_148278_3_, int p_148278_4_, int p_148278_5_, int p_148278_6_)
+    /**
+     * Returns true if the mouse has been pressed on this control.
+     */
+    public boolean mousePressed(int slotIndex, int p_148278_2_, int p_148278_3_, int p_148278_4_, int p_148278_5_, int p_148278_6_)
     {
-        this.field_148303_c.func_146790_a(p_148278_1_);
+        if (p_148278_5_ <= 32)
+        {
+            if (p_148278_5_ < 32 && p_148278_5_ > 16 && this.func_178013_b())
+            {
+                this.owner.selectServer(slotIndex);
+                this.owner.connectToSelected();
+                return true;
+            }
+
+            if (p_148278_5_ < 16 && p_148278_6_ < 16 && this.owner.func_175392_a(this, slotIndex))
+            {
+                this.owner.func_175391_a(this, slotIndex, GuiScreen.isShiftKeyDown());
+                return true;
+            }
+
+            if (p_148278_5_ < 16 && p_148278_6_ > 16 && this.owner.func_175394_b(this, slotIndex))
+            {
+                this.owner.func_175393_b(this, slotIndex, GuiScreen.isShiftKeyDown());
+                return true;
+            }
+        }
+
+        this.owner.selectServer(slotIndex);
 
         if (Minecraft.getSystemTime() - this.field_148298_f < 250L)
         {
-            this.field_148303_c.func_146796_h();
+            this.owner.connectToSelected();
         }
 
         this.field_148298_f = Minecraft.getSystemTime();
         return false;
     }
 
-    public void func_148277_b(int p_148277_1_, int p_148277_2_, int p_148277_3_, int p_148277_4_, int p_148277_5_, int p_148277_6_) {}
-
-    public ServerData func_148296_a()
+    public void setSelected(int p_178011_1_, int p_178011_2_, int p_178011_3_)
     {
-        return this.field_148301_e;
+    }
+
+    /**
+     * Fired when the mouse button is released. Arguments: index, x, y, mouseEvent, relativeX, relativeY
+     */
+    public void mouseReleased(int slotIndex, int x, int y, int mouseEvent, int relativeX, int relativeY)
+    {
+    }
+
+    public ServerData getServerData()
+    {
+        return this.server;
     }
 }

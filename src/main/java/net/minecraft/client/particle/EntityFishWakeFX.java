@@ -4,13 +4,11 @@ import net.minecraft.world.World;
 
 public class EntityFishWakeFX extends EntityFX
 {
-    private static final String __OBFID = "CL_00000933";
-
-    public EntityFishWakeFX(World p_i45073_1_, double p_i45073_2_, double p_i45073_4_, double p_i45073_6_, double p_i45073_8_, double p_i45073_10_, double p_i45073_12_)
+    protected EntityFishWakeFX(World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double p_i45073_8_, double p_i45073_10_, double p_i45073_12_)
     {
-        super(p_i45073_1_, p_i45073_2_, p_i45073_4_, p_i45073_6_, 0.0D, 0.0D, 0.0D);
+        super(worldIn, xCoordIn, yCoordIn, zCoordIn, 0.0D, 0.0D, 0.0D);
         this.motionX *= 0.30000001192092896D;
-        this.motionY = (double)((float)Math.random() * 0.2F + 0.1F);
+        this.motionY = Math.random() * 0.20000000298023224D + 0.10000000149011612D;
         this.motionZ *= 0.30000001192092896D;
         this.particleRed = 1.0F;
         this.particleGreen = 1.0F;
@@ -37,14 +35,22 @@ public class EntityFishWakeFX extends EntityFX
         this.motionX *= 0.9800000190734863D;
         this.motionY *= 0.9800000190734863D;
         this.motionZ *= 0.9800000190734863D;
-        int var1 = 60 - this.particleMaxAge;
-        float var2 = (float)var1 * 0.001F;
-        this.setSize(var2, var2);
-        this.setParticleTextureIndex(19 + var1 % 4);
+        int i = 60 - this.particleMaxAge;
+        float f = (float)i * 0.001F;
+        this.setSize(f, f);
+        this.setParticleTextureIndex(19 + i % 4);
 
         if (this.particleMaxAge-- <= 0)
         {
             this.setDead();
+        }
+    }
+
+    public static class Factory implements IParticleFactory
+    {
+        public EntityFX getEntityFX(int particleID, World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double xSpeedIn, double ySpeedIn, double zSpeedIn, int... p_178902_15_)
+        {
+            return new EntityFishWakeFX(worldIn, xCoordIn, yCoordIn, zCoordIn, xSpeedIn, ySpeedIn, zSpeedIn);
         }
     }
 }

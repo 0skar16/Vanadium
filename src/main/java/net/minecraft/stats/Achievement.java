@@ -6,6 +6,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.ChatComponentTranslation;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.IChatComponent;
+import net.minecraft.util.IJsonSerializable;
 import net.minecraft.util.StatCollector;
 
 public class Achievement extends StatBase
@@ -46,47 +47,46 @@ public class Achievement extends StatBase
      * achieve.
      */
     private boolean isSpecial;
-    private static final String __OBFID = "CL_00001466";
 
-    public Achievement(String p_i46327_1_, String p_i46327_2_, int p_i46327_3_, int p_i46327_4_, Item p_i46327_5_, Achievement p_i46327_6_)
+    public Achievement(String statIdIn, String unlocalizedName, int column, int row, Item itemIn, Achievement parent)
     {
-        this(p_i46327_1_, p_i46327_2_, p_i46327_3_, p_i46327_4_, new ItemStack(p_i46327_5_), p_i46327_6_);
+        this(statIdIn, unlocalizedName, column, row, new ItemStack(itemIn), parent);
     }
 
-    public Achievement(String p_i45301_1_, String p_i45301_2_, int p_i45301_3_, int p_i45301_4_, Block p_i45301_5_, Achievement p_i45301_6_)
+    public Achievement(String statIdIn, String unlocalizedName, int column, int row, Block blockIn, Achievement parent)
     {
-        this(p_i45301_1_, p_i45301_2_, p_i45301_3_, p_i45301_4_, new ItemStack(p_i45301_5_), p_i45301_6_);
+        this(statIdIn, unlocalizedName, column, row, new ItemStack(blockIn), parent);
     }
 
-    public Achievement(String p_i45302_1_, String p_i45302_2_, int p_i45302_3_, int p_i45302_4_, ItemStack p_i45302_5_, Achievement p_i45302_6_)
+    public Achievement(String statIdIn, String unlocalizedName, int column, int row, ItemStack stack, Achievement parent)
     {
-        super(p_i45302_1_, new ChatComponentTranslation("achievement." + p_i45302_2_, new Object[0]));
-        this.theItemStack = p_i45302_5_;
-        this.achievementDescription = "achievement." + p_i45302_2_ + ".desc";
-        this.displayColumn = p_i45302_3_;
-        this.displayRow = p_i45302_4_;
+        super(statIdIn, new ChatComponentTranslation("achievement." + unlocalizedName, new Object[0]));
+        this.theItemStack = stack;
+        this.achievementDescription = "achievement." + unlocalizedName + ".desc";
+        this.displayColumn = column;
+        this.displayRow = row;
 
-        if (p_i45302_3_ < AchievementList.minDisplayColumn)
+        if (column < AchievementList.minDisplayColumn)
         {
-            AchievementList.minDisplayColumn = p_i45302_3_;
+            AchievementList.minDisplayColumn = column;
         }
 
-        if (p_i45302_4_ < AchievementList.minDisplayRow)
+        if (row < AchievementList.minDisplayRow)
         {
-            AchievementList.minDisplayRow = p_i45302_4_;
+            AchievementList.minDisplayRow = row;
         }
 
-        if (p_i45302_3_ > AchievementList.maxDisplayColumn)
+        if (column > AchievementList.maxDisplayColumn)
         {
-            AchievementList.maxDisplayColumn = p_i45302_3_;
+            AchievementList.maxDisplayColumn = column;
         }
 
-        if (p_i45302_4_ > AchievementList.maxDisplayRow)
+        if (row > AchievementList.maxDisplayRow)
         {
-            AchievementList.maxDisplayRow = p_i45302_4_;
+            AchievementList.maxDisplayRow = row;
         }
 
-        this.parentAchievement = p_i45302_6_;
+        this.parentAchievement = parent;
     }
 
     /**
@@ -127,14 +127,14 @@ public class Achievement extends StatBase
         return true;
     }
 
-    public IChatComponent func_150951_e()
+    public IChatComponent getStatName()
     {
-        IChatComponent var1 = super.func_150951_e();
-        var1.getChatStyle().setColor(this.getSpecial() ? EnumChatFormatting.DARK_PURPLE : EnumChatFormatting.GREEN);
-        return var1;
+        IChatComponent ichatcomponent = super.getStatName();
+        ichatcomponent.getChatStyle().setColor(this.getSpecial() ? EnumChatFormatting.DARK_PURPLE : EnumChatFormatting.GREEN);
+        return ichatcomponent;
     }
 
-    public Achievement func_150953_b(Class p_150953_1_)
+    public Achievement func_150953_b(Class <? extends IJsonSerializable > p_150953_1_)
     {
         return (Achievement)super.func_150953_b(p_150953_1_);
     }
@@ -149,10 +149,12 @@ public class Achievement extends StatBase
 
     /**
      * Defines a string formatter for the achievement.
+     *  
+     * @param statStringFormatterIn 1.8.9
      */
-    public Achievement setStatStringFormatter(IStatStringFormat p_75988_1_)
+    public Achievement setStatStringFormatter(IStatStringFormat statStringFormatterIn)
     {
-        this.statStringFormatter = p_75988_1_;
+        this.statStringFormatter = statStringFormatterIn;
         return this;
     }
 

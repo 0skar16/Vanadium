@@ -4,15 +4,13 @@ import net.minecraft.world.World;
 
 public class EntityAuraFX extends EntityFX
 {
-    private static final String __OBFID = "CL_00000929";
-
-    public EntityAuraFX(World p_i1232_1_, double p_i1232_2_, double p_i1232_4_, double p_i1232_6_, double p_i1232_8_, double p_i1232_10_, double p_i1232_12_)
+    protected EntityAuraFX(World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double xSpeedIn, double ySpeedIn, double speedIn)
     {
-        super(p_i1232_1_, p_i1232_2_, p_i1232_4_, p_i1232_6_, p_i1232_8_, p_i1232_10_, p_i1232_12_);
-        float var14 = this.rand.nextFloat() * 0.1F + 0.2F;
-        this.particleRed = var14;
-        this.particleGreen = var14;
-        this.particleBlue = var14;
+        super(worldIn, xCoordIn, yCoordIn, zCoordIn, xSpeedIn, ySpeedIn, speedIn);
+        float f = this.rand.nextFloat() * 0.1F + 0.2F;
+        this.particleRed = f;
+        this.particleGreen = f;
+        this.particleBlue = f;
         this.setParticleTextureIndex(0);
         this.setSize(0.02F, 0.02F);
         this.particleScale *= this.rand.nextFloat() * 0.6F + 0.5F;
@@ -39,6 +37,25 @@ public class EntityAuraFX extends EntityFX
         if (this.particleMaxAge-- <= 0)
         {
             this.setDead();
+        }
+    }
+
+    public static class Factory implements IParticleFactory
+    {
+        public EntityFX getEntityFX(int particleID, World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double xSpeedIn, double ySpeedIn, double zSpeedIn, int... p_178902_15_)
+        {
+            return new EntityAuraFX(worldIn, xCoordIn, yCoordIn, zCoordIn, xSpeedIn, ySpeedIn, zSpeedIn);
+        }
+    }
+
+    public static class HappyVillagerFactory implements IParticleFactory
+    {
+        public EntityFX getEntityFX(int particleID, World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double xSpeedIn, double ySpeedIn, double zSpeedIn, int... p_178902_15_)
+        {
+            EntityFX entityfx = new EntityAuraFX(worldIn, xCoordIn, yCoordIn, zCoordIn, xSpeedIn, ySpeedIn, zSpeedIn);
+            entityfx.setParticleTextureIndex(82);
+            entityfx.setRBGColorF(1.0F, 1.0F, 1.0F);
+            return entityfx;
         }
     }
 }

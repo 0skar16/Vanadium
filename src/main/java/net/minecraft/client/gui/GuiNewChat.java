@@ -1,341 +1,285 @@
 package net.minecraft.client.gui;
 
 import com.google.common.collect.Lists;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.ChatComponentText;
-import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.IChatComponent;
 import net.minecraft.util.MathHelper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.lwjgl.opengl.GL11;
 
 public class GuiNewChat extends Gui
 {
     private static final Logger logger = LogManager.getLogger();
-    private final Minecraft field_146247_f;
-    private final List field_146248_g = new ArrayList();
-    private final List field_146252_h = new ArrayList();
-    private final List field_146253_i = new ArrayList();
-    private int field_146250_j;
-    private boolean field_146251_k;
-    private static final String __OBFID = "CL_00000669";
+    private final Minecraft mc;
+    private final List<String> sentMessages = Lists.<String>newArrayList();
+    private final List<ChatLine> chatLines = Lists.<ChatLine>newArrayList();
+    private final List<ChatLine> drawnChatLines = Lists.<ChatLine>newArrayList();
+    private int scrollPos;
+    private boolean isScrolled;
 
-    public GuiNewChat(Minecraft p_i1022_1_)
+    public GuiNewChat(Minecraft mcIn)
     {
-        this.field_146247_f = p_i1022_1_;
+        this.mc = mcIn;
     }
 
-    public void func_146230_a(int p_146230_1_)
+    public void drawChat(int updateCounter)
     {
-        if (this.field_146247_f.gameSettings.chatVisibility != EntityPlayer.EnumChatVisibility.HIDDEN)
+        if (this.mc.gameSettings.chatVisibility != EntityPlayer.EnumChatVisibility.HIDDEN)
         {
-            int var2 = this.func_146232_i();
-            boolean var3 = false;
-            int var4 = 0;
-            int var5 = this.field_146253_i.size();
-            float var6 = this.field_146247_f.gameSettings.chatOpacity * 0.9F + 0.1F;
+            int i = this.getLineCount();
+            boolean flag = false;
+            int j = 0;
+            int k = this.drawnChatLines.size();
+            float f = this.mc.gameSettings.chatOpacity * 0.9F + 0.1F;
 
-            if (var5 > 0)
+            if (k > 0)
             {
-                if (this.func_146241_e())
+                if (this.getChatOpen())
                 {
-                    var3 = true;
+                    flag = true;
                 }
 
-                float var7 = this.func_146244_h();
-                int var8 = MathHelper.ceiling_float_int((float)this.func_146228_f() / var7);
-                GL11.glPushMatrix();
-                GL11.glTranslatef(2.0F, 20.0F, 0.0F);
-                GL11.glScalef(var7, var7, 1.0F);
-                int var9;
-                int var11;
-                int var14;
+                float f1 = this.getChatScale();
+                int l = MathHelper.ceiling_float_int((float)this.getChatWidth() / f1);
+                GlStateManager.pushMatrix();
+                GlStateManager.translate(2.0F, 20.0F, 0.0F);
+                GlStateManager.scale(f1, f1, 1.0F);
 
-                for (var9 = 0; var9 + this.field_146250_j < this.field_146253_i.size() && var9 < var2; ++var9)
+                for (int i1 = 0; i1 + this.scrollPos < this.drawnChatLines.size() && i1 < i; ++i1)
                 {
-                    ChatLine var10 = (ChatLine)this.field_146253_i.get(var9 + this.field_146250_j);
+                    ChatLine chatline = (ChatLine)this.drawnChatLines.get(i1 + this.scrollPos);
 
-                    if (var10 != null)
+                    if (chatline != null)
                     {
-                        var11 = p_146230_1_ - var10.getUpdatedCounter();
+                        int j1 = updateCounter - chatline.getUpdatedCounter();
 
-                        if (var11 < 200 || var3)
+                        if (j1 < 200 || flag)
                         {
-                            double var12 = (double)var11 / 200.0D;
-                            var12 = 1.0D - var12;
-                            var12 *= 10.0D;
+                            double d0 = (double)j1 / 200.0D;
+                            d0 = 1.0D - d0;
+                            d0 = d0 * 10.0D;
+                            d0 = MathHelper.clamp_double(d0, 0.0D, 1.0D);
+                            d0 = d0 * d0;
+                            int l1 = (int)(255.0D * d0);
 
-                            if (var12 < 0.0D)
+                            if (flag)
                             {
-                                var12 = 0.0D;
+                                l1 = 255;
                             }
 
-                            if (var12 > 1.0D)
+                            l1 = (int)((float)l1 * f);
+                            ++j;
+
+                            if (l1 > 3)
                             {
-                                var12 = 1.0D;
-                            }
-
-                            var12 *= var12;
-                            var14 = (int)(255.0D * var12);
-
-                            if (var3)
-                            {
-                                var14 = 255;
-                            }
-
-                            var14 = (int)((float)var14 * var6);
-                            ++var4;
-
-                            if (var14 > 3)
-                            {
-                                byte var15 = 0;
-                                int var16 = -var9 * 9;
-                                drawRect(var15, var16 - 9, var15 + var8 + 4, var16, var14 / 2 << 24);
-                                String var17 = var10.func_151461_a().getFormattedText();
-                                this.field_146247_f.fontRenderer.drawStringWithShadow(var17, var15, var16 - 8, 16777215 + (var14 << 24));
-                                GL11.glDisable(GL11.GL_ALPHA_TEST);
+                                int i2 = 0;
+                                int j2 = -i1 * 9;
+                                drawRect(i2, j2 - 9, i2 + l + 4, j2, l1 / 2 << 24);
+                                String s = chatline.getChatComponent().getFormattedText();
+                                GlStateManager.enableBlend();
+                                this.mc.fontRendererObj.drawStringWithShadow(s, (float)i2, (float)(j2 - 8), 16777215 + (l1 << 24));
+                                GlStateManager.disableAlpha();
+                                GlStateManager.disableBlend();
                             }
                         }
                     }
                 }
 
-                if (var3)
+                if (flag)
                 {
-                    var9 = this.field_146247_f.fontRenderer.FONT_HEIGHT;
-                    GL11.glTranslatef(-3.0F, 0.0F, 0.0F);
-                    int var18 = var5 * var9 + var5;
-                    var11 = var4 * var9 + var4;
-                    int var19 = this.field_146250_j * var11 / var5;
-                    int var13 = var11 * var11 / var18;
+                    int k2 = this.mc.fontRendererObj.FONT_HEIGHT;
+                    GlStateManager.translate(-3.0F, 0.0F, 0.0F);
+                    int l2 = k * k2 + k;
+                    int i3 = j * k2 + j;
+                    int j3 = this.scrollPos * i3 / k;
+                    int k1 = i3 * i3 / l2;
 
-                    if (var18 != var11)
+                    if (l2 != i3)
                     {
-                        var14 = var19 > 0 ? 170 : 96;
-                        int var20 = this.field_146251_k ? 13382451 : 3355562;
-                        drawRect(0, -var19, 2, -var19 - var13, var20 + (var14 << 24));
-                        drawRect(2, -var19, 1, -var19 - var13, 13421772 + (var14 << 24));
+                        int k3 = j3 > 0 ? 170 : 96;
+                        int l3 = this.isScrolled ? 13382451 : 3355562;
+                        drawRect(0, -j3, 2, -j3 - k1, l3 + (k3 << 24));
+                        drawRect(2, -j3, 1, -j3 - k1, 13421772 + (k3 << 24));
                     }
                 }
 
-                GL11.glPopMatrix();
+                GlStateManager.popMatrix();
             }
         }
     }
 
-    public void func_146231_a()
+    /**
+     * Clears the chat.
+     */
+    public void clearChatMessages()
     {
-        this.field_146253_i.clear();
-        this.field_146252_h.clear();
-        this.field_146248_g.clear();
+        this.drawnChatLines.clear();
+        this.chatLines.clear();
+        this.sentMessages.clear();
     }
 
-    public void func_146227_a(IChatComponent p_146227_1_)
+    public void printChatMessage(IChatComponent chatComponent)
     {
-        this.func_146234_a(p_146227_1_, 0);
+        this.printChatMessageWithOptionalDeletion(chatComponent, 0);
     }
 
-    public void func_146234_a(IChatComponent p_146234_1_, int p_146234_2_)
+    /**
+     * prints the ChatComponent to Chat. If the ID is not 0, deletes an existing Chat Line of that ID from the GUI
+     */
+    public void printChatMessageWithOptionalDeletion(IChatComponent chatComponent, int chatLineId)
     {
-        this.func_146237_a(p_146234_1_, p_146234_2_, this.field_146247_f.ingameGUI.getUpdateCounter(), false);
-        logger.info("[CHAT] " + p_146234_1_.getUnformattedText());
+        this.setChatLine(chatComponent, chatLineId, this.mc.ingameGUI.getUpdateCounter(), false);
+        logger.info("[CHAT] " + chatComponent.getUnformattedText());
     }
 
-    private String func_146235_b(String p_146235_1_)
+    private void setChatLine(IChatComponent chatComponent, int chatLineId, int updateCounter, boolean displayOnly)
     {
-        return Minecraft.getMinecraft().gameSettings.chatColours ? p_146235_1_ : EnumChatFormatting.getTextWithoutFormattingCodes(p_146235_1_);
-    }
-
-    private void func_146237_a(IChatComponent p_146237_1_, int p_146237_2_, int p_146237_3_, boolean p_146237_4_)
-    {
-        if (p_146237_2_ != 0)
+        if (chatLineId != 0)
         {
-            this.func_146242_c(p_146237_2_);
+            this.deleteChatLine(chatLineId);
         }
 
-        int var5 = MathHelper.floor_float((float)this.func_146228_f() / this.func_146244_h());
-        int var6 = 0;
-        ChatComponentText var7 = new ChatComponentText("");
-        ArrayList var8 = Lists.newArrayList();
-        ArrayList var9 = Lists.newArrayList(p_146237_1_);
+        int i = MathHelper.floor_float((float)this.getChatWidth() / this.getChatScale());
+        List<IChatComponent> list = GuiUtilRenderComponents.splitText(chatComponent, i, this.mc.fontRendererObj, false, false);
+        boolean flag = this.getChatOpen();
 
-        for (int var10 = 0; var10 < var9.size(); ++var10)
+        for (IChatComponent ichatcomponent : list)
         {
-            IChatComponent var11 = (IChatComponent)var9.get(var10);
-            String var12 = this.func_146235_b(var11.getChatStyle().getFormattingCode() + var11.getUnformattedTextForChat());
-            int var13 = this.field_146247_f.fontRenderer.getStringWidth(var12);
-            ChatComponentText var14 = new ChatComponentText(var12);
-            var14.setChatStyle(var11.getChatStyle().createShallowCopy());
-            boolean var15 = false;
-
-            if (var6 + var13 > var5)
+            if (flag && this.scrollPos > 0)
             {
-                String var16 = this.field_146247_f.fontRenderer.trimStringToWidth(var12, var5 - var6, false);
-                String var17 = var16.length() < var12.length() ? var12.substring(var16.length()) : null;
-
-                if (var17 != null && var17.length() > 0)
-                {
-                    int var18 = var16.lastIndexOf(" ");
-
-                    if (var18 >= 0 && this.field_146247_f.fontRenderer.getStringWidth(var12.substring(0, var18)) > 0)
-                    {
-                        var16 = var12.substring(0, var18);
-                        var17 = var12.substring(var18);
-                    }
-
-                    ChatComponentText var19 = new ChatComponentText(var17);
-                    var19.setChatStyle(var11.getChatStyle().createShallowCopy());
-                    var9.add(var10 + 1, var19);
-                }
-
-                var13 = this.field_146247_f.fontRenderer.getStringWidth(var16);
-                var14 = new ChatComponentText(var16);
-                var14.setChatStyle(var11.getChatStyle().createShallowCopy());
-                var15 = true;
+                this.isScrolled = true;
+                this.scroll(1);
             }
 
-            if (var6 + var13 <= var5)
-            {
-                var6 += var13;
-                var7.appendSibling(var14);
-            }
-            else
-            {
-                var15 = true;
-            }
-
-            if (var15)
-            {
-                var8.add(var7);
-                var6 = 0;
-                var7 = new ChatComponentText("");
-            }
+            this.drawnChatLines.add(0, new ChatLine(updateCounter, ichatcomponent, chatLineId));
         }
 
-        var8.add(var7);
-        boolean var20 = this.func_146241_e();
-        IChatComponent var22;
-
-        for (Iterator var21 = var8.iterator(); var21.hasNext(); this.field_146253_i.add(0, new ChatLine(p_146237_3_, var22, p_146237_2_)))
+        while (this.drawnChatLines.size() > 100)
         {
-            var22 = (IChatComponent)var21.next();
-
-            if (var20 && this.field_146250_j > 0)
-            {
-                this.field_146251_k = true;
-                this.func_146229_b(1);
-            }
+            this.drawnChatLines.remove(this.drawnChatLines.size() - 1);
         }
 
-        while (this.field_146253_i.size() > 100)
+        if (!displayOnly)
         {
-            this.field_146253_i.remove(this.field_146253_i.size() - 1);
-        }
+            this.chatLines.add(0, new ChatLine(updateCounter, chatComponent, chatLineId));
 
-        if (!p_146237_4_)
-        {
-            this.field_146252_h.add(0, new ChatLine(p_146237_3_, p_146237_1_, p_146237_2_));
-
-            while (this.field_146252_h.size() > 100)
+            while (this.chatLines.size() > 100)
             {
-                this.field_146252_h.remove(this.field_146252_h.size() - 1);
+                this.chatLines.remove(this.chatLines.size() - 1);
             }
         }
     }
 
-    public void func_146245_b()
+    public void refreshChat()
     {
-        this.field_146253_i.clear();
+        this.drawnChatLines.clear();
         this.resetScroll();
 
-        for (int var1 = this.field_146252_h.size() - 1; var1 >= 0; --var1)
+        for (int i = this.chatLines.size() - 1; i >= 0; --i)
         {
-            ChatLine var2 = (ChatLine)this.field_146252_h.get(var1);
-            this.func_146237_a(var2.func_151461_a(), var2.getChatLineID(), var2.getUpdatedCounter(), true);
+            ChatLine chatline = (ChatLine)this.chatLines.get(i);
+            this.setChatLine(chatline.getChatComponent(), chatline.getChatLineID(), chatline.getUpdatedCounter(), true);
         }
     }
 
-    public List func_146238_c()
+    public List<String> getSentMessages()
     {
-        return this.field_146248_g;
+        return this.sentMessages;
     }
 
-    public void func_146239_a(String p_146239_1_)
+    /**
+     * Adds this string to the list of sent messages, for recall using the up/down arrow keys
+     *  
+     * @param message The message to add in the sendMessage List
+     */
+    public void addToSentMessages(String message)
     {
-        if (this.field_146248_g.isEmpty() || !((String)this.field_146248_g.get(this.field_146248_g.size() - 1)).equals(p_146239_1_))
+        if (this.sentMessages.isEmpty() || !((String)this.sentMessages.get(this.sentMessages.size() - 1)).equals(message))
         {
-            this.field_146248_g.add(p_146239_1_);
+            this.sentMessages.add(message);
         }
     }
 
+    /**
+     * Resets the chat scroll (executed when the GUI is closed, among others)
+     */
     public void resetScroll()
     {
-        this.field_146250_j = 0;
-        this.field_146251_k = false;
+        this.scrollPos = 0;
+        this.isScrolled = false;
     }
 
-    public void func_146229_b(int p_146229_1_)
+    /**
+     * Scrolls the chat by the given number of lines.
+     *  
+     * @param amount The amount to scroll
+     */
+    public void scroll(int amount)
     {
-        this.field_146250_j += p_146229_1_;
-        int var2 = this.field_146253_i.size();
+        this.scrollPos += amount;
+        int i = this.drawnChatLines.size();
 
-        if (this.field_146250_j > var2 - this.func_146232_i())
+        if (this.scrollPos > i - this.getLineCount())
         {
-            this.field_146250_j = var2 - this.func_146232_i();
+            this.scrollPos = i - this.getLineCount();
         }
 
-        if (this.field_146250_j <= 0)
+        if (this.scrollPos <= 0)
         {
-            this.field_146250_j = 0;
-            this.field_146251_k = false;
+            this.scrollPos = 0;
+            this.isScrolled = false;
         }
     }
 
-    public IChatComponent func_146236_a(int p_146236_1_, int p_146236_2_)
+    /**
+     * Gets the chat component under the mouse
+     *  
+     * @param mouseX The x position of the mouse
+     * @param mouseY The y position of the mouse
+     */
+    public IChatComponent getChatComponent(int mouseX, int mouseY)
     {
-        if (!this.func_146241_e())
+        if (!this.getChatOpen())
         {
             return null;
         }
         else
         {
-            ScaledResolution var3 = new ScaledResolution(this.field_146247_f, this.field_146247_f.displayWidth, this.field_146247_f.displayHeight);
-            int var4 = var3.getScaleFactor();
-            float var5 = this.func_146244_h();
-            int var6 = p_146236_1_ / var4 - 3;
-            int var7 = p_146236_2_ / var4 - 27;
-            var6 = MathHelper.floor_float((float)var6 / var5);
-            var7 = MathHelper.floor_float((float)var7 / var5);
+            ScaledResolution scaledresolution = new ScaledResolution(this.mc);
+            int i = scaledresolution.getScaleFactor();
+            float f = this.getChatScale();
+            int j = mouseX / i - 3;
+            int k = mouseY / i - 27;
+            j = MathHelper.floor_float((float)j / f);
+            k = MathHelper.floor_float((float)k / f);
 
-            if (var6 >= 0 && var7 >= 0)
+            if (j >= 0 && k >= 0)
             {
-                int var8 = Math.min(this.func_146232_i(), this.field_146253_i.size());
+                int l = Math.min(this.getLineCount(), this.drawnChatLines.size());
 
-                if (var6 <= MathHelper.floor_float((float)this.func_146228_f() / this.func_146244_h()) && var7 < this.field_146247_f.fontRenderer.FONT_HEIGHT * var8 + var8)
+                if (j <= MathHelper.floor_float((float)this.getChatWidth() / this.getChatScale()) && k < this.mc.fontRendererObj.FONT_HEIGHT * l + l)
                 {
-                    int var9 = var7 / this.field_146247_f.fontRenderer.FONT_HEIGHT + this.field_146250_j;
+                    int i1 = k / this.mc.fontRendererObj.FONT_HEIGHT + this.scrollPos;
 
-                    if (var9 >= 0 && var9 < this.field_146253_i.size())
+                    if (i1 >= 0 && i1 < this.drawnChatLines.size())
                     {
-                        ChatLine var10 = (ChatLine)this.field_146253_i.get(var9);
-                        int var11 = 0;
-                        Iterator var12 = var10.func_151461_a().iterator();
+                        ChatLine chatline = (ChatLine)this.drawnChatLines.get(i1);
+                        int j1 = 0;
 
-                        while (var12.hasNext())
+                        for (IChatComponent ichatcomponent : chatline.getChatComponent())
                         {
-                            IChatComponent var13 = (IChatComponent)var12.next();
-
-                            if (var13 instanceof ChatComponentText)
+                            if (ichatcomponent instanceof ChatComponentText)
                             {
-                                var11 += this.field_146247_f.fontRenderer.getStringWidth(this.func_146235_b(((ChatComponentText)var13).getChatComponentText_TextValue()));
+                                j1 += this.mc.fontRendererObj.getStringWidth(GuiUtilRenderComponents.func_178909_a(((ChatComponentText)ichatcomponent).getChatComponentText_TextValue(), false));
 
-                                if (var11 > var6)
+                                if (j1 > j)
                                 {
-                                    return var13;
+                                    return ichatcomponent;
                                 }
                             }
                         }
@@ -355,71 +299,81 @@ public class GuiNewChat extends Gui
         }
     }
 
-    public boolean func_146241_e()
+    /**
+     * Returns true if the chat GUI is open
+     */
+    public boolean getChatOpen()
     {
-        return this.field_146247_f.currentScreen instanceof GuiChat;
+        return this.mc.currentScreen instanceof GuiChat;
     }
 
-    public void func_146242_c(int p_146242_1_)
+    /**
+     * finds and deletes a Chat line by ID
+     *  
+     * @param id The ChatLine's id to delete
+     */
+    public void deleteChatLine(int id)
     {
-        Iterator var2 = this.field_146253_i.iterator();
-        ChatLine var3;
+        Iterator<ChatLine> iterator = this.drawnChatLines.iterator();
 
-        while (var2.hasNext())
+        while (iterator.hasNext())
         {
-            var3 = (ChatLine)var2.next();
+            ChatLine chatline = (ChatLine)iterator.next();
 
-            if (var3.getChatLineID() == p_146242_1_)
+            if (chatline.getChatLineID() == id)
             {
-                var2.remove();
+                iterator.remove();
             }
         }
 
-        var2 = this.field_146252_h.iterator();
+        iterator = this.chatLines.iterator();
 
-        while (var2.hasNext())
+        while (iterator.hasNext())
         {
-            var3 = (ChatLine)var2.next();
+            ChatLine chatline1 = (ChatLine)iterator.next();
 
-            if (var3.getChatLineID() == p_146242_1_)
+            if (chatline1.getChatLineID() == id)
             {
-                var2.remove();
+                iterator.remove();
                 break;
             }
         }
     }
 
-    public int func_146228_f()
+    public int getChatWidth()
     {
-        return func_146233_a(this.field_146247_f.gameSettings.chatWidth);
+        return calculateChatboxWidth(this.mc.gameSettings.chatWidth);
     }
 
-    public int func_146246_g()
+    public int getChatHeight()
     {
-        return func_146243_b(this.func_146241_e() ? this.field_146247_f.gameSettings.chatHeightFocused : this.field_146247_f.gameSettings.chatHeightUnfocused);
+        return calculateChatboxHeight(this.getChatOpen() ? this.mc.gameSettings.chatHeightFocused : this.mc.gameSettings.chatHeightUnfocused);
     }
 
-    public float func_146244_h()
+    /**
+     * Returns the chatscale from mc.gameSettings.chatScale
+     */
+    public float getChatScale()
     {
-        return this.field_146247_f.gameSettings.chatScale;
+        return this.mc.gameSettings.chatScale;
     }
 
-    public static int func_146233_a(float p_146233_0_)
+    public static int calculateChatboxWidth(float scale)
     {
-        short var1 = 320;
-        byte var2 = 40;
-        return MathHelper.floor_float(p_146233_0_ * (float)(var1 - var2) + (float)var2);
+        int i = 320;
+        int j = 40;
+        return MathHelper.floor_float(scale * (float)(i - j) + (float)j);
     }
 
-    public static int func_146243_b(float p_146243_0_)
+    public static int calculateChatboxHeight(float scale)
     {
-        short var1 = 180;
-        byte var2 = 20;
-        return MathHelper.floor_float(p_146243_0_ * (float)(var1 - var2) + (float)var2);
+        int i = 180;
+        int j = 20;
+        return MathHelper.floor_float(scale * (float)(i - j) + (float)j);
     }
 
-    public int func_146232_i()
+    public int getLineCount()
     {
-        return this.func_146246_g() / 9;
+        return this.getChatHeight() / 9;
     }
 }

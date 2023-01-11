@@ -5,19 +5,16 @@ import net.minecraft.entity.monster.IMob;
 import net.minecraft.entity.passive.EntityAmbientCreature;
 import net.minecraft.entity.passive.EntityAnimal;
 import net.minecraft.entity.passive.EntityWaterMob;
+import net.minecraft.entity.passive.IAnimals;
 
 public enum EnumCreatureType
 {
-    monster(IMob.class, 70, Material.air, false, false),
-    creature(EntityAnimal.class, 10, Material.air, true, true),
-    ambient(EntityAmbientCreature.class, 15, Material.air, true, false),
-    waterCreature(EntityWaterMob.class, 5, Material.water, true, false);
+    MONSTER(IMob.class, 70, Material.air, false, false),
+    CREATURE(EntityAnimal.class, 10, Material.air, true, true),
+    AMBIENT(EntityAmbientCreature.class, 15, Material.air, true, false),
+    WATER_CREATURE(EntityWaterMob.class, 5, Material.water, true, false);
 
-    /**
-     * The root class of creatures associated with this EnumCreatureType (IMobs for aggressive creatures, EntityAnimals
-     * for friendly ones)
-     */
-    private final Class creatureClass;
+    private final Class <? extends IAnimals > creatureClass;
     private final int maxNumberOfCreature;
     private final Material creatureMaterial;
 
@@ -26,18 +23,17 @@ public enum EnumCreatureType
 
     /** Whether this creature type is an animal. */
     private final boolean isAnimal;
-    private static final String __OBFID = "CL_00001551";
 
-    private EnumCreatureType(Class p_i1596_3_, int p_i1596_4_, Material p_i1596_5_, boolean p_i1596_6_, boolean p_i1596_7_)
+    private EnumCreatureType(Class <? extends IAnimals > creatureClassIn, int maxNumberOfCreatureIn, Material creatureMaterialIn, boolean isPeacefulCreatureIn, boolean isAnimalIn)
     {
-        this.creatureClass = p_i1596_3_;
-        this.maxNumberOfCreature = p_i1596_4_;
-        this.creatureMaterial = p_i1596_5_;
-        this.isPeacefulCreature = p_i1596_6_;
-        this.isAnimal = p_i1596_7_;
+        this.creatureClass = creatureClassIn;
+        this.maxNumberOfCreature = maxNumberOfCreatureIn;
+        this.creatureMaterial = creatureMaterialIn;
+        this.isPeacefulCreature = isPeacefulCreatureIn;
+        this.isAnimal = isAnimalIn;
     }
 
-    public Class getCreatureClass()
+    public Class <? extends IAnimals > getCreatureClass()
     {
         return this.creatureClass;
     }
@@ -45,11 +41,6 @@ public enum EnumCreatureType
     public int getMaxNumberOfCreature()
     {
         return this.maxNumberOfCreature;
-    }
-
-    public Material getCreatureMaterial()
-    {
-        return this.creatureMaterial;
     }
 
     /**

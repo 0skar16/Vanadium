@@ -1,9 +1,11 @@
 package dev.ztech.vanadium;
 
 import dev.ztech.vanadium.api.base.Base;
+import dev.ztech.vanadium.api.base.Session;
 import dev.ztech.vanadium.api.events.GTickEvent;
 import dev.ztech.vanadium.api.events.GameStartEvent;
 import dev.ztech.vanadium.api.events.InitEvent;
+import dev.ztech.vanadium.api.events.UnsafeTickEvent;
 import dev.ztech.vanadium.api.rendering.custom.ITexture;
 import dev.ztech.vanadium.api.rendering.custom.Renderer2D;
 import dev.ztech.vanadium.api.rendering.custom.Renderer3D;
@@ -36,11 +38,9 @@ public class Vanadium {
     public void onGameStart(GameStartEvent e){
         new InitEvent().call();
         ModLoader.loadModsToList(Base.modDir);
-        try{
-            tex = new ResourceTexture("image.png");
-        }catch(Exception ex){
-            Base.logger.logError("Couldn't load texture");
-        }
     }
-
+    @EventTarget
+    public void onTick(UnsafeTickEvent e){
+        Session.INSTANCE.getPlayer();
+    }
 }

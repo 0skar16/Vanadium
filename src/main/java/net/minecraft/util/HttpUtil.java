@@ -1,5 +1,9 @@
 package net.minecraft.util;
 
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -7,292 +11,303 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.Proxy;
 import java.net.ServerSocket;
 import java.net.URL;
-import java.net.URLConnection;
 import java.net.URLEncoder;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.minecraft.server.MinecraftServer;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class HttpUtil
 {
+    public static final ListeningExecutorService field_180193_a = MoreExecutors.listeningDecorator(Executors.newCachedThreadPool((new ThreadFactoryBuilder()).setDaemon(true).setNameFormat("Downloader %d").build()));
+
     /** The number of download threads that we have started so far. */
     private static final AtomicInteger downloadThreadsStarted = new AtomicInteger(0);
     private static final Logger logger = LogManager.getLogger();
-    private static final String __OBFID = "CL_00001485";
 
     /**
      * Builds an encoded HTTP POST content string from a string map
      */
-    public static String buildPostString(Map p_76179_0_)
+    public static String buildPostString(Map<String, Object> data)
     {
-        StringBuilder var1 = new StringBuilder();
-        Iterator var2 = p_76179_0_.entrySet().iterator();
+        StringBuilder stringbuilder = new StringBuilder();
 
-        while (var2.hasNext())
+        for (Entry<String, Object> entry : data.entrySet())
         {
-            Entry var3 = (Entry)var2.next();
-
-            if (var1.length() > 0)
+            if (stringbuilder.length() > 0)
             {
-                var1.append('&');
+                stringbuilder.append('&');
             }
 
             try
             {
-                var1.append(URLEncoder.encode((String)var3.getKey(), "UTF-8"));
+                stringbuilder.append(URLEncoder.encode((String)entry.getKey(), "UTF-8"));
             }
-            catch (UnsupportedEncodingException var6)
+            catch (UnsupportedEncodingException unsupportedencodingexception1)
             {
-                var6.printStackTrace();
+                unsupportedencodingexception1.printStackTrace();
             }
 
-            if (var3.getValue() != null)
+            if (entry.getValue() != null)
             {
-                var1.append('=');
+                stringbuilder.append('=');
 
                 try
                 {
-                    var1.append(URLEncoder.encode(var3.getValue().toString(), "UTF-8"));
+                    stringbuilder.append(URLEncoder.encode(entry.getValue().toString(), "UTF-8"));
                 }
-                catch (UnsupportedEncodingException var5)
+                catch (UnsupportedEncodingException unsupportedencodingexception)
                 {
-                    var5.printStackTrace();
+                    unsupportedencodingexception.printStackTrace();
                 }
             }
         }
 
-        return var1.toString();
+        return stringbuilder.toString();
     }
 
-    public static String func_151226_a(URL p_151226_0_, Map p_151226_1_, boolean p_151226_2_)
+    /**
+     * Sends a POST to the given URL using the map as the POST args
+     */
+    public static String postMap(URL url, Map<String, Object> data, boolean skipLoggingErrors)
     {
-        return func_151225_a(p_151226_0_, buildPostString(p_151226_1_), p_151226_2_);
+        return post(url, buildPostString(data), skipLoggingErrors);
     }
 
-    private static String func_151225_a(URL p_151225_0_, String p_151225_1_, boolean p_151225_2_)
+    /**
+     * Sends a POST to the given URL
+     */
+    private static String post(URL url, String content, boolean skipLoggingErrors)
     {
         try
         {
-            Proxy var3 = MinecraftServer.getServer() == null ? null : MinecraftServer.getServer().getServerProxy();
+            Proxy proxy = MinecraftServer.getServer() == null ? null : MinecraftServer.getServer().getServerProxy();
 
-            if (var3 == null)
+            if (proxy == null)
             {
-                var3 = Proxy.NO_PROXY;
+                proxy = Proxy.NO_PROXY;
             }
 
-            HttpURLConnection var4 = (HttpURLConnection)p_151225_0_.openConnection(var3);
-            var4.setRequestMethod("POST");
-            var4.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-            var4.setRequestProperty("Content-Length", "" + p_151225_1_.getBytes().length);
-            var4.setRequestProperty("Content-Language", "en-US");
-            var4.setUseCaches(false);
-            var4.setDoInput(true);
-            var4.setDoOutput(true);
-            DataOutputStream var5 = new DataOutputStream(var4.getOutputStream());
-            var5.writeBytes(p_151225_1_);
-            var5.flush();
-            var5.close();
-            BufferedReader var6 = new BufferedReader(new InputStreamReader(var4.getInputStream()));
-            StringBuffer var8 = new StringBuffer();
-            String var7;
+            HttpURLConnection httpurlconnection = (HttpURLConnection)url.openConnection(proxy);
+            httpurlconnection.setRequestMethod("POST");
+            httpurlconnection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+            httpurlconnection.setRequestProperty("Content-Length", "" + content.getBytes().length);
+            httpurlconnection.setRequestProperty("Content-Language", "en-US");
+            httpurlconnection.setUseCaches(false);
+            httpurlconnection.setDoInput(true);
+            httpurlconnection.setDoOutput(true);
+            DataOutputStream dataoutputstream = new DataOutputStream(httpurlconnection.getOutputStream());
+            dataoutputstream.writeBytes(content);
+            dataoutputstream.flush();
+            dataoutputstream.close();
+            BufferedReader bufferedreader = new BufferedReader(new InputStreamReader(httpurlconnection.getInputStream()));
+            StringBuffer stringbuffer = new StringBuffer();
+            String s;
 
-            while ((var7 = var6.readLine()) != null)
+            while ((s = bufferedreader.readLine()) != null)
             {
-                var8.append(var7);
-                var8.append('\r');
+                stringbuffer.append(s);
+                stringbuffer.append('\r');
             }
 
-            var6.close();
-            return var8.toString();
+            bufferedreader.close();
+            return stringbuffer.toString();
         }
-        catch (Exception var9)
+        catch (Exception exception)
         {
-            if (!p_151225_2_)
+            if (!skipLoggingErrors)
             {
-                logger.error("Could not post to " + p_151225_0_, var9);
+                logger.error((String)("Could not post to " + url), (Throwable)exception);
             }
 
             return "";
         }
     }
 
-    public static void func_151223_a(final File p_151223_0_, final String p_151223_1_, final HttpUtil.DownloadListener p_151223_2_, final Map p_151223_3_, final int p_151223_4_, final IProgressUpdate p_151223_5_, final Proxy p_151223_6_)
+    public static ListenableFuture<Object> downloadResourcePack(final File saveFile, final String packUrl, final Map<String, String> p_180192_2_, final int maxSize, final IProgressUpdate p_180192_4_, final Proxy p_180192_5_)
     {
-        Thread var7 = new Thread(new Runnable()
+        ListenableFuture<?> listenablefuture = field_180193_a.submit(new Runnable()
         {
-            private static final String __OBFID = "CL_00001486";
             public void run()
             {
-                URLConnection var1 = null;
-                InputStream var2 = null;
-                DataOutputStream var3 = null;
+                HttpURLConnection httpurlconnection = null;
+                InputStream inputstream = null;
+                OutputStream outputstream = null;
 
-                if (p_151223_5_ != null)
+                if (p_180192_4_ != null)
                 {
-                    p_151223_5_.resetProgressAndMessage("Downloading Texture Pack");
-                    p_151223_5_.resetProgresAndWorkingMessage("Making Request...");
+                    p_180192_4_.resetProgressAndMessage("Downloading Resource Pack");
+                    p_180192_4_.displayLoadingString("Making Request...");
                 }
 
                 try
                 {
-                    byte[] var4 = new byte[4096];
-                    URL var5 = new URL(p_151223_1_);
-                    var1 = var5.openConnection(p_151223_6_);
-                    float var6 = 0.0F;
-                    float var7 = (float)p_151223_3_.entrySet().size();
-                    Iterator var8 = p_151223_3_.entrySet().iterator();
-
-                    while (var8.hasNext())
+                    try
                     {
-                        Entry var9 = (Entry)var8.next();
-                        var1.setRequestProperty((String)var9.getKey(), (String)var9.getValue());
+                        byte[] abyte = new byte[4096];
+                        URL url = new URL(packUrl);
+                        httpurlconnection = (HttpURLConnection)url.openConnection(p_180192_5_);
+                        float f = 0.0F;
+                        float f1 = (float)p_180192_2_.entrySet().size();
 
-                        if (p_151223_5_ != null)
+                        for (Entry<String, String> entry : p_180192_2_.entrySet())
                         {
-                            p_151223_5_.setLoadingProgress((int)(++var6 / var7 * 100.0F));
-                        }
-                    }
+                            httpurlconnection.setRequestProperty((String)entry.getKey(), (String)entry.getValue());
 
-                    var2 = var1.getInputStream();
-                    var7 = (float)var1.getContentLength();
-                    int var28 = var1.getContentLength();
-
-                    if (p_151223_5_ != null)
-                    {
-                        p_151223_5_.resetProgresAndWorkingMessage(String.format("Downloading file (%.2f MB)...", new Object[] {Float.valueOf(var7 / 1000.0F / 1000.0F)}));
-                    }
-
-                    if (p_151223_0_.exists())
-                    {
-                        long var29 = p_151223_0_.length();
-
-                        if (var29 == (long)var28)
-                        {
-                            p_151223_2_.func_148522_a(p_151223_0_);
-
-                            if (p_151223_5_ != null)
+                            if (p_180192_4_ != null)
                             {
-                                p_151223_5_.func_146586_a();
+                                p_180192_4_.setLoadingProgress((int)(++f / f1 * 100.0F));
+                            }
+                        }
+
+                        inputstream = httpurlconnection.getInputStream();
+                        f1 = (float)httpurlconnection.getContentLength();
+                        int i = httpurlconnection.getContentLength();
+
+                        if (p_180192_4_ != null)
+                        {
+                            p_180192_4_.displayLoadingString(String.format("Downloading file (%.2f MB)...", new Object[] {Float.valueOf(f1 / 1000.0F / 1000.0F)}));
+                        }
+
+                        if (saveFile.exists())
+                        {
+                            long j = saveFile.length();
+
+                            if (j == (long)i)
+                            {
+                                if (p_180192_4_ != null)
+                                {
+                                    p_180192_4_.setDoneWorking();
+                                }
+
+                                return;
                             }
 
+                            HttpUtil.logger.warn("Deleting " + saveFile + " as it does not match what we currently have (" + i + " vs our " + j + ").");
+                            FileUtils.deleteQuietly(saveFile);
+                        }
+                        else if (saveFile.getParentFile() != null)
+                        {
+                            saveFile.getParentFile().mkdirs();
+                        }
+
+                        outputstream = new DataOutputStream(new FileOutputStream(saveFile));
+
+                        if (maxSize > 0 && f1 > (float)maxSize)
+                        {
+                            if (p_180192_4_ != null)
+                            {
+                                p_180192_4_.setDoneWorking();
+                            }
+
+                            throw new IOException("Filesize is bigger than maximum allowed (file is " + f + ", limit is " + maxSize + ")");
+                        }
+
+                        int k = 0;
+
+                        while ((k = inputstream.read(abyte)) >= 0)
+                        {
+                            f += (float)k;
+
+                            if (p_180192_4_ != null)
+                            {
+                                p_180192_4_.setLoadingProgress((int)(f / f1 * 100.0F));
+                            }
+
+                            if (maxSize > 0 && f > (float)maxSize)
+                            {
+                                if (p_180192_4_ != null)
+                                {
+                                    p_180192_4_.setDoneWorking();
+                                }
+
+                                throw new IOException("Filesize was bigger than maximum allowed (got >= " + f + ", limit was " + maxSize + ")");
+                            }
+
+                            if (Thread.interrupted())
+                            {
+                                HttpUtil.logger.error("INTERRUPTED");
+
+                                if (p_180192_4_ != null)
+                                {
+                                    p_180192_4_.setDoneWorking();
+                                }
+
+                                return;
+                            }
+
+                            outputstream.write(abyte, 0, k);
+                        }
+
+                        if (p_180192_4_ != null)
+                        {
+                            p_180192_4_.setDoneWorking();
                             return;
                         }
-
-                        HttpUtil.logger.warn("Deleting " + p_151223_0_ + " as it does not match what we currently have (" + var28 + " vs our " + var29 + ").");
-                        p_151223_0_.delete();
                     }
-                    else if (p_151223_0_.getParentFile() != null)
+                    catch (Throwable throwable)
                     {
-                        p_151223_0_.getParentFile().mkdirs();
-                    }
+                        throwable.printStackTrace();
 
-                    var3 = new DataOutputStream(new FileOutputStream(p_151223_0_));
-
-                    if (p_151223_4_ > 0 && var7 > (float)p_151223_4_)
-                    {
-                        if (p_151223_5_ != null)
+                        if (httpurlconnection != null)
                         {
-                            p_151223_5_.func_146586_a();
-                        }
+                            InputStream inputstream1 = httpurlconnection.getErrorStream();
 
-                        throw new IOException("Filesize is bigger than maximum allowed (file is " + var6 + ", limit is " + p_151223_4_ + ")");
-                    }
-
-                    boolean var30 = false;
-                    int var31;
-
-                    while ((var31 = var2.read(var4)) >= 0)
-                    {
-                        var6 += (float)var31;
-
-                        if (p_151223_5_ != null)
-                        {
-                            p_151223_5_.setLoadingProgress((int)(var6 / var7 * 100.0F));
-                        }
-
-                        if (p_151223_4_ > 0 && var6 > (float)p_151223_4_)
-                        {
-                            if (p_151223_5_ != null)
+                            try
                             {
-                                p_151223_5_.func_146586_a();
+                                HttpUtil.logger.error(IOUtils.toString(inputstream1));
                             }
-
-                            throw new IOException("Filesize was bigger than maximum allowed (got >= " + var6 + ", limit was " + p_151223_4_ + ")");
+                            catch (IOException ioexception)
+                            {
+                                ioexception.printStackTrace();
+                            }
                         }
 
-                        var3.write(var4, 0, var31);
+                        if (p_180192_4_ != null)
+                        {
+                            p_180192_4_.setDoneWorking();
+                            return;
+                        }
                     }
-
-                    p_151223_2_.func_148522_a(p_151223_0_);
-
-                    if (p_151223_5_ != null)
-                    {
-                        p_151223_5_.func_146586_a();
-                    }
-                }
-                catch (Throwable var26)
-                {
-                    var26.printStackTrace();
                 }
                 finally
                 {
-                    try
-                    {
-                        if (var2 != null)
-                        {
-                            var2.close();
-                        }
-                    }
-                    catch (IOException var25)
-                    {
-                        ;
-                    }
-
-                    try
-                    {
-                        if (var3 != null)
-                        {
-                            var3.close();
-                        }
-                    }
-                    catch (IOException var24)
-                    {
-                        ;
-                    }
+                    IOUtils.closeQuietly(inputstream);
+                    IOUtils.closeQuietly(outputstream);
                 }
             }
-        }, "File Downloader #" + downloadThreadsStarted.incrementAndGet());
-        var7.setDaemon(true);
-        var7.start();
+        });
+        return (ListenableFuture<Object>) listenablefuture;
     }
 
-    public static int func_76181_a() throws IOException
+    public static int getSuitableLanPort() throws IOException
     {
-        ServerSocket var0 = null;
-        boolean var1 = true;
-        int var10;
+        ServerSocket serversocket = null;
+        int i = -1;
 
         try
         {
-            var0 = new ServerSocket(0);
-            var10 = var0.getLocalPort();
+            serversocket = new ServerSocket(0);
+            i = serversocket.getLocalPort();
         }
         finally
         {
             try
             {
-                if (var0 != null)
+                if (serversocket != null)
                 {
-                    var0.close();
+                    serversocket.close();
                 }
             }
             catch (IOException var8)
@@ -301,29 +316,27 @@ public class HttpUtil
             }
         }
 
-        return var10;
+        return i;
     }
 
-    public static String func_152755_a(URL p_152755_0_) throws IOException
+    /**
+     * Send a GET request to the given URL.
+     */
+    public static String get(URL url) throws IOException
     {
-        HttpURLConnection var1 = (HttpURLConnection)p_152755_0_.openConnection();
-        var1.setRequestMethod("GET");
-        BufferedReader var2 = new BufferedReader(new InputStreamReader(var1.getInputStream()));
-        StringBuilder var4 = new StringBuilder();
-        String var3;
+        HttpURLConnection httpurlconnection = (HttpURLConnection)url.openConnection();
+        httpurlconnection.setRequestMethod("GET");
+        BufferedReader bufferedreader = new BufferedReader(new InputStreamReader(httpurlconnection.getInputStream()));
+        StringBuilder stringbuilder = new StringBuilder();
+        String s;
 
-        while ((var3 = var2.readLine()) != null)
+        while ((s = bufferedreader.readLine()) != null)
         {
-            var4.append(var3);
-            var4.append('\r');
+            stringbuilder.append(s);
+            stringbuilder.append('\r');
         }
 
-        var2.close();
-        return var4.toString();
-    }
-
-    public interface DownloadListener
-    {
-        void func_148522_a(File p_148522_1_);
+        bufferedreader.close();
+        return stringbuilder.toString();
     }
 }

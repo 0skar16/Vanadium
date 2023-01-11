@@ -1,29 +1,29 @@
 package net.minecraft.enchantment;
 
+import net.minecraft.util.ResourceLocation;
+
 public class EnchantmentFishingSpeed extends Enchantment
 {
-    private static final String __OBFID = "CL_00000117";
-
-    protected EnchantmentFishingSpeed(int p_i45361_1_, int p_i45361_2_, EnumEnchantmentType p_i45361_3_)
+    protected EnchantmentFishingSpeed(int enchID, ResourceLocation enchName, int enchWeight, EnumEnchantmentType enchType)
     {
-        super(p_i45361_1_, p_i45361_2_, p_i45361_3_);
+        super(enchID, enchName, enchWeight, enchType);
         this.setName("fishingSpeed");
     }
 
     /**
      * Returns the minimal value of enchantability needed on the enchantment level passed.
      */
-    public int getMinEnchantability(int p_77321_1_)
+    public int getMinEnchantability(int enchantmentLevel)
     {
-        return 15 + (p_77321_1_ - 1) * 9;
+        return 15 + (enchantmentLevel - 1) * 9;
     }
 
     /**
      * Returns the maximum value of enchantability nedded on the enchantment level passed.
      */
-    public int getMaxEnchantability(int p_77317_1_)
+    public int getMaxEnchantability(int enchantmentLevel)
     {
-        return super.getMinEnchantability(p_77317_1_) + 50;
+        return super.getMinEnchantability(enchantmentLevel) + 50;
     }
 
     /**

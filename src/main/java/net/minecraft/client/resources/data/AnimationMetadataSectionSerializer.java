@@ -10,85 +10,82 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.util.JsonUtils;
 import org.apache.commons.lang3.Validate;
 
-public class AnimationMetadataSectionSerializer extends BaseMetadataSectionSerializer implements JsonSerializer
+public class AnimationMetadataSectionSerializer extends BaseMetadataSectionSerializer<AnimationMetadataSection> implements JsonSerializer<AnimationMetadataSection>
 {
-    private static final String __OBFID = "CL_00001107";
-
-    public AnimationMetadataSection deserialize(JsonElement p_deserialize_1_, Type p_deserialize_2_, JsonDeserializationContext p_deserialize_3_)
+    public AnimationMetadataSection deserialize(JsonElement p_deserialize_1_, Type p_deserialize_2_, JsonDeserializationContext p_deserialize_3_) throws JsonParseException
     {
-        ArrayList var4 = Lists.newArrayList();
-        JsonObject var5 = JsonUtils.getJsonElementAsJsonObject(p_deserialize_1_, "metadata section");
-        int var6 = JsonUtils.getJsonObjectIntegerFieldValueOrDefault(var5, "frametime", 1);
+        List<AnimationFrame> list = Lists.<AnimationFrame>newArrayList();
+        JsonObject jsonobject = JsonUtils.getJsonObject(p_deserialize_1_, "metadata section");
+        int i = JsonUtils.getInt(jsonobject, "frametime", 1);
 
-        if (var6 != 1)
+        if (i != 1)
         {
-            Validate.inclusiveBetween(Integer.valueOf(1), Integer.valueOf(Integer.MAX_VALUE), Integer.valueOf(var6), "Invalid default frame time", new Object[0]);
+            Validate.inclusiveBetween(1L, 2147483647L, (long)i, "Invalid default frame time");
         }
 
-        int var8;
-
-        if (var5.has("frames"))
+        if (jsonobject.has("frames"))
         {
             try
             {
-                JsonArray var7 = JsonUtils.getJsonObjectJsonArrayField(var5, "frames");
+                JsonArray jsonarray = JsonUtils.getJsonArray(jsonobject, "frames");
 
-                for (var8 = 0; var8 < var7.size(); ++var8)
+                for (int j = 0; j < jsonarray.size(); ++j)
                 {
-                    JsonElement var9 = var7.get(var8);
-                    AnimationFrame var10 = this.parseAnimationFrame(var8, var9);
+                    JsonElement jsonelement = jsonarray.get(j);
+                    AnimationFrame animationframe = this.parseAnimationFrame(j, jsonelement);
 
-                    if (var10 != null)
+                    if (animationframe != null)
                     {
-                        var4.add(var10);
+                        list.add(animationframe);
                     }
                 }
             }
-            catch (ClassCastException var11)
+            catch (ClassCastException classcastexception)
             {
-                throw new JsonParseException("Invalid animation->frames: expected array, was " + var5.get("frames"), var11);
+                throw new JsonParseException("Invalid animation->frames: expected array, was " + jsonobject.get("frames"), classcastexception);
             }
         }
 
-        int var12 = JsonUtils.getJsonObjectIntegerFieldValueOrDefault(var5, "width", -1);
-        var8 = JsonUtils.getJsonObjectIntegerFieldValueOrDefault(var5, "height", -1);
+        int k = JsonUtils.getInt(jsonobject, "width", -1);
+        int l = JsonUtils.getInt(jsonobject, "height", -1);
 
-        if (var12 != -1)
+        if (k != -1)
         {
-            Validate.inclusiveBetween(Integer.valueOf(1), Integer.valueOf(Integer.MAX_VALUE), Integer.valueOf(var12), "Invalid width", new Object[0]);
+            Validate.inclusiveBetween(1L, 2147483647L, (long)k, "Invalid width");
         }
 
-        if (var8 != -1)
+        if (l != -1)
         {
-            Validate.inclusiveBetween(Integer.valueOf(1), Integer.valueOf(Integer.MAX_VALUE), Integer.valueOf(var8), "Invalid height", new Object[0]);
+            Validate.inclusiveBetween(1L, 2147483647L, (long)l, "Invalid height");
         }
 
-        return new AnimationMetadataSection(var4, var12, var8, var6);
+        boolean flag = JsonUtils.getBoolean(jsonobject, "interpolate", false);
+        return new AnimationMetadataSection(list, k, l, i, flag);
     }
 
     private AnimationFrame parseAnimationFrame(int p_110492_1_, JsonElement p_110492_2_)
     {
         if (p_110492_2_.isJsonPrimitive())
         {
-            return new AnimationFrame(JsonUtils.getJsonElementIntegerValue(p_110492_2_, "frames[" + p_110492_1_ + "]"));
+            return new AnimationFrame(JsonUtils.getInt(p_110492_2_, "frames[" + p_110492_1_ + "]"));
         }
         else if (p_110492_2_.isJsonObject())
         {
-            JsonObject var3 = JsonUtils.getJsonElementAsJsonObject(p_110492_2_, "frames[" + p_110492_1_ + "]");
-            int var4 = JsonUtils.getJsonObjectIntegerFieldValueOrDefault(var3, "time", -1);
+            JsonObject jsonobject = JsonUtils.getJsonObject(p_110492_2_, "frames[" + p_110492_1_ + "]");
+            int i = JsonUtils.getInt(jsonobject, "time", -1);
 
-            if (var3.has("time"))
+            if (jsonobject.has("time"))
             {
-                Validate.inclusiveBetween(Integer.valueOf(1), Integer.valueOf(Integer.MAX_VALUE), Integer.valueOf(var4), "Invalid frame time", new Object[0]);
+                Validate.inclusiveBetween(1L, 2147483647L, (long)i, "Invalid frame time");
             }
 
-            int var5 = JsonUtils.getJsonObjectIntegerFieldValue(var3, "index");
-            Validate.inclusiveBetween(Integer.valueOf(0), Integer.valueOf(Integer.MAX_VALUE), Integer.valueOf(var5), "Invalid frame index", new Object[0]);
-            return new AnimationFrame(var5, var4);
+            int j = JsonUtils.getInt(jsonobject, "index");
+            Validate.inclusiveBetween(0L, 2147483647L, (long)j, "Invalid frame index");
+            return new AnimationFrame(j, i);
         }
         else
         {
@@ -98,42 +95,42 @@ public class AnimationMetadataSectionSerializer extends BaseMetadataSectionSeria
 
     public JsonElement serialize(AnimationMetadataSection p_serialize_1_, Type p_serialize_2_, JsonSerializationContext p_serialize_3_)
     {
-        JsonObject var4 = new JsonObject();
-        var4.addProperty("frametime", Integer.valueOf(p_serialize_1_.getFrameTime()));
+        JsonObject jsonobject = new JsonObject();
+        jsonobject.addProperty("frametime", (Number)Integer.valueOf(p_serialize_1_.getFrameTime()));
 
         if (p_serialize_1_.getFrameWidth() != -1)
         {
-            var4.addProperty("width", Integer.valueOf(p_serialize_1_.getFrameWidth()));
+            jsonobject.addProperty("width", (Number)Integer.valueOf(p_serialize_1_.getFrameWidth()));
         }
 
         if (p_serialize_1_.getFrameHeight() != -1)
         {
-            var4.addProperty("height", Integer.valueOf(p_serialize_1_.getFrameHeight()));
+            jsonobject.addProperty("height", (Number)Integer.valueOf(p_serialize_1_.getFrameHeight()));
         }
 
         if (p_serialize_1_.getFrameCount() > 0)
         {
-            JsonArray var5 = new JsonArray();
+            JsonArray jsonarray = new JsonArray();
 
-            for (int var6 = 0; var6 < p_serialize_1_.getFrameCount(); ++var6)
+            for (int i = 0; i < p_serialize_1_.getFrameCount(); ++i)
             {
-                if (p_serialize_1_.frameHasTime(var6))
+                if (p_serialize_1_.frameHasTime(i))
                 {
-                    JsonObject var7 = new JsonObject();
-                    var7.addProperty("index", Integer.valueOf(p_serialize_1_.getFrameIndex(var6)));
-                    var7.addProperty("time", Integer.valueOf(p_serialize_1_.getFrameTimeSingle(var6)));
-                    var5.add(var7);
+                    JsonObject jsonobject1 = new JsonObject();
+                    jsonobject1.addProperty("index", (Number)Integer.valueOf(p_serialize_1_.getFrameIndex(i)));
+                    jsonobject1.addProperty("time", (Number)Integer.valueOf(p_serialize_1_.getFrameTimeSingle(i)));
+                    jsonarray.add(jsonobject1);
                 }
                 else
                 {
-                    var5.add(new JsonPrimitive(Integer.valueOf(p_serialize_1_.getFrameIndex(var6))));
+                    jsonarray.add(new JsonPrimitive(Integer.valueOf(p_serialize_1_.getFrameIndex(i))));
                 }
             }
 
-            var4.add("frames", var5);
+            jsonobject.add("frames", jsonarray);
         }
 
-        return var4;
+        return jsonobject;
     }
 
     /**
@@ -142,10 +139,5 @@ public class AnimationMetadataSectionSerializer extends BaseMetadataSectionSeria
     public String getSectionName()
     {
         return "animation";
-    }
-
-    public JsonElement serialize(Object p_serialize_1_, Type p_serialize_2_, JsonSerializationContext p_serialize_3_)
-    {
-        return this.serialize((AnimationMetadataSection)p_serialize_1_, p_serialize_2_, p_serialize_3_);
     }
 }

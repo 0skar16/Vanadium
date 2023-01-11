@@ -1,26 +1,25 @@
 package net.minecraft.entity;
 
 import io.netty.buffer.ByteBuf;
-import net.minecraft.block.Block;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.command.server.CommandBlockLogic;
 import net.minecraft.entity.item.EntityMinecart;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.ChunkCoordinates;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.IChatComponent;
-import net.minecraft.util.MathHelper;
+import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 
 public class EntityMinecartCommandBlock extends EntityMinecart
 {
-    private final CommandBlockLogic field_145824_a = new CommandBlockLogic()
+    private final CommandBlockLogic commandBlockLogic = new CommandBlockLogic()
     {
-        private static final String __OBFID = "CL_00001673";
-        public void func_145756_e()
+        public void updateCommand()
         {
-            EntityMinecartCommandBlock.this.getDataWatcher().updateObject(23, this.func_145753_i());
-            EntityMinecartCommandBlock.this.getDataWatcher().updateObject(24, IChatComponent.Serializer.func_150696_a(this.func_145749_h()));
+            EntityMinecartCommandBlock.this.getDataWatcher().updateObject(23, this.getCommand());
+            EntityMinecartCommandBlock.this.getDataWatcher().updateObject(24, IChatComponent.Serializer.componentToJson(this.getLastOutput()));
         }
         public int func_145751_f()
         {
@@ -30,26 +29,35 @@ public class EntityMinecartCommandBlock extends EntityMinecart
         {
             p_145757_1_.writeInt(EntityMinecartCommandBlock.this.getEntityId());
         }
-        public ChunkCoordinates getPlayerCoordinates()
+        public BlockPos getPosition()
         {
-            return new ChunkCoordinates(MathHelper.floor_double(EntityMinecartCommandBlock.this.posX), MathHelper.floor_double(EntityMinecartCommandBlock.this.posY + 0.5D), MathHelper.floor_double(EntityMinecartCommandBlock.this.posZ));
+            return new BlockPos(EntityMinecartCommandBlock.this.posX, EntityMinecartCommandBlock.this.posY + 0.5D, EntityMinecartCommandBlock.this.posZ);
+        }
+        public Vec3 getPositionVector()
+        {
+            return new Vec3(EntityMinecartCommandBlock.this.posX, EntityMinecartCommandBlock.this.posY, EntityMinecartCommandBlock.this.posZ);
         }
         public World getEntityWorld()
         {
             return EntityMinecartCommandBlock.this.worldObj;
         }
+        public Entity getCommandSenderEntity()
+        {
+            return EntityMinecartCommandBlock.this;
+        }
     };
-    private int field_145823_b = 0;
-    private static final String __OBFID = "CL_00001672";
 
-    public EntityMinecartCommandBlock(World p_i45321_1_)
+    /** Cooldown before command block logic runs again in ticks */
+    private int activatorRailCooldown = 0;
+
+    public EntityMinecartCommandBlock(World worldIn)
     {
-        super(p_i45321_1_);
+        super(worldIn);
     }
 
-    public EntityMinecartCommandBlock(World p_i45322_1_, double p_i45322_2_, double p_i45322_4_, double p_i45322_6_)
+    public EntityMinecartCommandBlock(World worldIn, double x, double y, double z)
     {
-        super(p_i45322_1_, p_i45322_2_, p_i45322_4_, p_i45322_6_);
+        super(worldIn, x, y, z);
     }
 
     protected void entityInit()
@@ -62,81 +70,77 @@ public class EntityMinecartCommandBlock extends EntityMinecart
     /**
      * (abstract) Protected helper method to read subclass entity data from NBT.
      */
-    protected void readEntityFromNBT(NBTTagCompound p_70037_1_)
+    protected void readEntityFromNBT(NBTTagCompound tagCompund)
     {
-        super.readEntityFromNBT(p_70037_1_);
-        this.field_145824_a.func_145759_b(p_70037_1_);
-        this.getDataWatcher().updateObject(23, this.func_145822_e().func_145753_i());
-        this.getDataWatcher().updateObject(24, IChatComponent.Serializer.func_150696_a(this.func_145822_e().func_145749_h()));
+        super.readEntityFromNBT(tagCompund);
+        this.commandBlockLogic.readDataFromNBT(tagCompund);
+        this.getDataWatcher().updateObject(23, this.getCommandBlockLogic().getCommand());
+        this.getDataWatcher().updateObject(24, IChatComponent.Serializer.componentToJson(this.getCommandBlockLogic().getLastOutput()));
     }
 
     /**
      * (abstract) Protected helper method to write subclass entity data to NBT.
      */
-    protected void writeEntityToNBT(NBTTagCompound p_70014_1_)
+    protected void writeEntityToNBT(NBTTagCompound tagCompound)
     {
-        super.writeEntityToNBT(p_70014_1_);
-        this.field_145824_a.func_145758_a(p_70014_1_);
+        super.writeEntityToNBT(tagCompound);
+        this.commandBlockLogic.writeDataToNBT(tagCompound);
     }
 
-    public int getMinecartType()
+    public EntityMinecart.EnumMinecartType getMinecartType()
     {
-        return 6;
+        return EntityMinecart.EnumMinecartType.COMMAND_BLOCK;
     }
 
-    public Block func_145817_o()
+    public IBlockState getDefaultDisplayTile()
     {
-        return Blocks.command_block;
+        return Blocks.command_block.getDefaultState();
     }
 
-    public CommandBlockLogic func_145822_e()
+    public CommandBlockLogic getCommandBlockLogic()
     {
-        return this.field_145824_a;
+        return this.commandBlockLogic;
     }
 
     /**
      * Called every tick the minecart is on an activator rail. Args: x, y, z, is the rail receiving power
      */
-    public void onActivatorRailPass(int p_96095_1_, int p_96095_2_, int p_96095_3_, boolean p_96095_4_)
+    public void onActivatorRailPass(int x, int y, int z, boolean receivingPower)
     {
-        if (p_96095_4_ && this.ticksExisted - this.field_145823_b >= 4)
+        if (receivingPower && this.ticksExisted - this.activatorRailCooldown >= 4)
         {
-            this.func_145822_e().func_145755_a(this.worldObj);
-            this.field_145823_b = this.ticksExisted;
+            this.getCommandBlockLogic().trigger(this.worldObj);
+            this.activatorRailCooldown = this.ticksExisted;
         }
     }
 
     /**
      * First layer of player interaction
      */
-    public boolean interactFirst(EntityPlayer p_130002_1_)
+    public boolean interactFirst(EntityPlayer playerIn)
     {
-        if (this.worldObj.isClient)
-        {
-            p_130002_1_.func_146095_a(this.func_145822_e());
-        }
-
-        return super.interactFirst(p_130002_1_);
+        this.commandBlockLogic.tryOpenEditCommandBlock(playerIn);
+        return false;
     }
 
-    public void func_145781_i(int p_145781_1_)
+    public void onDataWatcherUpdate(int dataID)
     {
-        super.func_145781_i(p_145781_1_);
+        super.onDataWatcherUpdate(dataID);
 
-        if (p_145781_1_ == 24)
+        if (dataID == 24)
         {
             try
             {
-                this.field_145824_a.func_145750_b(IChatComponent.Serializer.func_150699_a(this.getDataWatcher().getWatchableObjectString(24)));
+                this.commandBlockLogic.setLastOutput(IChatComponent.Serializer.jsonToComponent(this.getDataWatcher().getWatchableObjectString(24)));
             }
             catch (Throwable var3)
             {
                 ;
             }
         }
-        else if (p_145781_1_ == 23)
+        else if (dataID == 23)
         {
-            this.field_145824_a.func_145752_a(this.getDataWatcher().getWatchableObjectString(23));
+            this.commandBlockLogic.setCommand(this.getDataWatcher().getWatchableObjectString(23));
         }
     }
 }

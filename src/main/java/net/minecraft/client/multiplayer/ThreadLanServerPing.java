@@ -18,7 +18,6 @@ public class ThreadLanServerPing extends Thread
     private final DatagramSocket socket;
     private boolean isStopping = true;
     private final String address;
-    private static final String __OBFID = "CL_00001137";
 
     public ThreadLanServerPing(String p_i1321_1_, String p_i1321_2_) throws IOException
     {
@@ -31,20 +30,20 @@ public class ThreadLanServerPing extends Thread
 
     public void run()
     {
-        String var1 = getPingResponse(this.motd, this.address);
-        byte[] var2 = var1.getBytes();
+        String s = getPingResponse(this.motd, this.address);
+        byte[] abyte = s.getBytes();
 
         while (!this.isInterrupted() && this.isStopping)
         {
             try
             {
-                InetAddress var3 = InetAddress.getByName("224.0.2.60");
-                DatagramPacket var4 = new DatagramPacket(var2, var2.length, var3, 4445);
-                this.socket.send(var4);
+                InetAddress inetaddress = InetAddress.getByName("224.0.2.60");
+                DatagramPacket datagrampacket = new DatagramPacket(abyte, abyte.length, inetaddress, 4445);
+                this.socket.send(datagrampacket);
             }
-            catch (IOException var6)
+            catch (IOException ioexception)
             {
-                logger.warn("LanServerPinger: " + var6.getMessage());
+                logger.warn("LanServerPinger: " + ioexception.getMessage());
                 break;
             }
 
@@ -72,47 +71,47 @@ public class ThreadLanServerPing extends Thread
 
     public static String getMotdFromPingResponse(String p_77524_0_)
     {
-        int var1 = p_77524_0_.indexOf("[MOTD]");
+        int i = p_77524_0_.indexOf("[MOTD]");
 
-        if (var1 < 0)
+        if (i < 0)
         {
             return "missing no";
         }
         else
         {
-            int var2 = p_77524_0_.indexOf("[/MOTD]", var1 + "[MOTD]".length());
-            return var2 < var1 ? "missing no" : p_77524_0_.substring(var1 + "[MOTD]".length(), var2);
+            int j = p_77524_0_.indexOf("[/MOTD]", i + "[MOTD]".length());
+            return j < i ? "missing no" : p_77524_0_.substring(i + "[MOTD]".length(), j);
         }
     }
 
     public static String getAdFromPingResponse(String p_77523_0_)
     {
-        int var1 = p_77523_0_.indexOf("[/MOTD]");
+        int i = p_77523_0_.indexOf("[/MOTD]");
 
-        if (var1 < 0)
+        if (i < 0)
         {
             return null;
         }
         else
         {
-            int var2 = p_77523_0_.indexOf("[/MOTD]", var1 + "[/MOTD]".length());
+            int j = p_77523_0_.indexOf("[/MOTD]", i + "[/MOTD]".length());
 
-            if (var2 >= 0)
+            if (j >= 0)
             {
                 return null;
             }
             else
             {
-                int var3 = p_77523_0_.indexOf("[AD]", var1 + "[/MOTD]".length());
+                int k = p_77523_0_.indexOf("[AD]", i + "[/MOTD]".length());
 
-                if (var3 < 0)
+                if (k < 0)
                 {
                     return null;
                 }
                 else
                 {
-                    int var4 = p_77523_0_.indexOf("[/AD]", var3 + "[AD]".length());
-                    return var4 < var3 ? null : p_77523_0_.substring(var3 + "[AD]".length(), var4);
+                    int l = p_77523_0_.indexOf("[/AD]", k + "[AD]".length());
+                    return l < k ? null : p_77523_0_.substring(k + "[AD]".length(), l);
                 }
             }
         }

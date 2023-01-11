@@ -2,12 +2,14 @@ package net.minecraft.command;
 
 import java.util.List;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.BlockPos;
 import net.minecraft.world.WorldServer;
 
 public class CommandTime extends CommandBase
 {
-    private static final String __OBFID = "CL_00001183";
-
+    /**
+     * Gets the name of the command
+     */
     public String getCommandName()
     {
         return "time";
@@ -21,77 +23,99 @@ public class CommandTime extends CommandBase
         return 2;
     }
 
-    public String getCommandUsage(ICommandSender p_71518_1_)
+    /**
+     * Gets the usage string for the command.
+     */
+    public String getCommandUsage(ICommandSender sender)
     {
         return "commands.time.usage";
     }
 
-    public void processCommand(ICommandSender p_71515_1_, String[] p_71515_2_)
+    /**
+     * Callback when the command is invoked
+     */
+    public void processCommand(ICommandSender sender, String[] args) throws CommandException
     {
-        if (p_71515_2_.length > 1)
+        if (args.length > 1)
         {
-            int var3;
-
-            if (p_71515_2_[0].equals("set"))
+            if (args[0].equals("set"))
             {
-                if (p_71515_2_[1].equals("day"))
+                int l;
+
+                if (args[1].equals("day"))
                 {
-                    var3 = 1000;
+                    l = 1000;
                 }
-                else if (p_71515_2_[1].equals("night"))
+                else if (args[1].equals("night"))
                 {
-                    var3 = 13000;
+                    l = 13000;
                 }
                 else
                 {
-                    var3 = parseIntWithMin(p_71515_1_, p_71515_2_[1], 0);
+                    l = parseInt(args[1], 0);
                 }
 
-                this.setTime(p_71515_1_, var3);
-                func_152373_a(p_71515_1_, this, "commands.time.set", new Object[] {Integer.valueOf(var3)});
+                this.setTime(sender, l);
+                notifyOperators(sender, this, "commands.time.set", new Object[] {Integer.valueOf(l)});
                 return;
             }
 
-            if (p_71515_2_[0].equals("add"))
+            if (args[0].equals("add"))
             {
-                var3 = parseIntWithMin(p_71515_1_, p_71515_2_[1], 0);
-                this.addTime(p_71515_1_, var3);
-                func_152373_a(p_71515_1_, this, "commands.time.added", new Object[] {Integer.valueOf(var3)});
+                int k = parseInt(args[1], 0);
+                this.addTime(sender, k);
+                notifyOperators(sender, this, "commands.time.added", new Object[] {Integer.valueOf(k)});
                 return;
+            }
+
+            if (args[0].equals("query"))
+            {
+                if (args[1].equals("daytime"))
+                {
+                    int j = (int)(sender.getEntityWorld().getWorldTime() % 2147483647L);
+                    sender.setCommandStat(CommandResultStats.Type.QUERY_RESULT, j);
+                    notifyOperators(sender, this, "commands.time.query", new Object[] {Integer.valueOf(j)});
+                    return;
+                }
+
+                if (args[1].equals("gametime"))
+                {
+                    int i = (int)(sender.getEntityWorld().getTotalWorldTime() % 2147483647L);
+                    sender.setCommandStat(CommandResultStats.Type.QUERY_RESULT, i);
+                    notifyOperators(sender, this, "commands.time.query", new Object[] {Integer.valueOf(i)});
+                    return;
+                }
             }
         }
 
         throw new WrongUsageException("commands.time.usage", new Object[0]);
     }
 
-    /**
-     * Adds the strings available in this command to the given list of tab completion options.
-     */
-    public List addTabCompletionOptions(ICommandSender p_71516_1_, String[] p_71516_2_)
+    public List<String> addTabCompletionOptions(ICommandSender sender, String[] args, BlockPos pos)
     {
-        return p_71516_2_.length == 1 ? getListOfStringsMatchingLastWord(p_71516_2_, new String[] {"set", "add"}): (p_71516_2_.length == 2 && p_71516_2_[0].equals("set") ? getListOfStringsMatchingLastWord(p_71516_2_, new String[] {"day", "night"}): null);
+        return args.length == 1 ? getListOfStringsMatchingLastWord(args, new String[] {"set", "add", "query"}): (args.length == 2 && args[0].equals("set") ? getListOfStringsMatchingLastWord(args, new String[] {"day", "night"}): (args.length == 2 && args[0].equals("query") ? getListOfStringsMatchingLastWord(args, new String[] {"daytime", "gametime"}): null));
     }
 
     /**
      * Set the time in the server object.
      */
-    protected void setTime(ICommandSender p_71552_1_, int p_71552_2_)
+    protected void setTime(ICommandSender sender, int time)
     {
-        for (int var3 = 0; var3 < MinecraftServer.getServer().worldServers.length; ++var3)
+        for (int i = 0; i < MinecraftServer.getServer().worldServers.length; ++i)
         {
-            MinecraftServer.getServer().worldServers[var3].setWorldTime((long)p_71552_2_);
+            MinecraftServer.getServer().worldServers[i].setWorldTime((long)time);
         }
     }
 
     /**
      * Adds (or removes) time in the server object.
      */
-    protected void addTime(ICommandSender p_71553_1_, int p_71553_2_)
+    protected void addTime(ICommandSender sender, int time)
     {
-        for (int var3 = 0; var3 < MinecraftServer.getServer().worldServers.length; ++var3)
+        for (int i = 0; i < MinecraftServer.getServer().worldServers.length; ++i)
         {
-            WorldServer var4 = MinecraftServer.getServer().worldServers[var3];
-            var4.setWorldTime(var4.getWorldTime() + (long)p_71553_2_);
+            WorldServer worldserver = MinecraftServer.getServer().worldServers[i];
+            worldserver.setWorldTime(worldserver.getWorldTime() + (long)time);
         }
     }
 }

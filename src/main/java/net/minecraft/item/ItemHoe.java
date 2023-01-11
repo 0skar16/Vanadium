@@ -1,59 +1,81 @@
 package net.minecraft.item;
 
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockDirt;
 import net.minecraft.block.material.Material;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.world.World;
 
 public class ItemHoe extends Item
 {
     protected Item.ToolMaterial theToolMaterial;
-    private static final String __OBFID = "CL_00000039";
 
-    public ItemHoe(Item.ToolMaterial p_i45343_1_)
+    public ItemHoe(Item.ToolMaterial material)
     {
-        this.theToolMaterial = p_i45343_1_;
+        this.theToolMaterial = material;
         this.maxStackSize = 1;
-        this.setMaxDamage(p_i45343_1_.getMaxUses());
+        this.setMaxDamage(material.getMaxUses());
         this.setCreativeTab(CreativeTabs.tabTools);
     }
 
+    @SuppressWarnings("incomplete-switch")
+
     /**
-     * Callback for item usage. If the item does something special on right clicking, he will have one of those. Return
-     * True if something happen and false if it don't. This is for ITEMS, not BLOCKS
+     * Called when a Block is right-clicked with this Item
      */
-    public boolean onItemUse(ItemStack p_77648_1_, EntityPlayer p_77648_2_, World p_77648_3_, int p_77648_4_, int p_77648_5_, int p_77648_6_, int p_77648_7_, float p_77648_8_, float p_77648_9_, float p_77648_10_)
+    public boolean onItemUse(ItemStack stack, EntityPlayer playerIn, World worldIn, BlockPos pos, EnumFacing side, float hitX, float hitY, float hitZ)
     {
-        if (!p_77648_2_.canPlayerEdit(p_77648_4_, p_77648_5_, p_77648_6_, p_77648_7_, p_77648_1_))
+        if (!playerIn.canPlayerEdit(pos.offset(side), side, stack))
         {
             return false;
         }
         else
         {
-            Block var11 = p_77648_3_.getBlock(p_77648_4_, p_77648_5_, p_77648_6_);
+            IBlockState iblockstate = worldIn.getBlockState(pos);
+            Block block = iblockstate.getBlock();
 
-            if (p_77648_7_ != 0 && p_77648_3_.getBlock(p_77648_4_, p_77648_5_ + 1, p_77648_6_).getMaterial() == Material.air && (var11 == Blocks.grass || var11 == Blocks.dirt))
+            if (side != EnumFacing.DOWN && worldIn.getBlockState(pos.up()).getBlock().getMaterial() == Material.air)
             {
-                Block var12 = Blocks.farmland;
-                p_77648_3_.playSoundEffect((double)((float)p_77648_4_ + 0.5F), (double)((float)p_77648_5_ + 0.5F), (double)((float)p_77648_6_ + 0.5F), var12.stepSound.func_150498_e(), (var12.stepSound.func_150497_c() + 1.0F) / 2.0F, var12.stepSound.func_150494_d() * 0.8F);
-
-                if (p_77648_3_.isClient)
+                if (block == Blocks.grass)
                 {
-                    return true;
+                    return this.useHoe(stack, playerIn, worldIn, pos, Blocks.farmland.getDefaultState());
                 }
-                else
+
+                if (block == Blocks.dirt)
                 {
-                    p_77648_3_.setBlock(p_77648_4_, p_77648_5_, p_77648_6_, var12);
-                    p_77648_1_.damageItem(1, p_77648_2_);
-                    return true;
+                    switch ((BlockDirt.DirtType)iblockstate.getValue(BlockDirt.VARIANT))
+                    {
+                        case DIRT:
+                            return this.useHoe(stack, playerIn, worldIn, pos, Blocks.farmland.getDefaultState());
+
+                        case COARSE_DIRT:
+                            return this.useHoe(stack, playerIn, worldIn, pos, Blocks.dirt.getDefaultState().withProperty(BlockDirt.VARIANT, BlockDirt.DirtType.DIRT));
+                    }
                 }
             }
-            else
-            {
-                return false;
-            }
+
+            return false;
+        }
+    }
+
+    protected boolean useHoe(ItemStack stack, EntityPlayer player, World worldIn, BlockPos target, IBlockState newState)
+    {
+        worldIn.playSoundEffect((double)((float)target.getX() + 0.5F), (double)((float)target.getY() + 0.5F), (double)((float)target.getZ() + 0.5F), newState.getBlock().stepSound.getStepSound(), (newState.getBlock().stepSound.getVolume() + 1.0F) / 2.0F, newState.getBlock().stepSound.getFrequency() * 0.8F);
+
+        if (worldIn.isRemote)
+        {
+            return true;
+        }
+        else
+        {
+            worldIn.setBlockState(target, newState);
+            stack.damageItem(1, player);
+            return true;
         }
     }
 

@@ -7,42 +7,36 @@ import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 
-public class ObjectIntIdentityMap implements IObjectIntIterable
+public class ObjectIntIdentityMap<T> implements IObjectIntIterable<T>
 {
-    private IdentityHashMap field_148749_a = new IdentityHashMap(512);
-    private List field_148748_b = Lists.newArrayList();
-    private static final String __OBFID = "CL_00001203";
+    private final IdentityHashMap<T, Integer> identityMap = new IdentityHashMap(512);
+    private final List<T> objectList = Lists.<T>newArrayList();
 
-    public void func_148746_a(Object p_148746_1_, int p_148746_2_)
+    public void put(T key, int value)
     {
-        this.field_148749_a.put(p_148746_1_, Integer.valueOf(p_148746_2_));
+        this.identityMap.put(key, Integer.valueOf(value));
 
-        while (this.field_148748_b.size() <= p_148746_2_)
+        while (this.objectList.size() <= value)
         {
-            this.field_148748_b.add((Object)null);
+            this.objectList.add(null);
         }
 
-        this.field_148748_b.set(p_148746_2_, p_148746_1_);
+        this.objectList.set(value, key);
     }
 
-    public int func_148747_b(Object p_148747_1_)
+    public int get(T key)
     {
-        Integer var2 = (Integer)this.field_148749_a.get(p_148747_1_);
-        return var2 == null ? -1 : var2.intValue();
+        Integer integer = (Integer)this.identityMap.get(key);
+        return integer == null ? -1 : integer.intValue();
     }
 
-    public Object func_148745_a(int p_148745_1_)
+    public final T getByValue(int value)
     {
-        return p_148745_1_ >= 0 && p_148745_1_ < this.field_148748_b.size() ? this.field_148748_b.get(p_148745_1_) : null;
+        return (T)(value >= 0 && value < this.objectList.size() ? this.objectList.get(value) : null);
     }
 
-    public Iterator iterator()
+    public Iterator<T> iterator()
     {
-        return Iterators.filter(this.field_148748_b.iterator(), Predicates.notNull());
-    }
-
-    public boolean func_148744_b(int p_148744_1_)
-    {
-        return this.func_148745_a(p_148744_1_) != null;
+        return Iterators.filter(this.objectList.iterator(), Predicates.notNull());
     }
 }

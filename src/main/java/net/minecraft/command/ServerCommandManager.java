@@ -1,6 +1,5 @@
 package net.minecraft.command;
 
-import java.util.Iterator;
 import net.minecraft.command.server.CommandAchievement;
 import net.minecraft.command.server.CommandBanIp;
 import net.minecraft.command.server.CommandBanPlayer;
@@ -12,7 +11,6 @@ import net.minecraft.command.server.CommandListBans;
 import net.minecraft.command.server.CommandListPlayers;
 import net.minecraft.command.server.CommandMessage;
 import net.minecraft.command.server.CommandMessageRaw;
-import net.minecraft.command.server.CommandNetstat;
 import net.minecraft.command.server.CommandOp;
 import net.minecraft.command.server.CommandPardonIp;
 import net.minecraft.command.server.CommandPardonPlayer;
@@ -34,11 +32,10 @@ import net.minecraft.network.rcon.RConConsoleSource;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.ChatComponentTranslation;
 import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.IChatComponent;
 
 public class ServerCommandManager extends CommandHandler implements IAdminCommand
 {
-    private static final String __OBFID = "CL_00000922";
-
     public ServerCommandManager()
     {
         this.registerCommand(new CommandTime());
@@ -51,8 +48,11 @@ public class ServerCommandManager extends CommandHandler implements IAdminComman
         this.registerCommand(new CommandXP());
         this.registerCommand(new CommandTeleport());
         this.registerCommand(new CommandGive());
+        this.registerCommand(new CommandReplaceItem());
+        this.registerCommand(new CommandStats());
         this.registerCommand(new CommandEffect());
         this.registerCommand(new CommandEnchant());
+        this.registerCommand(new CommandParticle());
         this.registerCommand(new CommandEmote());
         this.registerCommand(new CommandShowSeed());
         this.registerCommand(new CommandHelp());
@@ -67,11 +67,20 @@ public class ServerCommandManager extends CommandHandler implements IAdminComman
         this.registerCommand(new CommandSpreadPlayers());
         this.registerCommand(new CommandPlaySound());
         this.registerCommand(new CommandScoreboard());
+        this.registerCommand(new CommandExecuteAt());
+        this.registerCommand(new CommandTrigger());
         this.registerCommand(new CommandAchievement());
         this.registerCommand(new CommandSummon());
         this.registerCommand(new CommandSetBlock());
+        this.registerCommand(new CommandFill());
+        this.registerCommand(new CommandClone());
+        this.registerCommand(new CommandCompare());
+        this.registerCommand(new CommandBlockData());
         this.registerCommand(new CommandTestForBlock());
         this.registerCommand(new CommandMessageRaw());
+        this.registerCommand(new CommandWorldBorder());
+        this.registerCommand(new CommandTitle());
+        this.registerCommand(new CommandEntityData());
 
         if (MinecraftServer.getServer().isDedicatedServer())
         {
@@ -90,7 +99,6 @@ public class ServerCommandManager extends CommandHandler implements IAdminComman
             this.registerCommand(new CommandListPlayers());
             this.registerCommand(new CommandWhitelist());
             this.registerCommand(new CommandSetPlayerTimeout());
-            this.registerCommand(new CommandNetstat());
         }
         else
         {
@@ -100,42 +108,55 @@ public class ServerCommandManager extends CommandHandler implements IAdminComman
         CommandBase.setAdminCommander(this);
     }
 
-    public void func_152372_a(ICommandSender p_152372_1_, ICommand p_152372_2_, int p_152372_3_, String p_152372_4_, Object ... p_152372_5_)
+    /**
+     * Send an informative message to the server operators
+     */
+    public void notifyOperators(ICommandSender sender, ICommand command, int flags, String msgFormat, Object... msgParams)
     {
-        boolean var6 = true;
+        boolean flag = true;
+        MinecraftServer minecraftserver = MinecraftServer.getServer();
 
-        if (p_152372_1_ instanceof CommandBlockLogic && !MinecraftServer.getServer().worldServers[0].getGameRules().getGameRuleBooleanValue("commandBlockOutput"))
+        if (!sender.sendCommandFeedback())
         {
-            var6 = false;
+            flag = false;
         }
 
-        ChatComponentTranslation var7 = new ChatComponentTranslation("chat.type.admin", new Object[] {p_152372_1_.getCommandSenderName(), new ChatComponentTranslation(p_152372_4_, p_152372_5_)});
-        var7.getChatStyle().setColor(EnumChatFormatting.GRAY);
-        var7.getChatStyle().setItalic(Boolean.valueOf(true));
+        IChatComponent ichatcomponent = new ChatComponentTranslation("chat.type.admin", new Object[] {sender.getName(), new ChatComponentTranslation(msgFormat, msgParams)});
+        ichatcomponent.getChatStyle().setColor(EnumChatFormatting.GRAY);
+        ichatcomponent.getChatStyle().setItalic(Boolean.valueOf(true));
 
-        if (var6)
+        if (flag)
         {
-            Iterator var8 = MinecraftServer.getServer().getConfigurationManager().playerEntityList.iterator();
-
-            while (var8.hasNext())
+            for (EntityPlayer entityplayer : minecraftserver.getConfigurationManager().getPlayerList())
             {
-                EntityPlayer var9 = (EntityPlayer)var8.next();
-
-                if (var9 != p_152372_1_ && MinecraftServer.getServer().getConfigurationManager().func_152596_g(var9.getGameProfile()) && p_152372_2_.canCommandSenderUseCommand(var9) && (!(p_152372_1_ instanceof RConConsoleSource) || MinecraftServer.getServer().func_152363_m()))
+                if (entityplayer != sender && minecraftserver.getConfigurationManager().canSendCommands(entityplayer.getGameProfile()) && command.canCommandSenderUseCommand(sender))
                 {
-                    var9.addChatMessage(var7);
+                    boolean flag1 = sender instanceof MinecraftServer && MinecraftServer.getServer().shouldBroadcastConsoleToOps();
+                    boolean flag2 = sender instanceof RConConsoleSource && MinecraftServer.getServer().shouldBroadcastRconToOps();
+
+                    if (flag1 || flag2 || !(sender instanceof RConConsoleSource) && !(sender instanceof MinecraftServer))
+                    {
+                        entityplayer.addChatMessage(ichatcomponent);
+                    }
                 }
             }
         }
 
-        if (p_152372_1_ != MinecraftServer.getServer())
+        if (sender != minecraftserver && minecraftserver.worldServers[0].getGameRules().getBoolean("logAdminCommands"))
         {
-            MinecraftServer.getServer().addChatMessage(var7);
+            minecraftserver.addChatMessage(ichatcomponent);
         }
 
-        if ((p_152372_3_ & 1) != 1)
+        boolean flag3 = minecraftserver.worldServers[0].getGameRules().getBoolean("sendCommandFeedback");
+
+        if (sender instanceof CommandBlockLogic)
         {
-            p_152372_1_.addChatMessage(new ChatComponentTranslation(p_152372_4_, p_152372_5_));
+            flag3 = ((CommandBlockLogic)sender).shouldTrackOutput();
+        }
+
+        if ((flags & 1) != 1 && flag3 || sender instanceof MinecraftServer)
+        {
+            sender.addChatMessage(new ChatComponentTranslation(msgFormat, msgParams));
         }
     }
 }

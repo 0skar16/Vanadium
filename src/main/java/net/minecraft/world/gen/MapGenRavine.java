@@ -1,202 +1,199 @@
 package net.minecraft.world.gen;
 
 import java.util.Random;
-import net.minecraft.block.Block;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.ChunkPrimer;
 
 public class MapGenRavine extends MapGenBase
 {
     private float[] field_75046_d = new float[1024];
-    private static final String __OBFID = "CL_00000390";
 
-    protected void func_151540_a(long p_151540_1_, int p_151540_3_, int p_151540_4_, Block[] p_151540_5_, double p_151540_6_, double p_151540_8_, double p_151540_10_, float p_151540_12_, float p_151540_13_, float p_151540_14_, int p_151540_15_, int p_151540_16_, double p_151540_17_)
+    protected void func_180707_a(long p_180707_1_, int p_180707_3_, int p_180707_4_, ChunkPrimer p_180707_5_, double p_180707_6_, double p_180707_8_, double p_180707_10_, float p_180707_12_, float p_180707_13_, float p_180707_14_, int p_180707_15_, int p_180707_16_, double p_180707_17_)
     {
-        Random var19 = new Random(p_151540_1_);
-        double var20 = (double)(p_151540_3_ * 16 + 8);
-        double var22 = (double)(p_151540_4_ * 16 + 8);
-        float var24 = 0.0F;
-        float var25 = 0.0F;
+        Random random = new Random(p_180707_1_);
+        double d0 = (double)(p_180707_3_ * 16 + 8);
+        double d1 = (double)(p_180707_4_ * 16 + 8);
+        float f = 0.0F;
+        float f1 = 0.0F;
 
-        if (p_151540_16_ <= 0)
+        if (p_180707_16_ <= 0)
         {
-            int var26 = this.range * 16 - 16;
-            p_151540_16_ = var26 - var19.nextInt(var26 / 4);
+            int i = this.range * 16 - 16;
+            p_180707_16_ = i - random.nextInt(i / 4);
         }
 
-        boolean var53 = false;
+        boolean flag1 = false;
 
-        if (p_151540_15_ == -1)
+        if (p_180707_15_ == -1)
         {
-            p_151540_15_ = p_151540_16_ / 2;
-            var53 = true;
+            p_180707_15_ = p_180707_16_ / 2;
+            flag1 = true;
         }
 
-        float var27 = 1.0F;
+        float f2 = 1.0F;
 
-        for (int var28 = 0; var28 < 256; ++var28)
+        for (int j = 0; j < 256; ++j)
         {
-            if (var28 == 0 || var19.nextInt(3) == 0)
+            if (j == 0 || random.nextInt(3) == 0)
             {
-                var27 = 1.0F + var19.nextFloat() * var19.nextFloat() * 1.0F;
+                f2 = 1.0F + random.nextFloat() * random.nextFloat() * 1.0F;
             }
 
-            this.field_75046_d[var28] = var27 * var27;
+            this.field_75046_d[j] = f2 * f2;
         }
 
-        for (; p_151540_15_ < p_151540_16_; ++p_151540_15_)
+        for (; p_180707_15_ < p_180707_16_; ++p_180707_15_)
         {
-            double var54 = 1.5D + (double)(MathHelper.sin((float)p_151540_15_ * (float)Math.PI / (float)p_151540_16_) * p_151540_12_ * 1.0F);
-            double var30 = var54 * p_151540_17_;
-            var54 *= (double)var19.nextFloat() * 0.25D + 0.75D;
-            var30 *= (double)var19.nextFloat() * 0.25D + 0.75D;
-            float var32 = MathHelper.cos(p_151540_14_);
-            float var33 = MathHelper.sin(p_151540_14_);
-            p_151540_6_ += (double)(MathHelper.cos(p_151540_13_) * var32);
-            p_151540_8_ += (double)var33;
-            p_151540_10_ += (double)(MathHelper.sin(p_151540_13_) * var32);
-            p_151540_14_ *= 0.7F;
-            p_151540_14_ += var25 * 0.05F;
-            p_151540_13_ += var24 * 0.05F;
-            var25 *= 0.8F;
-            var24 *= 0.5F;
-            var25 += (var19.nextFloat() - var19.nextFloat()) * var19.nextFloat() * 2.0F;
-            var24 += (var19.nextFloat() - var19.nextFloat()) * var19.nextFloat() * 4.0F;
+            double d9 = 1.5D + (double)(MathHelper.sin((float)p_180707_15_ * (float)Math.PI / (float)p_180707_16_) * p_180707_12_ * 1.0F);
+            double d2 = d9 * p_180707_17_;
+            d9 = d9 * ((double)random.nextFloat() * 0.25D + 0.75D);
+            d2 = d2 * ((double)random.nextFloat() * 0.25D + 0.75D);
+            float f3 = MathHelper.cos(p_180707_14_);
+            float f4 = MathHelper.sin(p_180707_14_);
+            p_180707_6_ += (double)(MathHelper.cos(p_180707_13_) * f3);
+            p_180707_8_ += (double)f4;
+            p_180707_10_ += (double)(MathHelper.sin(p_180707_13_) * f3);
+            p_180707_14_ = p_180707_14_ * 0.7F;
+            p_180707_14_ = p_180707_14_ + f1 * 0.05F;
+            p_180707_13_ += f * 0.05F;
+            f1 = f1 * 0.8F;
+            f = f * 0.5F;
+            f1 = f1 + (random.nextFloat() - random.nextFloat()) * random.nextFloat() * 2.0F;
+            f = f + (random.nextFloat() - random.nextFloat()) * random.nextFloat() * 4.0F;
 
-            if (var53 || var19.nextInt(4) != 0)
+            if (flag1 || random.nextInt(4) != 0)
             {
-                double var34 = p_151540_6_ - var20;
-                double var36 = p_151540_10_ - var22;
-                double var38 = (double)(p_151540_16_ - p_151540_15_);
-                double var40 = (double)(p_151540_12_ + 2.0F + 16.0F);
+                double d3 = p_180707_6_ - d0;
+                double d4 = p_180707_10_ - d1;
+                double d5 = (double)(p_180707_16_ - p_180707_15_);
+                double d6 = (double)(p_180707_12_ + 2.0F + 16.0F);
 
-                if (var34 * var34 + var36 * var36 - var38 * var38 > var40 * var40)
+                if (d3 * d3 + d4 * d4 - d5 * d5 > d6 * d6)
                 {
                     return;
                 }
 
-                if (p_151540_6_ >= var20 - 16.0D - var54 * 2.0D && p_151540_10_ >= var22 - 16.0D - var54 * 2.0D && p_151540_6_ <= var20 + 16.0D + var54 * 2.0D && p_151540_10_ <= var22 + 16.0D + var54 * 2.0D)
+                if (p_180707_6_ >= d0 - 16.0D - d9 * 2.0D && p_180707_10_ >= d1 - 16.0D - d9 * 2.0D && p_180707_6_ <= d0 + 16.0D + d9 * 2.0D && p_180707_10_ <= d1 + 16.0D + d9 * 2.0D)
                 {
-                    int var55 = MathHelper.floor_double(p_151540_6_ - var54) - p_151540_3_ * 16 - 1;
-                    int var35 = MathHelper.floor_double(p_151540_6_ + var54) - p_151540_3_ * 16 + 1;
-                    int var56 = MathHelper.floor_double(p_151540_8_ - var30) - 1;
-                    int var37 = MathHelper.floor_double(p_151540_8_ + var30) + 1;
-                    int var57 = MathHelper.floor_double(p_151540_10_ - var54) - p_151540_4_ * 16 - 1;
-                    int var39 = MathHelper.floor_double(p_151540_10_ + var54) - p_151540_4_ * 16 + 1;
+                    int k2 = MathHelper.floor_double(p_180707_6_ - d9) - p_180707_3_ * 16 - 1;
+                    int k = MathHelper.floor_double(p_180707_6_ + d9) - p_180707_3_ * 16 + 1;
+                    int l2 = MathHelper.floor_double(p_180707_8_ - d2) - 1;
+                    int l = MathHelper.floor_double(p_180707_8_ + d2) + 1;
+                    int i3 = MathHelper.floor_double(p_180707_10_ - d9) - p_180707_4_ * 16 - 1;
+                    int i1 = MathHelper.floor_double(p_180707_10_ + d9) - p_180707_4_ * 16 + 1;
 
-                    if (var55 < 0)
+                    if (k2 < 0)
                     {
-                        var55 = 0;
+                        k2 = 0;
                     }
 
-                    if (var35 > 16)
+                    if (k > 16)
                     {
-                        var35 = 16;
+                        k = 16;
                     }
 
-                    if (var56 < 1)
+                    if (l2 < 1)
                     {
-                        var56 = 1;
+                        l2 = 1;
                     }
 
-                    if (var37 > 248)
+                    if (l > 248)
                     {
-                        var37 = 248;
+                        l = 248;
                     }
 
-                    if (var57 < 0)
+                    if (i3 < 0)
                     {
-                        var57 = 0;
+                        i3 = 0;
                     }
 
-                    if (var39 > 16)
+                    if (i1 > 16)
                     {
-                        var39 = 16;
+                        i1 = 16;
                     }
 
-                    boolean var58 = false;
-                    int var41;
-                    int var44;
+                    boolean flag2 = false;
 
-                    for (var41 = var55; !var58 && var41 < var35; ++var41)
+                    for (int j1 = k2; !flag2 && j1 < k; ++j1)
                     {
-                        for (int var42 = var57; !var58 && var42 < var39; ++var42)
+                        for (int k1 = i3; !flag2 && k1 < i1; ++k1)
                         {
-                            for (int var43 = var37 + 1; !var58 && var43 >= var56 - 1; --var43)
+                            for (int l1 = l + 1; !flag2 && l1 >= l2 - 1; --l1)
                             {
-                                var44 = (var41 * 16 + var42) * 256 + var43;
-
-                                if (var43 >= 0 && var43 < 256)
+                                if (l1 >= 0 && l1 < 256)
                                 {
-                                    Block var45 = p_151540_5_[var44];
+                                    IBlockState iblockstate = p_180707_5_.getBlockState(j1, l1, k1);
 
-                                    if (var45 == Blocks.flowing_water || var45 == Blocks.water)
+                                    if (iblockstate.getBlock() == Blocks.flowing_water || iblockstate.getBlock() == Blocks.water)
                                     {
-                                        var58 = true;
+                                        flag2 = true;
                                     }
 
-                                    if (var43 != var56 - 1 && var41 != var55 && var41 != var35 - 1 && var42 != var57 && var42 != var39 - 1)
+                                    if (l1 != l2 - 1 && j1 != k2 && j1 != k - 1 && k1 != i3 && k1 != i1 - 1)
                                     {
-                                        var43 = var56;
+                                        l1 = l2;
                                     }
                                 }
                             }
                         }
                     }
 
-                    if (!var58)
+                    if (!flag2)
                     {
-                        for (var41 = var55; var41 < var35; ++var41)
+                        BlockPos.MutableBlockPos blockpos$mutableblockpos = new BlockPos.MutableBlockPos();
+
+                        for (int j3 = k2; j3 < k; ++j3)
                         {
-                            double var59 = ((double)(var41 + p_151540_3_ * 16) + 0.5D - p_151540_6_) / var54;
+                            double d10 = ((double)(j3 + p_180707_3_ * 16) + 0.5D - p_180707_6_) / d9;
 
-                            for (var44 = var57; var44 < var39; ++var44)
+                            for (int i2 = i3; i2 < i1; ++i2)
                             {
-                                double var60 = ((double)(var44 + p_151540_4_ * 16) + 0.5D - p_151540_10_) / var54;
-                                int var47 = (var41 * 16 + var44) * 256 + var37;
-                                boolean var48 = false;
+                                double d7 = ((double)(i2 + p_180707_4_ * 16) + 0.5D - p_180707_10_) / d9;
+                                boolean flag = false;
 
-                                if (var59 * var59 + var60 * var60 < 1.0D)
+                                if (d10 * d10 + d7 * d7 < 1.0D)
                                 {
-                                    for (int var49 = var37 - 1; var49 >= var56; --var49)
+                                    for (int j2 = l; j2 > l2; --j2)
                                     {
-                                        double var50 = ((double)var49 + 0.5D - p_151540_8_) / var30;
+                                        double d8 = ((double)(j2 - 1) + 0.5D - p_180707_8_) / d2;
 
-                                        if ((var59 * var59 + var60 * var60) * (double)this.field_75046_d[var49] + var50 * var50 / 6.0D < 1.0D)
+                                        if ((d10 * d10 + d7 * d7) * (double)this.field_75046_d[j2 - 1] + d8 * d8 / 6.0D < 1.0D)
                                         {
-                                            Block var52 = p_151540_5_[var47];
+                                            IBlockState iblockstate1 = p_180707_5_.getBlockState(j3, j2, i2);
 
-                                            if (var52 == Blocks.grass)
+                                            if (iblockstate1.getBlock() == Blocks.grass)
                                             {
-                                                var48 = true;
+                                                flag = true;
                                             }
 
-                                            if (var52 == Blocks.stone || var52 == Blocks.dirt || var52 == Blocks.grass)
+                                            if (iblockstate1.getBlock() == Blocks.stone || iblockstate1.getBlock() == Blocks.dirt || iblockstate1.getBlock() == Blocks.grass)
                                             {
-                                                if (var49 < 10)
+                                                if (j2 - 1 < 10)
                                                 {
-                                                    p_151540_5_[var47] = Blocks.flowing_lava;
+                                                    p_180707_5_.setBlockState(j3, j2, i2, Blocks.flowing_lava.getDefaultState());
                                                 }
                                                 else
                                                 {
-                                                    p_151540_5_[var47] = null;
+                                                    p_180707_5_.setBlockState(j3, j2, i2, Blocks.air.getDefaultState());
 
-                                                    if (var48 && p_151540_5_[var47 - 1] == Blocks.dirt)
+                                                    if (flag && p_180707_5_.getBlockState(j3, j2 - 1, i2).getBlock() == Blocks.dirt)
                                                     {
-                                                        p_151540_5_[var47 - 1] = this.worldObj.getBiomeGenForCoords(var41 + p_151540_3_ * 16, var44 + p_151540_4_ * 16).topBlock;
+                                                        blockpos$mutableblockpos.set(j3 + p_180707_3_ * 16, 0, i2 + p_180707_4_ * 16);
+                                                        p_180707_5_.setBlockState(j3, j2 - 1, i2, this.worldObj.getBiomeGenForCoords(blockpos$mutableblockpos).topBlock);
                                                     }
                                                 }
                                             }
                                         }
-
-                                        --var47;
                                     }
                                 }
                             }
                         }
 
-                        if (var53)
+                        if (flag1)
                         {
                             break;
                         }
@@ -206,21 +203,24 @@ public class MapGenRavine extends MapGenBase
         }
     }
 
-    protected void func_151538_a(World p_151538_1_, int p_151538_2_, int p_151538_3_, int p_151538_4_, int p_151538_5_, Block[] p_151538_6_)
+    /**
+     * Recursively called by generate()
+     */
+    protected void recursiveGenerate(World worldIn, int chunkX, int chunkZ, int p_180701_4_, int p_180701_5_, ChunkPrimer chunkPrimerIn)
     {
         if (this.rand.nextInt(50) == 0)
         {
-            double var7 = (double)(p_151538_2_ * 16 + this.rand.nextInt(16));
-            double var9 = (double)(this.rand.nextInt(this.rand.nextInt(40) + 8) + 20);
-            double var11 = (double)(p_151538_3_ * 16 + this.rand.nextInt(16));
-            byte var13 = 1;
+            double d0 = (double)(chunkX * 16 + this.rand.nextInt(16));
+            double d1 = (double)(this.rand.nextInt(this.rand.nextInt(40) + 8) + 20);
+            double d2 = (double)(chunkZ * 16 + this.rand.nextInt(16));
+            int i = 1;
 
-            for (int var14 = 0; var14 < var13; ++var14)
+            for (int j = 0; j < i; ++j)
             {
-                float var15 = this.rand.nextFloat() * (float)Math.PI * 2.0F;
-                float var16 = (this.rand.nextFloat() - 0.5F) * 2.0F / 8.0F;
-                float var17 = (this.rand.nextFloat() * 2.0F + this.rand.nextFloat()) * 2.0F;
-                this.func_151540_a(this.rand.nextLong(), p_151538_4_, p_151538_5_, p_151538_6_, var7, var9, var11, var17, var15, var16, 0, 0, 3.0D);
+                float f = this.rand.nextFloat() * (float)Math.PI * 2.0F;
+                float f1 = (this.rand.nextFloat() - 0.5F) * 2.0F / 8.0F;
+                float f2 = (this.rand.nextFloat() * 2.0F + this.rand.nextFloat()) * 2.0F;
+                this.func_180707_a(this.rand.nextLong(), p_180701_4_, p_180701_5_, chunkPrimerIn, d0, d1, d2, f2, f, f1, 0, 0, 3.0D);
             }
         }
     }

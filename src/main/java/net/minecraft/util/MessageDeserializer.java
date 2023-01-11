@@ -1,13 +1,13 @@
 package net.minecraft.util;
 
-import com.google.common.collect.BiMap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import java.io.IOException;
 import java.util.List;
+import net.minecraft.network.EnumConnectionState;
+import net.minecraft.network.EnumPacketDirection;
 import net.minecraft.network.NetworkManager;
-import net.minecraft.network.NetworkStatistics;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import org.apache.logging.log4j.LogManager;
@@ -18,45 +18,41 @@ import org.apache.logging.log4j.MarkerManager;
 public class MessageDeserializer extends ByteToMessageDecoder
 {
     private static final Logger logger = LogManager.getLogger();
-    private static final Marker field_150799_b = MarkerManager.getMarker("PACKET_RECEIVED", NetworkManager.logMarkerPackets);
-    private final NetworkStatistics field_152499_c;
-    private static final String __OBFID = "CL_00001252";
+    private static final Marker RECEIVED_PACKET_MARKER = MarkerManager.getMarker("PACKET_RECEIVED", NetworkManager.logMarkerPackets);
+    private final EnumPacketDirection direction;
 
-    public MessageDeserializer(NetworkStatistics p_i1183_1_)
+    public MessageDeserializer(EnumPacketDirection direction)
     {
-        this.field_152499_c = p_i1183_1_;
+        this.direction = direction;
     }
 
-    protected void decode(ChannelHandlerContext p_decode_1_, ByteBuf p_decode_2_, List p_decode_3_) throws IOException
+    protected void decode(ChannelHandlerContext p_decode_1_, ByteBuf p_decode_2_, List<Object> p_decode_3_) throws IOException, InstantiationException, IllegalAccessException, Exception
     {
-        int var4 = p_decode_2_.readableBytes();
-
-        if (var4 != 0)
+        if (p_decode_2_.readableBytes() != 0)
         {
-            PacketBuffer var5 = new PacketBuffer(p_decode_2_);
-            int var6 = var5.readVarIntFromBuffer();
-            Packet var7 = Packet.generatePacket((BiMap)p_decode_1_.channel().attr(NetworkManager.attrKeyReceivable).get(), var6);
+            PacketBuffer packetbuffer = new PacketBuffer(p_decode_2_);
+            int i = packetbuffer.readVarIntFromBuffer();
+            Packet packet = ((EnumConnectionState)p_decode_1_.channel().attr(NetworkManager.attrKeyConnectionState).get()).getPacket(this.direction, i);
 
-            if (var7 == null)
+            if (packet == null)
             {
-                throw new IOException("Bad packet id " + var6);
+                throw new IOException("Bad packet id " + i);
             }
             else
             {
-                var7.readPacketData(var5);
+                packet.readPacketData(packetbuffer);
 
-                if (var5.readableBytes() > 0)
+                if (packetbuffer.readableBytes() > 0)
                 {
-                    throw new IOException("Packet was larger than I expected, found " + var5.readableBytes() + " bytes extra whilst reading packet " + var6);
+                    throw new IOException("Packet " + ((EnumConnectionState)p_decode_1_.channel().attr(NetworkManager.attrKeyConnectionState).get()).getId() + "/" + i + " (" + packet.getClass().getSimpleName() + ") was larger than I expected, found " + packetbuffer.readableBytes() + " bytes extra whilst reading packet " + i);
                 }
                 else
                 {
-                    p_decode_3_.add(var7);
-                    this.field_152499_c.func_152469_a(var6, (long)var4);
+                    p_decode_3_.add(packet);
 
                     if (logger.isDebugEnabled())
                     {
-                        logger.debug(field_150799_b, " IN: [{}:{}] {}[{}]", new Object[] {p_decode_1_.channel().attr(NetworkManager.attrKeyConnectionState).get(), Integer.valueOf(var6), var7.getClass().getName(), var7.serialize()});
+                        logger.debug(RECEIVED_PACKET_MARKER, " IN: [{}:{}] {}", new Object[] {p_decode_1_.channel().attr(NetworkManager.attrKeyConnectionState).get(), Integer.valueOf(i), packet.getClass().getName()});
                     }
                 }
             }

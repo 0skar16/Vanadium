@@ -1,13 +1,18 @@
 package net.minecraft.block;
 
 import java.util.Random;
+import net.minecraft.block.state.IBlockState;
+import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
 
 public interface IGrowable
 {
-    boolean func_149851_a(World p_149851_1_, int p_149851_2_, int p_149851_3_, int p_149851_4_, boolean p_149851_5_);
+    /**
+     * Whether this IGrowable can grow
+     */
+    boolean canGrow(World worldIn, BlockPos pos, IBlockState state, boolean isClient);
 
-    boolean func_149852_a(World p_149852_1_, Random p_149852_2_, int p_149852_3_, int p_149852_4_, int p_149852_5_);
+    boolean canUseBonemeal(World worldIn, Random rand, BlockPos pos, IBlockState state);
 
-    void func_149853_b(World p_149853_1_, Random p_149853_2_, int p_149853_3_, int p_149853_4_, int p_149853_5_);
+    void grow(World worldIn, Random rand, BlockPos pos, IBlockState state);
 }

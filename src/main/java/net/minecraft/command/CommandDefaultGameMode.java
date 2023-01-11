@@ -1,6 +1,5 @@
 package net.minecraft.command;
 
-import java.util.Iterator;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.ChatComponentTranslation;
@@ -8,44 +7,50 @@ import net.minecraft.world.WorldSettings;
 
 public class CommandDefaultGameMode extends CommandGameMode
 {
-    private static final String __OBFID = "CL_00000296";
-
+    /**
+     * Gets the name of the command
+     */
     public String getCommandName()
     {
         return "defaultgamemode";
     }
 
-    public String getCommandUsage(ICommandSender p_71518_1_)
+    /**
+     * Gets the usage string for the command.
+     */
+    public String getCommandUsage(ICommandSender sender)
     {
         return "commands.defaultgamemode.usage";
     }
 
-    public void processCommand(ICommandSender p_71515_1_, String[] p_71515_2_)
+    /**
+     * Callback when the command is invoked
+     */
+    public void processCommand(ICommandSender sender, String[] args) throws CommandException
     {
-        if (p_71515_2_.length > 0)
-        {
-            WorldSettings.GameType var3 = this.getGameModeFromCommand(p_71515_1_, p_71515_2_[0]);
-            this.setGameType(var3);
-            func_152373_a(p_71515_1_, this, "commands.defaultgamemode.success", new Object[] {new ChatComponentTranslation("gameMode." + var3.getName(), new Object[0])});
-        }
-        else
+        if (args.length <= 0)
         {
             throw new WrongUsageException("commands.defaultgamemode.usage", new Object[0]);
         }
+        else
+        {
+            WorldSettings.GameType worldsettings$gametype = this.getGameModeFromCommand(sender, args[0]);
+            this.setGameType(worldsettings$gametype);
+            notifyOperators(sender, this, "commands.defaultgamemode.success", new Object[] {new ChatComponentTranslation("gameMode." + worldsettings$gametype.getName(), new Object[0])});
+        }
     }
 
-    protected void setGameType(WorldSettings.GameType p_71541_1_)
+    protected void setGameType(WorldSettings.GameType gameMode)
     {
-        MinecraftServer var2 = MinecraftServer.getServer();
-        var2.setGameType(p_71541_1_);
-        EntityPlayerMP var4;
+        MinecraftServer minecraftserver = MinecraftServer.getServer();
+        minecraftserver.setGameType(gameMode);
 
-        if (var2.getForceGamemode())
+        if (minecraftserver.getForceGamemode())
         {
-            for (Iterator var3 = MinecraftServer.getServer().getConfigurationManager().playerEntityList.iterator(); var3.hasNext(); var4.fallDistance = 0.0F)
+            for (EntityPlayerMP entityplayermp : MinecraftServer.getServer().getConfigurationManager().getPlayerList())
             {
-                var4 = (EntityPlayerMP)var3.next();
-                var4.setGameType(p_71541_1_);
+                entityplayermp.setGameType(gameMode);
+                entityplayermp.fallDistance = 0.0F;
             }
         }
     }

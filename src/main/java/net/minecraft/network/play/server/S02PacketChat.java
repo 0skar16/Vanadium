@@ -1,76 +1,73 @@
 package net.minecraft.network.play.server;
 
 import java.io.IOException;
-import net.minecraft.network.INetHandler;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 import net.minecraft.util.IChatComponent;
 
-public class S02PacketChat extends Packet
+public class S02PacketChat implements Packet<INetHandlerPlayClient>
 {
-    private IChatComponent field_148919_a;
-    private boolean field_148918_b;
-    private static final String __OBFID = "CL_00001289";
+    private IChatComponent chatComponent;
+    private byte type;
 
     public S02PacketChat()
     {
-        this.field_148918_b = true;
     }
 
-    public S02PacketChat(IChatComponent p_i45179_1_)
+    public S02PacketChat(IChatComponent component)
     {
-        this(p_i45179_1_, true);
+        this(component, (byte)1);
     }
 
-    public S02PacketChat(IChatComponent p_i45180_1_, boolean p_i45180_2_)
+    public S02PacketChat(IChatComponent message, byte typeIn)
     {
-        this.field_148918_b = true;
-        this.field_148919_a = p_i45180_1_;
-        this.field_148918_b = p_i45180_2_;
+        this.chatComponent = message;
+        this.type = typeIn;
     }
 
     /**
      * Reads the raw packet data from the data stream.
      */
-    public void readPacketData(PacketBuffer p_148837_1_) throws IOException
+    public void readPacketData(PacketBuffer buf) throws IOException
     {
-        this.field_148919_a = IChatComponent.Serializer.func_150699_a(p_148837_1_.readStringFromBuffer(32767));
+        this.chatComponent = buf.readChatComponent();
+        this.type = buf.readByte();
     }
 
     /**
      * Writes the raw packet data to the data stream.
      */
-    public void writePacketData(PacketBuffer p_148840_1_) throws IOException
+    public void writePacketData(PacketBuffer buf) throws IOException
     {
-        p_148840_1_.writeStringToBuffer(IChatComponent.Serializer.func_150696_a(this.field_148919_a));
-    }
-
-    public void processPacket(INetHandlerPlayClient p_148833_1_)
-    {
-        p_148833_1_.handleChat(this);
+        buf.writeChatComponent(this.chatComponent);
+        buf.writeByte(this.type);
     }
 
     /**
-     * Returns a string formatted as comma separated [field]=[value] values. Used by Minecraft for logging purposes.
+     * Passes this Packet on to the NetHandler for processing.
      */
-    public String serialize()
+    public void processPacket(INetHandlerPlayClient handler)
     {
-        return String.format("message=\'%s\'", new Object[] {this.field_148919_a});
+        handler.handleChat(this);
     }
 
-    public IChatComponent func_148915_c()
+    public IChatComponent getChatComponent()
     {
-        return this.field_148919_a;
+        return this.chatComponent;
     }
 
-    public boolean func_148916_d()
+    public boolean isChat()
     {
-        return this.field_148918_b;
+        return this.type == 1 || this.type == 2;
     }
 
-    public void processPacket(INetHandler p_148833_1_)
+    /**
+     * Returns the id of the area to display the text, 2 for above the action bar, anything else currently for the chat
+     * window
+     */
+    public byte getType()
     {
-        this.processPacket((INetHandlerPlayClient)p_148833_1_);
+        return this.type;
     }
 }

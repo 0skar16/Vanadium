@@ -6,21 +6,21 @@ public class VanillaTextRenderer implements TextRenderer{
 
     @Override
     public int getHeight() {
-        return Minecraft.getMinecraft().fontRenderer.FONT_HEIGHT;
+        return Minecraft.getMinecraft().fontRendererObj.FONT_HEIGHT;
     }
 
     @Override
     public int getWidth(String string) {
-        return Minecraft.getMinecraft().fontRenderer.getStringWidth(string);
+        return Minecraft.getMinecraft().fontRendererObj.getStringWidth(string);
     }
 
     @Override
-    public void render(String text, int x, int y, int color) {
-        Minecraft.getMinecraft().fontRenderer.drawString(text, x, y, color);
+    public void render(String text, int x, int y, int color, boolean shadow) {
+        Minecraft.getMinecraft().fontRendererObj.drawString(text, x, y, color, shadow);
     }
 
     @Override
     public void renderWithShadow(String text, int x, int y, int color) {
-        Minecraft.getMinecraft().fontRenderer.drawStringWithShadow(text,x,y,color);
+        Minecraft.getMinecraft().fontRendererObj.drawStringWithShadow(text,x,y,color);
     }
 }

@@ -1,498 +1,1080 @@
 package net.minecraft.client.renderer;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import net.minecraft.block.Block;
-import net.minecraft.block.material.Material;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.culling.ICamera;
-import net.minecraft.client.renderer.entity.RenderItem;
-import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
-import net.minecraft.client.shader.TesselatorVertexState;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.AxisAlignedBB;
+import com.google.common.primitives.Floats;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.ShortBuffer;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.Comparator;
+import net.minecraft.block.state.IBlockState;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.renderer.vertex.VertexFormat;
+import net.minecraft.client.renderer.vertex.VertexFormatElement;
+import net.minecraft.src.Config;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.EnumWorldBlockLayer;
 import net.minecraft.util.MathHelper;
-import net.minecraft.world.ChunkCache;
-import net.minecraft.world.World;
-import net.minecraft.world.chunk.Chunk;
-import optifine.Config;
-import optifine.Reflector;
-
+import net.optifine.SmartAnimations;
+import net.optifine.render.RenderEnv;
+import net.optifine.shaders.SVertexBuilder;
+import net.optifine.util.TextureUtils;
+import org.apache.logging.log4j.LogManager;
 import org.lwjgl.opengl.GL11;
 
 public class WorldRenderer
 {
-    protected TesselatorVertexState vertexState;
+    private ByteBuffer byteBuffer;
+    public IntBuffer rawIntBuffer;
+    private ShortBuffer rawShortBuffer;
+    public FloatBuffer rawFloatBuffer;
+    public int vertexCount;
+    private VertexFormatElement vertexFormatElement;
+    private int vertexFormatIndex;
 
-    /** Reference to the World object. */
-    public World worldObj;
-    protected int glRenderList;
-    protected Tessellator tessellator;
-    public static volatile int chunksUpdated;
-    public int posX;
-    public int posY;
-    public int posZ;
+    /** None */
+    private boolean noColor;
+    public int drawMode;
+    private double xOffset;
+    private double yOffset;
+    private double zOffset;
+    private VertexFormat vertexFormat;
+    private boolean isDrawing;
+    private EnumWorldBlockLayer blockLayer = null;
+    private boolean[] drawnIcons = new boolean[256];
+    private TextureAtlasSprite[] quadSprites = null;
+    private TextureAtlasSprite[] quadSpritesPrev = null;
+    private TextureAtlasSprite quadSprite = null;
+    public SVertexBuilder sVertexBuilder;
+    public RenderEnv renderEnv = null;
+    public BitSet animatedSprites = null;
+    public BitSet animatedSpritesCached = new BitSet();
+    private boolean modeTriangles = false;
+    private ByteBuffer byteBufferTriangles;
 
-    /** Pos X minus */
-    public int posXMinus;
-
-    /** Pos Y minus */
-    public int posYMinus;
-
-    /** Pos Z minus */
-    public int posZMinus;
-
-    /** Pos X clipped */
-    public int posXClip;
-
-    /** Pos Y clipped */
-    public int posYClip;
-
-    /** Pos Z clipped */
-    public int posZClip;
-    public boolean isInFrustum;
-
-    /** Should this renderer skip this render pass */
-    public boolean[] skipRenderPass;
-
-    /** Pos X plus */
-    public int posXPlus;
-
-    /** Pos Y plus */
-    public int posYPlus;
-
-    /** Pos Z plus */
-    public int posZPlus;
-
-    /** Boolean for whether this renderer needs to be updated or not */
-    public volatile boolean needsUpdate;
-
-    /** Axis aligned bounding box */
-    public AxisAlignedBB rendererBoundingBox;
-
-    /** Chunk index */
-    public int chunkIndex;
-
-    /** Is this renderer visible according to the occlusion query */
-    public boolean isVisible;
-
-    /** Is this renderer waiting on the result of the occlusion query */
-    public boolean isWaitingOnOcclusionQuery;
-
-    /** OpenGL occlusion query */
-    public int glOcclusionQuery;
-
-    /** Is the chunk lit */
-    public boolean isChunkLit;
-    protected boolean isInitialized;
-    public List tileEntityRenderers;
-    protected List tileEntities;
-
-    /** Bytes sent to the GPU */
-    protected int bytesDrawn;
-    public boolean isVisibleFromPosition;
-    public double visibleFromX;
-    public double visibleFromY;
-    public double visibleFromZ;
-    public boolean isInFrustrumFully;
-    protected boolean needsBoxUpdate;
-    public volatile boolean isUpdating;
-    public float sortDistanceToEntitySquared;
-    public double distanceToEntityXzSq;
-    protected boolean skipAllRenderPasses;
-    public boolean inSortedWorldRenderers;
-    public boolean needVertexStateResort;
-    public RenderGlobal renderGlobal;
-    public static int globalChunkOffsetX = 0;
-    public static int globalChunkOffsetZ = 0;
-    private static final String __OBFID = "CL_00000942";
-
-    public WorldRenderer(World par1World, List par2List, int par3, int par4, int par5, int par6)
+    public WorldRenderer(int bufferSizeIn)
     {
-        this.tessellator = Tessellator.instance;
-        this.skipRenderPass = new boolean[] {true, true};
-        this.tileEntityRenderers = new ArrayList();
-        this.isVisibleFromPosition = false;
-        this.isInFrustrumFully = false;
-        this.needsBoxUpdate = false;
-        this.isUpdating = false;
-        this.skipAllRenderPasses = true;
-        this.renderGlobal = Minecraft.getMinecraft().renderGlobal;
-        this.glRenderList = -1;
-        this.isInFrustum = false;
-        this.isVisible = true;
-        this.isInitialized = false;
-        this.worldObj = par1World;
-        this.vertexState = null;
-        this.tileEntities = par2List;
-        this.glRenderList = par6;
-        this.posX = -999;
-        this.setPosition(par3, par4, par5);
-        this.needsUpdate = false;
+        this.byteBuffer = GLAllocation.createDirectByteBuffer(bufferSizeIn * 4);
+        this.rawIntBuffer = this.byteBuffer.asIntBuffer();
+        this.rawShortBuffer = this.byteBuffer.asShortBuffer();
+        this.rawFloatBuffer = this.byteBuffer.asFloatBuffer();
+        SVertexBuilder.initVertexBuilder(this);
     }
 
-    /**
-     * Sets a new position for the renderer and setting it up so it can be reloaded with the new data for that position
-     */
-    public void setPosition(int par1, int par2, int par3)
+    private void growBuffer(int p_181670_1_)
     {
-        if (par1 != this.posX || par2 != this.posY || par3 != this.posZ)
+        if (p_181670_1_ > this.rawIntBuffer.remaining())
         {
-            this.setDontDraw();
-            this.posX = par1;
-            this.posY = par2;
-            this.posZ = par3;
-            this.posXPlus = par1 + 8;
-            this.posYPlus = par2 + 8;
-            this.posZPlus = par3 + 8;
-            this.posXClip = par1 & 1023;
-            this.posYClip = par2;
-            this.posZClip = par3 & 1023;
-            this.posXMinus = par1 - this.posXClip;
-            this.posYMinus = par2 - this.posYClip;
-            this.posZMinus = par3 - this.posZClip;
-            this.rendererBoundingBox = AxisAlignedBB.getBoundingBox((double)par1, (double)par2, (double)par3, (double)(par1 + 16), (double)(par2 + 16), (double)(par3 + 16));
-            this.needsBoxUpdate = true;
-            this.markDirty();
-            this.isVisibleFromPosition = false;
-        }
-    }
+            int i = this.byteBuffer.capacity();
+            int j = i % 2097152;
+            int k = j + (((this.rawIntBuffer.position() + p_181670_1_) * 4 - j) / 2097152 + 1) * 2097152;
+            LogManager.getLogger().warn("Needed to grow BufferBuilder buffer: Old size " + i + " bytes, new size " + k + " bytes.");
+            int l = this.rawIntBuffer.position();
+            ByteBuffer bytebuffer = GLAllocation.createDirectByteBuffer(k);
+            this.byteBuffer.position(0);
+            bytebuffer.put(this.byteBuffer);
+            bytebuffer.rewind();
+            this.byteBuffer = bytebuffer;
+            this.rawFloatBuffer = this.byteBuffer.asFloatBuffer();
+            this.rawIntBuffer = this.byteBuffer.asIntBuffer();
+            this.rawIntBuffer.position(l);
+            this.rawShortBuffer = this.byteBuffer.asShortBuffer();
+            this.rawShortBuffer.position(l << 1);
 
-    protected void setupGLTranslation()
-    {
-        GL11.glTranslatef((float)this.posXClip, (float)this.posYClip, (float)this.posZClip);
-    }
-
-    /**
-     * Will update this chunk renderer
-     */
-    public void updateRenderer(EntityLivingBase p_147892_1_)
-    {
-        if (this.worldObj != null)
-        {
-            if (this.needsBoxUpdate)
+            if (this.quadSprites != null)
             {
-                GL11.glNewList(this.glRenderList + 2, GL11.GL_COMPILE);
-                RenderItem.renderAABB(AxisAlignedBB.getBoundingBox((double)this.posXClip, (double)this.posYClip, (double)this.posZClip, (double)(this.posXClip + 16), (double)(this.posYClip + 16), (double)(this.posZClip + 16)));
-                GL11.glEndList();
-                this.needsBoxUpdate = false;
-            }
-
-            this.isVisible = true;
-            this.isVisibleFromPosition = false;
-
-            if (this.needsUpdate)
-            {
-                this.needsUpdate = false;
-                int xMin = this.posX;
-                int yMin = this.posY;
-                int zMain = this.posZ;
-                int xMax = this.posX + 16;
-                int yMax = this.posY + 16;
-                int zMax = this.posZ + 16;
-
-                for (int var26 = 0; var26 < 2; ++var26)
-                {
-                    this.skipRenderPass[var26] = true;
-                }
-
-                this.skipAllRenderPasses = true;
-
-                if (Reflector.LightCache.exists())
-                {
-                    Object var29 = Reflector.getFieldValue(Reflector.LightCache_cache);
-                    Reflector.callVoid(var29, Reflector.LightCache_clear, new Object[0]);
-                    Reflector.callVoid(Reflector.BlockCoord_resetPool, new Object[0]);
-                }
-
-                Chunk.isLit = false;
-                HashSet var30 = new HashSet();
-                var30.addAll(this.tileEntityRenderers);
-                this.tileEntityRenderers.clear();
-                Minecraft var9 = Minecraft.getMinecraft();
-                EntityLivingBase var10 = var9.renderViewEntity;
-                int viewEntityPosX = MathHelper.floor_double(var10.posX);
-                int viewEntityPosY = MathHelper.floor_double(var10.posY);
-                int viewEntityPosZ = MathHelper.floor_double(var10.posZ);
-                byte var14 = 1;
-                ChunkCache chunkcache = new ChunkCache(this.worldObj, xMin - var14, yMin - var14, zMain - var14, xMax + var14, yMax + var14, zMax + var14, var14);
-
-                if (!chunkcache.extendedLevelsInChunkCache())
-                {
-                    ++chunksUpdated;
-                    RenderBlocks var27 = new RenderBlocks(chunkcache);
-                    Reflector.callVoid(Reflector.ForgeHooksClient_setWorldRendererRB, new Object[] {var27});
-                    this.bytesDrawn = 0;
-                    this.vertexState = null;
-                    this.tessellator = Tessellator.instance;
-                    boolean hasForge = Reflector.ForgeHooksClient.exists();
-
-                    for (int renderPass = 0; renderPass < 2; ++renderPass)
-                    {
-                        boolean renderNextPass = false;
-                        boolean hasRenderedBlocks = false;
-                        boolean hasGlList = false;
-
-                        for (int y = yMin; y < yMax; ++y)
-                        {
-                            for (int z = zMain; z < zMax; ++z)
-                            {
-                                for (int x = xMin; x < xMax; ++x)
-                                {
-                                    Block block = chunkcache.getBlock(x, y, z);
-
-                                    if (block.getMaterial() != Material.air)
-                                    {
-                                        if (!hasGlList)
-                                        {
-                                            hasGlList = true;
-                                            this.preRenderBlocks(renderPass);
-                                        }
-
-                                        boolean hasTileEntity = false;
-
-                                        if (hasForge)
-                                        {
-                                            hasTileEntity = Reflector.callBoolean(block, Reflector.ForgeBlock_hasTileEntity, new Object[] {Integer.valueOf(chunkcache.getBlockMetadata(x, y, z))});
-                                        }
-                                        else
-                                        {
-                                            hasTileEntity = block.hasTileEntity();
-                                        }
-
-                                        if (renderPass == 0 && hasTileEntity)
-                                        {
-                                            TileEntity blockPass = chunkcache.getTileEntity(x, y, z);
-
-                                            if (TileEntityRendererDispatcher.instance.hasSpecialRenderer(blockPass))
-                                            {
-                                                this.tileEntityRenderers.add(blockPass);
-                                            }
-                                        }
-
-                                        int var32 = block.getRenderBlockPass();
-
-                                        if (var32 > renderPass)
-                                        {
-                                            renderNextPass = true;
-                                        }
-
-                                        boolean canRender = var32 == renderPass;
-
-                                        if (Reflector.ForgeBlock_canRenderInPass.exists())
-                                        {
-                                            canRender = Reflector.callBoolean(block, Reflector.ForgeBlock_canRenderInPass, new Object[] {Integer.valueOf(renderPass)});
-                                        }
-
-                                        if (canRender)
-                                        {
-                                            hasRenderedBlocks |= var27.renderBlockByRenderType(block, x, y, z);
-
-                                            if (block.getRenderType() == 0 && x == viewEntityPosX && y == viewEntityPosY && z == viewEntityPosZ)
-                                            {
-                                                var27.setRenderFromInside(true);
-                                                var27.setRenderAllFaces(true);
-                                                var27.renderBlockByRenderType(block, x, y, z);
-                                                var27.setRenderFromInside(false);
-                                                var27.setRenderAllFaces(false);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        if (hasRenderedBlocks)
-                        {
-                            this.skipRenderPass[renderPass] = false;
-                        }
-
-                        if (hasGlList)
-                        {
-                            this.postRenderBlocks(renderPass, p_147892_1_);
-                        }
-                        else
-                        {
-                            hasRenderedBlocks = false;
-                        }
-
-                        if (!renderNextPass)
-                        {
-                            break;
-                        }
-                    }
-
-                    Reflector.callVoid(Reflector.ForgeHooksClient_setWorldRendererRB, new Object[] {(RenderBlocks)null});
-                }
-
-                HashSet var31 = new HashSet();
-                var31.addAll(this.tileEntityRenderers);
-                var31.removeAll(var30);
-                this.tileEntities.addAll(var31);
-                var30.removeAll(this.tileEntityRenderers);
-                this.tileEntities.removeAll(var30);
-                this.isChunkLit = Chunk.isLit;
-                this.isInitialized = true;
-                this.skipAllRenderPasses = this.skipRenderPass[0] && this.skipRenderPass[1];
-                this.updateFinished();
+                TextureAtlasSprite[] atextureatlassprite = this.quadSprites;
+                int i1 = this.getBufferQuadSize();
+                this.quadSprites = new TextureAtlasSprite[i1];
+                System.arraycopy(atextureatlassprite, 0, this.quadSprites, 0, Math.min(atextureatlassprite.length, this.quadSprites.length));
+                this.quadSpritesPrev = null;
             }
         }
     }
 
-    protected void preRenderBlocks(int renderpass)
+    public void sortVertexData(float p_181674_1_, float p_181674_2_, float p_181674_3_)
     {
-        GL11.glNewList(this.glRenderList + renderpass, GL11.GL_COMPILE);
-        this.tessellator.setRenderingChunk(true);
+        int i = this.vertexCount / 4;
+        final float[] afloat = new float[i];
 
-        if (Config.isFastRender())
+        for (int j = 0; j < i; ++j)
         {
-            Reflector.callVoid(Reflector.ForgeHooksClient_onPreRenderWorld, new Object[] {this, Integer.valueOf(renderpass)});
-            this.tessellator.startDrawingQuads();
-            this.tessellator.setTranslation((double)(-globalChunkOffsetX), 0.0D, (double)(-globalChunkOffsetZ));
+            afloat[j] = getDistanceSq(this.rawFloatBuffer, (float)((double)p_181674_1_ + this.xOffset), (float)((double)p_181674_2_ + this.yOffset), (float)((double)p_181674_3_ + this.zOffset), this.vertexFormat.getIntegerSize(), j * this.vertexFormat.getNextOffset());
+        }
+
+        Integer[] ainteger = new Integer[i];
+
+        for (int k = 0; k < ainteger.length; ++k)
+        {
+            ainteger[k] = Integer.valueOf(k);
+        }
+
+        Arrays.sort(ainteger, new Comparator<Integer>()
+        {
+            public int compare(Integer p_compare_1_, Integer p_compare_2_)
+            {
+                return Floats.compare(afloat[p_compare_2_.intValue()], afloat[p_compare_1_.intValue()]);
+            }
+        });
+        BitSet bitset = new BitSet();
+        int l = this.vertexFormat.getNextOffset();
+        int[] aint = new int[l];
+
+        for (int l1 = 0; (l1 = bitset.nextClearBit(l1)) < ainteger.length; ++l1)
+        {
+            int i1 = ainteger[l1].intValue();
+
+            if (i1 != l1)
+            {
+                this.rawIntBuffer.limit(i1 * l + l);
+                this.rawIntBuffer.position(i1 * l);
+                this.rawIntBuffer.get(aint);
+                int j1 = i1;
+
+                for (int k1 = ainteger[i1].intValue(); j1 != l1; k1 = ainteger[k1].intValue())
+                {
+                    this.rawIntBuffer.limit(k1 * l + l);
+                    this.rawIntBuffer.position(k1 * l);
+                    IntBuffer intbuffer = this.rawIntBuffer.slice();
+                    this.rawIntBuffer.limit(j1 * l + l);
+                    this.rawIntBuffer.position(j1 * l);
+                    this.rawIntBuffer.put(intbuffer);
+                    bitset.set(j1);
+                    j1 = k1;
+                }
+
+                this.rawIntBuffer.limit(l1 * l + l);
+                this.rawIntBuffer.position(l1 * l);
+                this.rawIntBuffer.put(aint);
+            }
+
+            bitset.set(l1);
+        }
+
+        this.rawIntBuffer.limit(this.rawIntBuffer.capacity());
+        this.rawIntBuffer.position(this.getBufferSize());
+
+        if (this.quadSprites != null)
+        {
+            TextureAtlasSprite[] atextureatlassprite = new TextureAtlasSprite[this.vertexCount / 4];
+            int i2 = this.vertexFormat.getNextOffset() / 4 * 4;
+
+            for (int j2 = 0; j2 < ainteger.length; ++j2)
+            {
+                int k2 = ainteger[j2].intValue();
+                atextureatlassprite[j2] = this.quadSprites[k2];
+            }
+
+            System.arraycopy(atextureatlassprite, 0, this.quadSprites, 0, atextureatlassprite.length);
+        }
+    }
+
+    public WorldRenderer.State getVertexState()
+    {
+        this.rawIntBuffer.rewind();
+        int i = this.getBufferSize();
+        this.rawIntBuffer.limit(i);
+        int[] aint = new int[i];
+        this.rawIntBuffer.get(aint);
+        this.rawIntBuffer.limit(this.rawIntBuffer.capacity());
+        this.rawIntBuffer.position(i);
+        TextureAtlasSprite[] atextureatlassprite = null;
+
+        if (this.quadSprites != null)
+        {
+            int j = this.vertexCount / 4;
+            atextureatlassprite = new TextureAtlasSprite[j];
+            System.arraycopy(this.quadSprites, 0, atextureatlassprite, 0, j);
+        }
+
+        return new WorldRenderer.State(aint, new VertexFormat(this.vertexFormat), atextureatlassprite);
+    }
+
+    public int getBufferSize()
+    {
+        return this.vertexCount * this.vertexFormat.getIntegerSize();
+    }
+
+    private static float getDistanceSq(FloatBuffer p_181665_0_, float p_181665_1_, float p_181665_2_, float p_181665_3_, int p_181665_4_, int p_181665_5_)
+    {
+        float f = p_181665_0_.get(p_181665_5_ + p_181665_4_ * 0 + 0);
+        float f1 = p_181665_0_.get(p_181665_5_ + p_181665_4_ * 0 + 1);
+        float f2 = p_181665_0_.get(p_181665_5_ + p_181665_4_ * 0 + 2);
+        float f3 = p_181665_0_.get(p_181665_5_ + p_181665_4_ * 1 + 0);
+        float f4 = p_181665_0_.get(p_181665_5_ + p_181665_4_ * 1 + 1);
+        float f5 = p_181665_0_.get(p_181665_5_ + p_181665_4_ * 1 + 2);
+        float f6 = p_181665_0_.get(p_181665_5_ + p_181665_4_ * 2 + 0);
+        float f7 = p_181665_0_.get(p_181665_5_ + p_181665_4_ * 2 + 1);
+        float f8 = p_181665_0_.get(p_181665_5_ + p_181665_4_ * 2 + 2);
+        float f9 = p_181665_0_.get(p_181665_5_ + p_181665_4_ * 3 + 0);
+        float f10 = p_181665_0_.get(p_181665_5_ + p_181665_4_ * 3 + 1);
+        float f11 = p_181665_0_.get(p_181665_5_ + p_181665_4_ * 3 + 2);
+        float f12 = (f + f3 + f6 + f9) * 0.25F - p_181665_1_;
+        float f13 = (f1 + f4 + f7 + f10) * 0.25F - p_181665_2_;
+        float f14 = (f2 + f5 + f8 + f11) * 0.25F - p_181665_3_;
+        return f12 * f12 + f13 * f13 + f14 * f14;
+    }
+
+    public void setVertexState(WorldRenderer.State state)
+    {
+        this.rawIntBuffer.clear();
+        this.growBuffer(state.getRawBuffer().length);
+        this.rawIntBuffer.put(state.getRawBuffer());
+        this.vertexCount = state.getVertexCount();
+        this.vertexFormat = new VertexFormat(state.getVertexFormat());
+
+        if (state.stateQuadSprites != null)
+        {
+            if (this.quadSprites == null)
+            {
+                this.quadSprites = this.quadSpritesPrev;
+            }
+
+            if (this.quadSprites == null || this.quadSprites.length < this.getBufferQuadSize())
+            {
+                this.quadSprites = new TextureAtlasSprite[this.getBufferQuadSize()];
+            }
+
+            TextureAtlasSprite[] atextureatlassprite = state.stateQuadSprites;
+            System.arraycopy(atextureatlassprite, 0, this.quadSprites, 0, atextureatlassprite.length);
         }
         else
         {
-            GL11.glPushMatrix();
-            this.setupGLTranslation();
-            float var2 = 1.000001F;
-            GL11.glTranslatef(-8.0F, -8.0F, -8.0F);
-            GL11.glScalef(var2, var2, var2);
-            GL11.glTranslatef(8.0F, 8.0F, 8.0F);
-            Reflector.callVoid(Reflector.ForgeHooksClient_onPreRenderWorld, new Object[] {this, Integer.valueOf(renderpass)});
-            this.tessellator.startDrawingQuads();
-            this.tessellator.setTranslation((double)(-this.posX), (double)(-this.posY), (double)(-this.posZ));
+            if (this.quadSprites != null)
+            {
+                this.quadSpritesPrev = this.quadSprites;
+            }
+
+            this.quadSprites = null;
         }
     }
 
-    protected void postRenderBlocks(int renderpass, EntityLivingBase entityLiving)
+    public void reset()
     {
-        if (Config.isTranslucentBlocksFancy() && renderpass == 1 && !this.skipRenderPass[renderpass])
+        this.vertexCount = 0;
+        this.vertexFormatElement = null;
+        this.vertexFormatIndex = 0;
+        this.quadSprite = null;
+
+        if (SmartAnimations.isActive())
         {
-            this.vertexState = this.tessellator.getVertexState((float)entityLiving.posX, (float)entityLiving.posY, (float)entityLiving.posZ);
+            if (this.animatedSprites == null)
+            {
+                this.animatedSprites = this.animatedSpritesCached;
+            }
+
+            this.animatedSprites.clear();
         }
-
-        this.bytesDrawn += this.tessellator.draw();
-        Reflector.callVoid(Reflector.ForgeHooksClient_onPostRenderWorld, new Object[] {this, Integer.valueOf(renderpass)});
-        this.tessellator.setRenderingChunk(false);
-
-        if (!Config.isFastRender())
+        else if (this.animatedSprites != null)
         {
-            GL11.glPopMatrix();
+            this.animatedSprites = null;
         }
 
-        GL11.glEndList();
-        this.tessellator.setTranslation(0.0D, 0.0D, 0.0D);
+        this.modeTriangles = false;
     }
 
-    public void updateRendererSort(EntityLivingBase p_147889_1_)
+    public void begin(int glMode, VertexFormat format)
     {
-        if (this.vertexState != null && !this.skipRenderPass[1])
+        if (this.isDrawing)
         {
-            this.tessellator = Tessellator.instance;
-            this.preRenderBlocks(1);
-            this.tessellator.setVertexState(this.vertexState);
-            this.postRenderBlocks(1, p_147889_1_);
+            throw new IllegalStateException("Already building!");
         }
-    }
-
-    /**
-     * Returns the distance of this chunk renderer to the entity without performing the final normalizing square root,
-     * for performance reasons.
-     */
-    public float distanceToEntitySquared(Entity par1Entity)
-    {
-        float var2 = (float)(par1Entity.posX - (double)this.posXPlus);
-        float var3 = (float)(par1Entity.posY - (double)this.posYPlus);
-        float var4 = (float)(par1Entity.posZ - (double)this.posZPlus);
-        return var2 * var2 + var3 * var3 + var4 * var4;
-    }
-
-    /**
-     * When called this renderer won't draw anymore until its gets initialized again
-     */
-    public void setDontDraw()
-    {
-        for (int var1 = 0; var1 < 2; ++var1)
+        else
         {
-            this.skipRenderPass[var1] = true;
-        }
+            this.isDrawing = true;
+            this.reset();
+            this.drawMode = glMode;
+            this.vertexFormat = format;
+            this.vertexFormatElement = format.getElement(this.vertexFormatIndex);
+            this.noColor = false;
+            this.byteBuffer.limit(this.byteBuffer.capacity());
 
-        this.skipAllRenderPasses = true;
-        this.isInFrustum = false;
-        this.isInitialized = false;
-        this.vertexState = null;
+            if (Config.isShaders())
+            {
+                SVertexBuilder.endSetVertexFormat(this);
+            }
+
+            if (Config.isMultiTexture())
+            {
+                if (this.blockLayer != null)
+                {
+                    if (this.quadSprites == null)
+                    {
+                        this.quadSprites = this.quadSpritesPrev;
+                    }
+
+                    if (this.quadSprites == null || this.quadSprites.length < this.getBufferQuadSize())
+                    {
+                        this.quadSprites = new TextureAtlasSprite[this.getBufferQuadSize()];
+                    }
+                }
+            }
+            else
+            {
+                if (this.quadSprites != null)
+                {
+                    this.quadSpritesPrev = this.quadSprites;
+                }
+
+                this.quadSprites = null;
+            }
+        }
     }
 
-    public void stopRendering()
+    public WorldRenderer tex(double u, double v)
     {
-        this.setDontDraw();
-        this.worldObj = null;
+        if (this.quadSprite != null && this.quadSprites != null)
+        {
+            u = (double)this.quadSprite.toSingleU((float)u);
+            v = (double)this.quadSprite.toSingleV((float)v);
+            this.quadSprites[this.vertexCount / 4] = this.quadSprite;
+        }
+
+        int i = this.vertexCount * this.vertexFormat.getNextOffset() + this.vertexFormat.getOffset(this.vertexFormatIndex);
+
+        switch (this.vertexFormatElement.getType())
+        {
+            case FLOAT:
+                this.byteBuffer.putFloat(i, (float)u);
+                this.byteBuffer.putFloat(i + 4, (float)v);
+                break;
+
+            case UINT:
+            case INT:
+                this.byteBuffer.putInt(i, (int)u);
+                this.byteBuffer.putInt(i + 4, (int)v);
+                break;
+
+            case USHORT:
+            case SHORT:
+                this.byteBuffer.putShort(i, (short)((int)v));
+                this.byteBuffer.putShort(i + 2, (short)((int)u));
+                break;
+
+            case UBYTE:
+            case BYTE:
+                this.byteBuffer.put(i, (byte)((int)v));
+                this.byteBuffer.put(i + 1, (byte)((int)u));
+        }
+
+        this.nextVertexFormatIndex();
+        return this;
+    }
+
+    public WorldRenderer lightmap(int p_181671_1_, int p_181671_2_)
+    {
+        int i = this.vertexCount * this.vertexFormat.getNextOffset() + this.vertexFormat.getOffset(this.vertexFormatIndex);
+
+        switch (this.vertexFormatElement.getType())
+        {
+            case FLOAT:
+                this.byteBuffer.putFloat(i, (float)p_181671_1_);
+                this.byteBuffer.putFloat(i + 4, (float)p_181671_2_);
+                break;
+
+            case UINT:
+            case INT:
+                this.byteBuffer.putInt(i, p_181671_1_);
+                this.byteBuffer.putInt(i + 4, p_181671_2_);
+                break;
+
+            case USHORT:
+            case SHORT:
+                this.byteBuffer.putShort(i, (short)p_181671_2_);
+                this.byteBuffer.putShort(i + 2, (short)p_181671_1_);
+                break;
+
+            case UBYTE:
+            case BYTE:
+                this.byteBuffer.put(i, (byte)p_181671_2_);
+                this.byteBuffer.put(i + 1, (byte)p_181671_1_);
+        }
+
+        this.nextVertexFormatIndex();
+        return this;
+    }
+
+    public void putBrightness4(int p_178962_1_, int p_178962_2_, int p_178962_3_, int p_178962_4_)
+    {
+        int i = (this.vertexCount - 4) * this.vertexFormat.getIntegerSize() + this.vertexFormat.getUvOffsetById(1) / 4;
+        int j = this.vertexFormat.getNextOffset() >> 2;
+        this.rawIntBuffer.put(i, p_178962_1_);
+        this.rawIntBuffer.put(i + j, p_178962_2_);
+        this.rawIntBuffer.put(i + j * 2, p_178962_3_);
+        this.rawIntBuffer.put(i + j * 3, p_178962_4_);
+    }
+
+    public void putPosition(double x, double y, double z)
+    {
+        int i = this.vertexFormat.getIntegerSize();
+        int j = (this.vertexCount - 4) * i;
+
+        for (int k = 0; k < 4; ++k)
+        {
+            int l = j + k * i;
+            int i1 = l + 1;
+            int j1 = i1 + 1;
+            this.rawIntBuffer.put(l, Float.floatToRawIntBits((float)(x + this.xOffset) + Float.intBitsToFloat(this.rawIntBuffer.get(l))));
+            this.rawIntBuffer.put(i1, Float.floatToRawIntBits((float)(y + this.yOffset) + Float.intBitsToFloat(this.rawIntBuffer.get(i1))));
+            this.rawIntBuffer.put(j1, Float.floatToRawIntBits((float)(z + this.zOffset) + Float.intBitsToFloat(this.rawIntBuffer.get(j1))));
+        }
     }
 
     /**
      * Takes in the pass the call list is being requested for. Args: renderPass
      */
-    public int getGLCallListForPass(int par1)
+    public int getColorIndex(int p_78909_1_)
     {
-        return this.glRenderList + par1;
+        return ((this.vertexCount - p_78909_1_) * this.vertexFormat.getNextOffset() + this.vertexFormat.getColorOffset()) / 4;
     }
 
-    public void updateInFrustum(ICamera par1ICamera)
+    public void putColorMultiplier(float red, float green, float blue, int p_178978_4_)
     {
-        this.isInFrustum = par1ICamera.isBoundingBoxInFrustum(this.rendererBoundingBox);
+        int i = this.getColorIndex(p_178978_4_);
+        int j = -1;
 
-        if (this.isInFrustum && Config.isOcclusionFancy())
+        if (!this.noColor)
         {
-            this.isInFrustrumFully = par1ICamera.isBoundingBoxInFrustumFully(this.rendererBoundingBox);
+            j = this.rawIntBuffer.get(i);
+
+            if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN)
+            {
+                int k = (int)((float)(j & 255) * red);
+                int l = (int)((float)(j >> 8 & 255) * green);
+                int i1 = (int)((float)(j >> 16 & 255) * blue);
+                j = j & -16777216;
+                j = j | i1 << 16 | l << 8 | k;
+            }
+            else
+            {
+                int j1 = (int)((float)(j >> 24 & 255) * red);
+                int k1 = (int)((float)(j >> 16 & 255) * green);
+                int l1 = (int)((float)(j >> 8 & 255) * blue);
+                j = j & 255;
+                j = j | j1 << 24 | k1 << 16 | l1 << 8;
+            }
+        }
+
+        this.rawIntBuffer.put(i, j);
+    }
+
+    private void putColor(int argb, int p_178988_2_)
+    {
+        int i = this.getColorIndex(p_178988_2_);
+        int j = argb >> 16 & 255;
+        int k = argb >> 8 & 255;
+        int l = argb & 255;
+        int i1 = argb >> 24 & 255;
+        this.putColorRGBA(i, j, k, l, i1);
+    }
+
+    public void putColorRGB_F(float red, float green, float blue, int p_178994_4_)
+    {
+        int i = this.getColorIndex(p_178994_4_);
+        int j = MathHelper.clamp_int((int)(red * 255.0F), 0, 255);
+        int k = MathHelper.clamp_int((int)(green * 255.0F), 0, 255);
+        int l = MathHelper.clamp_int((int)(blue * 255.0F), 0, 255);
+        this.putColorRGBA(i, j, k, l, 255);
+    }
+
+    public void putColorRGBA(int index, int red, int p_178972_3_, int p_178972_4_, int p_178972_5_)
+    {
+        if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN)
+        {
+            this.rawIntBuffer.put(index, p_178972_5_ << 24 | p_178972_4_ << 16 | p_178972_3_ << 8 | red);
         }
         else
         {
-            this.isInFrustrumFully = false;
+            this.rawIntBuffer.put(index, red << 24 | p_178972_3_ << 16 | p_178972_4_ << 8 | p_178972_5_);
         }
     }
 
     /**
-     * Renders the occlusion query GL List
+     * Disabels color processing.
      */
-    public void callOcclusionQueryList()
+    public void noColor()
     {
-        GL11.glCallList(this.glRenderList + 2);
+        this.noColor = true;
     }
 
-    /**
-     * Checks if all render passes are to be skipped. Returns false if the renderer is not initialized
-     */
-    public boolean skipAllRenderPasses()
+    public WorldRenderer color(float red, float green, float blue, float alpha)
     {
-        return this.skipAllRenderPasses;
+        return this.color((int)(red * 255.0F), (int)(green * 255.0F), (int)(blue * 255.0F), (int)(alpha * 255.0F));
     }
 
-    /**
-     * Marks the current renderer data as dirty and needing to be updated.
-     */
-    public void markDirty()
+    public WorldRenderer color(int red, int green, int blue, int alpha)
     {
-        this.needsUpdate = true;
-    }
-
-    protected void updateFinished()
-    {
-        if (!this.skipAllRenderPasses && !this.inSortedWorldRenderers)
+        if (this.noColor)
         {
-            Minecraft.getMinecraft().renderGlobal.addToSortedWorldRenderers(this);
+            return this;
+        }
+        else
+        {
+            int i = this.vertexCount * this.vertexFormat.getNextOffset() + this.vertexFormat.getOffset(this.vertexFormatIndex);
+
+            switch (this.vertexFormatElement.getType())
+            {
+                case FLOAT:
+                    this.byteBuffer.putFloat(i, (float)red / 255.0F);
+                    this.byteBuffer.putFloat(i + 4, (float)green / 255.0F);
+                    this.byteBuffer.putFloat(i + 8, (float)blue / 255.0F);
+                    this.byteBuffer.putFloat(i + 12, (float)alpha / 255.0F);
+                    break;
+
+                case UINT:
+                case INT:
+                    this.byteBuffer.putFloat(i, (float)red);
+                    this.byteBuffer.putFloat(i + 4, (float)green);
+                    this.byteBuffer.putFloat(i + 8, (float)blue);
+                    this.byteBuffer.putFloat(i + 12, (float)alpha);
+                    break;
+
+                case USHORT:
+                case SHORT:
+                    this.byteBuffer.putShort(i, (short)red);
+                    this.byteBuffer.putShort(i + 2, (short)green);
+                    this.byteBuffer.putShort(i + 4, (short)blue);
+                    this.byteBuffer.putShort(i + 6, (short)alpha);
+                    break;
+
+                case UBYTE:
+                case BYTE:
+                    if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN)
+                    {
+                        this.byteBuffer.put(i, (byte)red);
+                        this.byteBuffer.put(i + 1, (byte)green);
+                        this.byteBuffer.put(i + 2, (byte)blue);
+                        this.byteBuffer.put(i + 3, (byte)alpha);
+                    }
+                    else
+                    {
+                        this.byteBuffer.put(i, (byte)alpha);
+                        this.byteBuffer.put(i + 1, (byte)blue);
+                        this.byteBuffer.put(i + 2, (byte)green);
+                        this.byteBuffer.put(i + 3, (byte)red);
+                    }
+            }
+
+            this.nextVertexFormatIndex();
+            return this;
         }
     }
 
-    public void updateDistanceToEntitySquared(Entity entity)
+    public void addVertexData(int[] vertexData)
     {
-        double dx = entity.posX - (double)this.posXPlus;
-        double dy = entity.posY - (double)this.posYPlus;
-        double dz = entity.posZ - (double)this.posZPlus;
-        double dXzSq = dx * dx + dz * dz;
-        this.distanceToEntityXzSq = dXzSq;
-        this.sortDistanceToEntitySquared = (float)(dXzSq + dy * dy);
+        if (Config.isShaders())
+        {
+            SVertexBuilder.beginAddVertexData(this, vertexData);
+        }
+
+        this.growBuffer(vertexData.length);
+        this.rawIntBuffer.position(this.getBufferSize());
+        this.rawIntBuffer.put(vertexData);
+        this.vertexCount += vertexData.length / this.vertexFormat.getIntegerSize();
+
+        if (Config.isShaders())
+        {
+            SVertexBuilder.endAddVertexData(this);
+        }
+    }
+
+    public void endVertex()
+    {
+        ++this.vertexCount;
+        this.growBuffer(this.vertexFormat.getIntegerSize());
+        this.vertexFormatIndex = 0;
+        this.vertexFormatElement = this.vertexFormat.getElement(this.vertexFormatIndex);
+
+        if (Config.isShaders())
+        {
+            SVertexBuilder.endAddVertex(this);
+        }
+    }
+
+    public WorldRenderer pos(double x, double y, double z)
+    {
+        if (Config.isShaders())
+        {
+            SVertexBuilder.beginAddVertex(this);
+        }
+
+        int i = this.vertexCount * this.vertexFormat.getNextOffset() + this.vertexFormat.getOffset(this.vertexFormatIndex);
+
+        switch (this.vertexFormatElement.getType())
+        {
+            case FLOAT:
+                this.byteBuffer.putFloat(i, (float)(x + this.xOffset));
+                this.byteBuffer.putFloat(i + 4, (float)(y + this.yOffset));
+                this.byteBuffer.putFloat(i + 8, (float)(z + this.zOffset));
+                break;
+
+            case UINT:
+            case INT:
+                this.byteBuffer.putInt(i, Float.floatToRawIntBits((float)(x + this.xOffset)));
+                this.byteBuffer.putInt(i + 4, Float.floatToRawIntBits((float)(y + this.yOffset)));
+                this.byteBuffer.putInt(i + 8, Float.floatToRawIntBits((float)(z + this.zOffset)));
+                break;
+
+            case USHORT:
+            case SHORT:
+                this.byteBuffer.putShort(i, (short)((int)(x + this.xOffset)));
+                this.byteBuffer.putShort(i + 2, (short)((int)(y + this.yOffset)));
+                this.byteBuffer.putShort(i + 4, (short)((int)(z + this.zOffset)));
+                break;
+
+            case UBYTE:
+            case BYTE:
+                this.byteBuffer.put(i, (byte)((int)(x + this.xOffset)));
+                this.byteBuffer.put(i + 1, (byte)((int)(y + this.yOffset)));
+                this.byteBuffer.put(i + 2, (byte)((int)(z + this.zOffset)));
+        }
+
+        this.nextVertexFormatIndex();
+        return this;
+    }
+
+    public void putNormal(float x, float y, float z)
+    {
+        int i = (byte)((int)(x * 127.0F)) & 255;
+        int j = (byte)((int)(y * 127.0F)) & 255;
+        int k = (byte)((int)(z * 127.0F)) & 255;
+        int l = i | j << 8 | k << 16;
+        int i1 = this.vertexFormat.getNextOffset() >> 2;
+        int j1 = (this.vertexCount - 4) * i1 + this.vertexFormat.getNormalOffset() / 4;
+        this.rawIntBuffer.put(j1, l);
+        this.rawIntBuffer.put(j1 + i1, l);
+        this.rawIntBuffer.put(j1 + i1 * 2, l);
+        this.rawIntBuffer.put(j1 + i1 * 3, l);
+    }
+
+    private void nextVertexFormatIndex()
+    {
+        ++this.vertexFormatIndex;
+        this.vertexFormatIndex %= this.vertexFormat.getElementCount();
+        this.vertexFormatElement = this.vertexFormat.getElement(this.vertexFormatIndex);
+
+        if (this.vertexFormatElement.getUsage() == VertexFormatElement.EnumUsage.PADDING)
+        {
+            this.nextVertexFormatIndex();
+        }
+    }
+
+    public WorldRenderer normal(float p_181663_1_, float p_181663_2_, float p_181663_3_)
+    {
+        int i = this.vertexCount * this.vertexFormat.getNextOffset() + this.vertexFormat.getOffset(this.vertexFormatIndex);
+
+        switch (this.vertexFormatElement.getType())
+        {
+            case FLOAT:
+                this.byteBuffer.putFloat(i, p_181663_1_);
+                this.byteBuffer.putFloat(i + 4, p_181663_2_);
+                this.byteBuffer.putFloat(i + 8, p_181663_3_);
+                break;
+
+            case UINT:
+            case INT:
+                this.byteBuffer.putInt(i, (int)p_181663_1_);
+                this.byteBuffer.putInt(i + 4, (int)p_181663_2_);
+                this.byteBuffer.putInt(i + 8, (int)p_181663_3_);
+                break;
+
+            case USHORT:
+            case SHORT:
+                this.byteBuffer.putShort(i, (short)((int)(p_181663_1_ * 32767.0F) & 65535));
+                this.byteBuffer.putShort(i + 2, (short)((int)(p_181663_2_ * 32767.0F) & 65535));
+                this.byteBuffer.putShort(i + 4, (short)((int)(p_181663_3_ * 32767.0F) & 65535));
+                break;
+
+            case UBYTE:
+            case BYTE:
+                this.byteBuffer.put(i, (byte)((int)(p_181663_1_ * 127.0F) & 255));
+                this.byteBuffer.put(i + 1, (byte)((int)(p_181663_2_ * 127.0F) & 255));
+                this.byteBuffer.put(i + 2, (byte)((int)(p_181663_3_ * 127.0F) & 255));
+        }
+
+        this.nextVertexFormatIndex();
+        return this;
+    }
+
+    public void setTranslation(double x, double y, double z)
+    {
+        this.xOffset = x;
+        this.yOffset = y;
+        this.zOffset = z;
+    }
+
+    public void finishDrawing()
+    {
+        if (!this.isDrawing)
+        {
+            throw new IllegalStateException("Not building!");
+        }
+        else
+        {
+            this.isDrawing = false;
+            this.byteBuffer.position(0);
+            this.byteBuffer.limit(this.getBufferSize() * 4);
+        }
+    }
+
+    public ByteBuffer getByteBuffer()
+    {
+        return this.modeTriangles ? this.byteBufferTriangles : this.byteBuffer;
+    }
+
+    public VertexFormat getVertexFormat()
+    {
+        return this.vertexFormat;
+    }
+
+    public int getVertexCount()
+    {
+        return this.modeTriangles ? this.vertexCount / 4 * 6 : this.vertexCount;
+    }
+
+    public int getDrawMode()
+    {
+        return this.modeTriangles ? 4 : this.drawMode;
+    }
+
+    public void putColor4(int argb)
+    {
+        for (int i = 0; i < 4; ++i)
+        {
+            this.putColor(argb, i + 1);
+        }
+    }
+
+    public void putColorRGB_F4(float red, float green, float blue)
+    {
+        for (int i = 0; i < 4; ++i)
+        {
+            this.putColorRGB_F(red, green, blue, i + 1);
+        }
+    }
+
+    public void putSprite(TextureAtlasSprite p_putSprite_1_)
+    {
+        if (this.animatedSprites != null && p_putSprite_1_ != null && p_putSprite_1_.getAnimationIndex() >= 0)
+        {
+            this.animatedSprites.set(p_putSprite_1_.getAnimationIndex());
+        }
+
+        if (this.quadSprites != null)
+        {
+            int i = this.vertexCount / 4;
+            this.quadSprites[i - 1] = p_putSprite_1_;
+        }
+    }
+
+    public void setSprite(TextureAtlasSprite p_setSprite_1_)
+    {
+        if (this.animatedSprites != null && p_setSprite_1_ != null && p_setSprite_1_.getAnimationIndex() >= 0)
+        {
+            this.animatedSprites.set(p_setSprite_1_.getAnimationIndex());
+        }
+
+        if (this.quadSprites != null)
+        {
+            this.quadSprite = p_setSprite_1_;
+        }
+    }
+
+    public boolean isMultiTexture()
+    {
+        return this.quadSprites != null;
+    }
+
+    public void drawMultiTexture()
+    {
+        if (this.quadSprites != null)
+        {
+            int i = Config.getMinecraft().getTextureMapBlocks().getCountRegisteredSprites();
+
+            if (this.drawnIcons.length <= i)
+            {
+                this.drawnIcons = new boolean[i + 1];
+            }
+
+            Arrays.fill(this.drawnIcons, false);
+            int j = 0;
+            int k = -1;
+            int l = this.vertexCount / 4;
+
+            for (int i1 = 0; i1 < l; ++i1)
+            {
+                TextureAtlasSprite textureatlassprite = this.quadSprites[i1];
+
+                if (textureatlassprite != null)
+                {
+                    int j1 = textureatlassprite.getIndexInMap();
+
+                    if (!this.drawnIcons[j1])
+                    {
+                        if (textureatlassprite == TextureUtils.iconGrassSideOverlay)
+                        {
+                            if (k < 0)
+                            {
+                                k = i1;
+                            }
+                        }
+                        else
+                        {
+                            i1 = this.drawForIcon(textureatlassprite, i1) - 1;
+                            ++j;
+
+                            if (this.blockLayer != EnumWorldBlockLayer.TRANSLUCENT)
+                            {
+                                this.drawnIcons[j1] = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (k >= 0)
+            {
+                this.drawForIcon(TextureUtils.iconGrassSideOverlay, k);
+                ++j;
+            }
+
+            if (j > 0)
+            {
+                ;
+            }
+        }
+    }
+
+    private int drawForIcon(TextureAtlasSprite p_drawForIcon_1_, int p_drawForIcon_2_)
+    {
+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, p_drawForIcon_1_.glSpriteTextureId);
+        int i = -1;
+        int j = -1;
+        int k = this.vertexCount / 4;
+
+        for (int l = p_drawForIcon_2_; l < k; ++l)
+        {
+            TextureAtlasSprite textureatlassprite = this.quadSprites[l];
+
+            if (textureatlassprite == p_drawForIcon_1_)
+            {
+                if (j < 0)
+                {
+                    j = l;
+                }
+            }
+            else if (j >= 0)
+            {
+                this.draw(j, l);
+
+                if (this.blockLayer == EnumWorldBlockLayer.TRANSLUCENT)
+                {
+                    return l;
+                }
+
+                j = -1;
+
+                if (i < 0)
+                {
+                    i = l;
+                }
+            }
+        }
+
+        if (j >= 0)
+        {
+            this.draw(j, k);
+        }
+
+        if (i < 0)
+        {
+            i = k;
+        }
+
+        return i;
+    }
+
+    private void draw(int p_draw_1_, int p_draw_2_)
+    {
+        int i = p_draw_2_ - p_draw_1_;
+
+        if (i > 0)
+        {
+            int j = p_draw_1_ * 4;
+            int k = i * 4;
+            GL11.glDrawArrays(this.drawMode, j, k);
+        }
+    }
+
+    public void setBlockLayer(EnumWorldBlockLayer p_setBlockLayer_1_)
+    {
+        this.blockLayer = p_setBlockLayer_1_;
+
+        if (p_setBlockLayer_1_ == null)
+        {
+            if (this.quadSprites != null)
+            {
+                this.quadSpritesPrev = this.quadSprites;
+            }
+
+            this.quadSprites = null;
+            this.quadSprite = null;
+        }
+    }
+
+    private int getBufferQuadSize()
+    {
+        int i = this.rawIntBuffer.capacity() * 4 / (this.vertexFormat.getIntegerSize() * 4);
+        return i;
+    }
+
+    public RenderEnv getRenderEnv(IBlockState p_getRenderEnv_1_, BlockPos p_getRenderEnv_2_)
+    {
+        if (this.renderEnv == null)
+        {
+            this.renderEnv = new RenderEnv(p_getRenderEnv_1_, p_getRenderEnv_2_);
+            return this.renderEnv;
+        }
+        else
+        {
+            this.renderEnv.reset(p_getRenderEnv_1_, p_getRenderEnv_2_);
+            return this.renderEnv;
+        }
+    }
+
+    public boolean isDrawing()
+    {
+        return this.isDrawing;
+    }
+
+    public double getXOffset()
+    {
+        return this.xOffset;
+    }
+
+    public double getYOffset()
+    {
+        return this.yOffset;
+    }
+
+    public double getZOffset()
+    {
+        return this.zOffset;
+    }
+
+    public EnumWorldBlockLayer getBlockLayer()
+    {
+        return this.blockLayer;
+    }
+
+    public void putColorMultiplierRgba(float p_putColorMultiplierRgba_1_, float p_putColorMultiplierRgba_2_, float p_putColorMultiplierRgba_3_, float p_putColorMultiplierRgba_4_, int p_putColorMultiplierRgba_5_)
+    {
+        int i = this.getColorIndex(p_putColorMultiplierRgba_5_);
+        int j = -1;
+
+        if (!this.noColor)
+        {
+            j = this.rawIntBuffer.get(i);
+
+            if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN)
+            {
+                int k = (int)((float)(j & 255) * p_putColorMultiplierRgba_1_);
+                int l = (int)((float)(j >> 8 & 255) * p_putColorMultiplierRgba_2_);
+                int i1 = (int)((float)(j >> 16 & 255) * p_putColorMultiplierRgba_3_);
+                int j1 = (int)((float)(j >> 24 & 255) * p_putColorMultiplierRgba_4_);
+                j = j1 << 24 | i1 << 16 | l << 8 | k;
+            }
+            else
+            {
+                int k1 = (int)((float)(j >> 24 & 255) * p_putColorMultiplierRgba_1_);
+                int l1 = (int)((float)(j >> 16 & 255) * p_putColorMultiplierRgba_2_);
+                int i2 = (int)((float)(j >> 8 & 255) * p_putColorMultiplierRgba_3_);
+                int j2 = (int)((float)(j & 255) * p_putColorMultiplierRgba_4_);
+                j = k1 << 24 | l1 << 16 | i2 << 8 | j2;
+            }
+        }
+
+        this.rawIntBuffer.put(i, j);
+    }
+
+    public void quadsToTriangles()
+    {
+        if (this.drawMode == 7)
+        {
+            if (this.byteBufferTriangles == null)
+            {
+                this.byteBufferTriangles = GLAllocation.createDirectByteBuffer(this.byteBuffer.capacity() * 2);
+            }
+
+            if (this.byteBufferTriangles.capacity() < this.byteBuffer.capacity() * 2)
+            {
+                this.byteBufferTriangles = GLAllocation.createDirectByteBuffer(this.byteBuffer.capacity() * 2);
+            }
+
+            int i = this.vertexFormat.getNextOffset();
+            int j = this.byteBuffer.limit();
+            this.byteBuffer.rewind();
+            this.byteBufferTriangles.clear();
+
+            for (int k = 0; k < this.vertexCount; k += 4)
+            {
+                this.byteBuffer.limit((k + 3) * i);
+                this.byteBuffer.position(k * i);
+                this.byteBufferTriangles.put(this.byteBuffer);
+                this.byteBuffer.limit((k + 1) * i);
+                this.byteBuffer.position(k * i);
+                this.byteBufferTriangles.put(this.byteBuffer);
+                this.byteBuffer.limit((k + 2 + 2) * i);
+                this.byteBuffer.position((k + 2) * i);
+                this.byteBufferTriangles.put(this.byteBuffer);
+            }
+
+            this.byteBuffer.limit(j);
+            this.byteBuffer.rewind();
+            this.byteBufferTriangles.flip();
+            this.modeTriangles = true;
+        }
+    }
+
+    public boolean isColorDisabled()
+    {
+        return this.noColor;
+    }
+
+    public class State
+    {
+        private final int[] stateRawBuffer;
+        private final VertexFormat stateVertexFormat;
+        private TextureAtlasSprite[] stateQuadSprites;
+
+        public State(int[] p_i1_2_, VertexFormat p_i1_3_, TextureAtlasSprite[] p_i1_4_)
+        {
+            this.stateRawBuffer = p_i1_2_;
+            this.stateVertexFormat = p_i1_3_;
+            this.stateQuadSprites = p_i1_4_;
+        }
+
+        public State(int[] buffer, VertexFormat format)
+        {
+            this.stateRawBuffer = buffer;
+            this.stateVertexFormat = format;
+        }
+
+        public int[] getRawBuffer()
+        {
+            return this.stateRawBuffer;
+        }
+
+        public int getVertexCount()
+        {
+            return this.stateRawBuffer.length / this.stateVertexFormat.getIntegerSize();
+        }
+
+        public VertexFormat getVertexFormat()
+        {
+            return this.stateVertexFormat;
+        }
     }
 }

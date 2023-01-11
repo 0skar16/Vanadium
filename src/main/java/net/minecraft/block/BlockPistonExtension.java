@@ -3,118 +3,94 @@ package net.minecraft.block;
 import java.util.List;
 import java.util.Random;
 import net.minecraft.block.material.Material;
-import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.block.properties.IProperty;
+import net.minecraft.block.properties.PropertyBool;
+import net.minecraft.block.properties.PropertyDirection;
+import net.minecraft.block.properties.PropertyEnum;
+import net.minecraft.block.state.BlockState;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.util.AxisAlignedBB;
-import net.minecraft.util.Facing;
-import net.minecraft.util.IIcon;
-import net.minecraft.util.MathHelper;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.IStringSerializable;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 
 public class BlockPistonExtension extends Block
 {
-    private IIcon field_150088_a;
-    private static final String __OBFID = "CL_00000367";
+    public static final PropertyDirection FACING = PropertyDirection.create("facing");
+    public static final PropertyEnum<BlockPistonExtension.EnumPistonType> TYPE = PropertyEnum.<BlockPistonExtension.EnumPistonType>create("type", BlockPistonExtension.EnumPistonType.class);
+    public static final PropertyBool SHORT = PropertyBool.create("short");
 
     public BlockPistonExtension()
     {
         super(Material.piston);
+        this.setDefaultState(this.blockState.getBaseState().withProperty(FACING, EnumFacing.NORTH).withProperty(TYPE, BlockPistonExtension.EnumPistonType.DEFAULT).withProperty(SHORT, Boolean.valueOf(false)));
         this.setStepSound(soundTypePiston);
         this.setHardness(0.5F);
     }
 
-    public void func_150086_a(IIcon p_150086_1_)
+    public void onBlockHarvested(World worldIn, BlockPos pos, IBlockState state, EntityPlayer player)
     {
-        this.field_150088_a = p_150086_1_;
-    }
-
-    public void func_150087_e()
-    {
-        this.field_150088_a = null;
-    }
-
-    /**
-     * Called when the block is attempted to be harvested
-     */
-    public void onBlockHarvested(World p_149681_1_, int p_149681_2_, int p_149681_3_, int p_149681_4_, int p_149681_5_, EntityPlayer p_149681_6_)
-    {
-        if (p_149681_6_.capabilities.isCreativeMode)
+        if (player.capabilities.isCreativeMode)
         {
-            int var7 = func_150085_b(p_149681_5_);
-            Block var8 = p_149681_1_.getBlock(p_149681_2_ - Facing.offsetsXForSide[var7], p_149681_3_ - Facing.offsetsYForSide[var7], p_149681_4_ - Facing.offsetsZForSide[var7]);
+            EnumFacing enumfacing = (EnumFacing)state.getValue(FACING);
 
-            if (var8 == Blocks.piston || var8 == Blocks.sticky_piston)
+            if (enumfacing != null)
             {
-                p_149681_1_.setBlockToAir(p_149681_2_ - Facing.offsetsXForSide[var7], p_149681_3_ - Facing.offsetsYForSide[var7], p_149681_4_ - Facing.offsetsZForSide[var7]);
+                BlockPos blockpos = pos.offset(enumfacing.getOpposite());
+                Block block = worldIn.getBlockState(blockpos).getBlock();
+
+                if (block == Blocks.piston || block == Blocks.sticky_piston)
+                {
+                    worldIn.setBlockToAir(blockpos);
+                }
             }
         }
 
-        super.onBlockHarvested(p_149681_1_, p_149681_2_, p_149681_3_, p_149681_4_, p_149681_5_, p_149681_6_);
+        super.onBlockHarvested(worldIn, pos, state, player);
     }
 
-    public void breakBlock(World p_149749_1_, int p_149749_2_, int p_149749_3_, int p_149749_4_, Block p_149749_5_, int p_149749_6_)
+    public void breakBlock(World worldIn, BlockPos pos, IBlockState state)
     {
-        super.breakBlock(p_149749_1_, p_149749_2_, p_149749_3_, p_149749_4_, p_149749_5_, p_149749_6_);
-        int var7 = Facing.oppositeSide[func_150085_b(p_149749_6_)];
-        p_149749_2_ += Facing.offsetsXForSide[var7];
-        p_149749_3_ += Facing.offsetsYForSide[var7];
-        p_149749_4_ += Facing.offsetsZForSide[var7];
-        Block var8 = p_149749_1_.getBlock(p_149749_2_, p_149749_3_, p_149749_4_);
+        super.breakBlock(worldIn, pos, state);
+        EnumFacing enumfacing = ((EnumFacing)state.getValue(FACING)).getOpposite();
+        pos = pos.offset(enumfacing);
+        IBlockState iblockstate = worldIn.getBlockState(pos);
 
-        if (var8 == Blocks.piston || var8 == Blocks.sticky_piston)
+        if ((iblockstate.getBlock() == Blocks.piston || iblockstate.getBlock() == Blocks.sticky_piston) && ((Boolean)iblockstate.getValue(BlockPistonBase.EXTENDED)).booleanValue())
         {
-            p_149749_6_ = p_149749_1_.getBlockMetadata(p_149749_2_, p_149749_3_, p_149749_4_);
-
-            if (BlockPistonBase.func_150075_c(p_149749_6_))
-            {
-                var8.dropBlockAsItem(p_149749_1_, p_149749_2_, p_149749_3_, p_149749_4_, p_149749_6_, 0);
-                p_149749_1_.setBlockToAir(p_149749_2_, p_149749_3_, p_149749_4_);
-            }
+            iblockstate.getBlock().dropBlockAsItem(worldIn, pos, iblockstate, 0);
+            worldIn.setBlockToAir(pos);
         }
     }
 
     /**
-     * Gets the block's texture. Args: side, meta
+     * Used to determine ambient occlusion and culling when rebuilding chunks for render
      */
-    public IIcon getIcon(int p_149691_1_, int p_149691_2_)
-    {
-        int var3 = func_150085_b(p_149691_2_);
-        return p_149691_1_ == var3 ? (this.field_150088_a != null ? this.field_150088_a : ((p_149691_2_ & 8) != 0 ? BlockPistonBase.func_150074_e("piston_top_sticky") : BlockPistonBase.func_150074_e("piston_top_normal"))) : (var3 < 6 && p_149691_1_ == Facing.oppositeSide[var3] ? BlockPistonBase.func_150074_e("piston_top_normal") : BlockPistonBase.func_150074_e("piston_side"));
-    }
-
-    public void registerBlockIcons(IIconRegister p_149651_1_) {}
-
-    /**
-     * The type of render function that is called for this block
-     */
-    public int getRenderType()
-    {
-        return 17;
-    }
-
     public boolean isOpaqueCube()
     {
         return false;
     }
 
-    public boolean renderAsNormalBlock()
+    public boolean isFullCube()
     {
         return false;
     }
 
-    public boolean canPlaceBlockAt(World p_149742_1_, int p_149742_2_, int p_149742_3_, int p_149742_4_)
+    public boolean canPlaceBlockAt(World worldIn, BlockPos pos)
     {
         return false;
     }
 
     /**
-     * checks to see if you can place this block can be placed on that side of a block: BlockLever overrides
+     * Check whether this Block can be placed on the given side
      */
-    public boolean canPlaceBlockOnSide(World p_149707_1_, int p_149707_2_, int p_149707_3_, int p_149707_4_, int p_149707_5_)
+    public boolean canPlaceBlockOnSide(World worldIn, BlockPos pos, EnumFacing side)
     {
         return false;
     }
@@ -122,125 +98,182 @@ public class BlockPistonExtension extends Block
     /**
      * Returns the quantity of items to drop on block destruction.
      */
-    public int quantityDropped(Random p_149745_1_)
+    public int quantityDropped(Random random)
     {
         return 0;
     }
 
-    public void addCollisionBoxesToList(World p_149743_1_, int p_149743_2_, int p_149743_3_, int p_149743_4_, AxisAlignedBB p_149743_5_, List p_149743_6_, Entity p_149743_7_)
+    /**
+     * Add all collision boxes of this Block to the list that intersect with the given mask.
+     */
+    public void addCollisionBoxesToList(World worldIn, BlockPos pos, IBlockState state, AxisAlignedBB mask, List<AxisAlignedBB> list, Entity collidingEntity)
     {
-        int var8 = p_149743_1_.getBlockMetadata(p_149743_2_, p_149743_3_, p_149743_4_);
-        float var9 = 0.25F;
-        float var10 = 0.375F;
-        float var11 = 0.625F;
-        float var12 = 0.25F;
-        float var13 = 0.75F;
-
-        switch (func_150085_b(var8))
-        {
-            case 0:
-                this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 0.25F, 1.0F);
-                super.addCollisionBoxesToList(p_149743_1_, p_149743_2_, p_149743_3_, p_149743_4_, p_149743_5_, p_149743_6_, p_149743_7_);
-                this.setBlockBounds(0.375F, 0.25F, 0.375F, 0.625F, 1.0F, 0.625F);
-                super.addCollisionBoxesToList(p_149743_1_, p_149743_2_, p_149743_3_, p_149743_4_, p_149743_5_, p_149743_6_, p_149743_7_);
-                break;
-
-            case 1:
-                this.setBlockBounds(0.0F, 0.75F, 0.0F, 1.0F, 1.0F, 1.0F);
-                super.addCollisionBoxesToList(p_149743_1_, p_149743_2_, p_149743_3_, p_149743_4_, p_149743_5_, p_149743_6_, p_149743_7_);
-                this.setBlockBounds(0.375F, 0.0F, 0.375F, 0.625F, 0.75F, 0.625F);
-                super.addCollisionBoxesToList(p_149743_1_, p_149743_2_, p_149743_3_, p_149743_4_, p_149743_5_, p_149743_6_, p_149743_7_);
-                break;
-
-            case 2:
-                this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 0.25F);
-                super.addCollisionBoxesToList(p_149743_1_, p_149743_2_, p_149743_3_, p_149743_4_, p_149743_5_, p_149743_6_, p_149743_7_);
-                this.setBlockBounds(0.25F, 0.375F, 0.25F, 0.75F, 0.625F, 1.0F);
-                super.addCollisionBoxesToList(p_149743_1_, p_149743_2_, p_149743_3_, p_149743_4_, p_149743_5_, p_149743_6_, p_149743_7_);
-                break;
-
-            case 3:
-                this.setBlockBounds(0.0F, 0.0F, 0.75F, 1.0F, 1.0F, 1.0F);
-                super.addCollisionBoxesToList(p_149743_1_, p_149743_2_, p_149743_3_, p_149743_4_, p_149743_5_, p_149743_6_, p_149743_7_);
-                this.setBlockBounds(0.25F, 0.375F, 0.0F, 0.75F, 0.625F, 0.75F);
-                super.addCollisionBoxesToList(p_149743_1_, p_149743_2_, p_149743_3_, p_149743_4_, p_149743_5_, p_149743_6_, p_149743_7_);
-                break;
-
-            case 4:
-                this.setBlockBounds(0.0F, 0.0F, 0.0F, 0.25F, 1.0F, 1.0F);
-                super.addCollisionBoxesToList(p_149743_1_, p_149743_2_, p_149743_3_, p_149743_4_, p_149743_5_, p_149743_6_, p_149743_7_);
-                this.setBlockBounds(0.375F, 0.25F, 0.25F, 0.625F, 0.75F, 1.0F);
-                super.addCollisionBoxesToList(p_149743_1_, p_149743_2_, p_149743_3_, p_149743_4_, p_149743_5_, p_149743_6_, p_149743_7_);
-                break;
-
-            case 5:
-                this.setBlockBounds(0.75F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
-                super.addCollisionBoxesToList(p_149743_1_, p_149743_2_, p_149743_3_, p_149743_4_, p_149743_5_, p_149743_6_, p_149743_7_);
-                this.setBlockBounds(0.0F, 0.375F, 0.25F, 0.75F, 0.625F, 0.75F);
-                super.addCollisionBoxesToList(p_149743_1_, p_149743_2_, p_149743_3_, p_149743_4_, p_149743_5_, p_149743_6_, p_149743_7_);
-        }
-
+        this.applyHeadBounds(state);
+        super.addCollisionBoxesToList(worldIn, pos, state, mask, list, collidingEntity);
+        this.applyCoreBounds(state);
+        super.addCollisionBoxesToList(worldIn, pos, state, mask, list, collidingEntity);
         this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
     }
 
-    public void setBlockBoundsBasedOnState(IBlockAccess p_149719_1_, int p_149719_2_, int p_149719_3_, int p_149719_4_)
+    private void applyCoreBounds(IBlockState state)
     {
-        int var5 = p_149719_1_.getBlockMetadata(p_149719_2_, p_149719_3_, p_149719_4_);
-        float var6 = 0.25F;
+        float f = 0.25F;
+        float f1 = 0.375F;
+        float f2 = 0.625F;
+        float f3 = 0.25F;
+        float f4 = 0.75F;
 
-        switch (func_150085_b(var5))
+        switch ((EnumFacing)state.getValue(FACING))
         {
-            case 0:
-                this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 0.25F, 1.0F);
+            case DOWN:
+                this.setBlockBounds(0.375F, 0.25F, 0.375F, 0.625F, 1.0F, 0.625F);
                 break;
 
-            case 1:
-                this.setBlockBounds(0.0F, 0.75F, 0.0F, 1.0F, 1.0F, 1.0F);
+            case UP:
+                this.setBlockBounds(0.375F, 0.0F, 0.375F, 0.625F, 0.75F, 0.625F);
                 break;
 
-            case 2:
-                this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 0.25F);
+            case NORTH:
+                this.setBlockBounds(0.25F, 0.375F, 0.25F, 0.75F, 0.625F, 1.0F);
                 break;
 
-            case 3:
-                this.setBlockBounds(0.0F, 0.0F, 0.75F, 1.0F, 1.0F, 1.0F);
+            case SOUTH:
+                this.setBlockBounds(0.25F, 0.375F, 0.0F, 0.75F, 0.625F, 0.75F);
                 break;
 
-            case 4:
-                this.setBlockBounds(0.0F, 0.0F, 0.0F, 0.25F, 1.0F, 1.0F);
+            case WEST:
+                this.setBlockBounds(0.375F, 0.25F, 0.25F, 0.625F, 0.75F, 1.0F);
                 break;
 
-            case 5:
-                this.setBlockBounds(0.75F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
+            case EAST:
+                this.setBlockBounds(0.0F, 0.375F, 0.25F, 0.75F, 0.625F, 0.75F);
         }
     }
 
-    public void onNeighborBlockChange(World p_149695_1_, int p_149695_2_, int p_149695_3_, int p_149695_4_, Block p_149695_5_)
+    public void setBlockBoundsBasedOnState(IBlockAccess worldIn, BlockPos pos)
     {
-        int var6 = func_150085_b(p_149695_1_.getBlockMetadata(p_149695_2_, p_149695_3_, p_149695_4_));
-        Block var7 = p_149695_1_.getBlock(p_149695_2_ - Facing.offsetsXForSide[var6], p_149695_3_ - Facing.offsetsYForSide[var6], p_149695_4_ - Facing.offsetsZForSide[var6]);
-
-        if (var7 != Blocks.piston && var7 != Blocks.sticky_piston)
-        {
-            p_149695_1_.setBlockToAir(p_149695_2_, p_149695_3_, p_149695_4_);
-        }
-        else
-        {
-            var7.onNeighborBlockChange(p_149695_1_, p_149695_2_ - Facing.offsetsXForSide[var6], p_149695_3_ - Facing.offsetsYForSide[var6], p_149695_4_ - Facing.offsetsZForSide[var6], p_149695_5_);
-        }
+        this.applyHeadBounds(worldIn.getBlockState(pos));
     }
 
-    public static int func_150085_b(int p_150085_0_)
+    public void applyHeadBounds(IBlockState state)
     {
-        return MathHelper.clamp_int(p_150085_0_ & 7, 0, Facing.offsetsXForSide.length - 1);
+        float f = 0.25F;
+        EnumFacing enumfacing = (EnumFacing)state.getValue(FACING);
+
+        if (enumfacing != null)
+        {
+            switch (enumfacing)
+            {
+                case DOWN:
+                    this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 0.25F, 1.0F);
+                    break;
+
+                case UP:
+                    this.setBlockBounds(0.0F, 0.75F, 0.0F, 1.0F, 1.0F, 1.0F);
+                    break;
+
+                case NORTH:
+                    this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 0.25F);
+                    break;
+
+                case SOUTH:
+                    this.setBlockBounds(0.0F, 0.0F, 0.75F, 1.0F, 1.0F, 1.0F);
+                    break;
+
+                case WEST:
+                    this.setBlockBounds(0.0F, 0.0F, 0.0F, 0.25F, 1.0F, 1.0F);
+                    break;
+
+                case EAST:
+                    this.setBlockBounds(0.75F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
+            }
+        }
     }
 
     /**
-     * Gets an item for the block being called on. Args: world, x, y, z
+     * Called when a neighboring block changes.
      */
-    public Item getItem(World p_149694_1_, int p_149694_2_, int p_149694_3_, int p_149694_4_)
+    public void onNeighborBlockChange(World worldIn, BlockPos pos, IBlockState state, Block neighborBlock)
     {
-        int var5 = p_149694_1_.getBlockMetadata(p_149694_2_, p_149694_3_, p_149694_4_);
-        return (var5 & 8) != 0 ? Item.getItemFromBlock(Blocks.sticky_piston) : Item.getItemFromBlock(Blocks.piston);
+        EnumFacing enumfacing = (EnumFacing)state.getValue(FACING);
+        BlockPos blockpos = pos.offset(enumfacing.getOpposite());
+        IBlockState iblockstate = worldIn.getBlockState(blockpos);
+
+        if (iblockstate.getBlock() != Blocks.piston && iblockstate.getBlock() != Blocks.sticky_piston)
+        {
+            worldIn.setBlockToAir(pos);
+        }
+        else
+        {
+            iblockstate.getBlock().onNeighborBlockChange(worldIn, blockpos, iblockstate, neighborBlock);
+        }
+    }
+
+    public boolean shouldSideBeRendered(IBlockAccess worldIn, BlockPos pos, EnumFacing side)
+    {
+        return true;
+    }
+
+    public static EnumFacing getFacing(int meta)
+    {
+        int i = meta & 7;
+        return i > 5 ? null : EnumFacing.getFront(i);
+    }
+
+    public Item getItem(World worldIn, BlockPos pos)
+    {
+        return worldIn.getBlockState(pos).getValue(TYPE) == BlockPistonExtension.EnumPistonType.STICKY ? Item.getItemFromBlock(Blocks.sticky_piston) : Item.getItemFromBlock(Blocks.piston);
+    }
+
+    /**
+     * Convert the given metadata into a BlockState for this Block
+     */
+    public IBlockState getStateFromMeta(int meta)
+    {
+        return this.getDefaultState().withProperty(FACING, getFacing(meta)).withProperty(TYPE, (meta & 8) > 0 ? BlockPistonExtension.EnumPistonType.STICKY : BlockPistonExtension.EnumPistonType.DEFAULT);
+    }
+
+    /**
+     * Convert the BlockState into the correct metadata value
+     */
+    public int getMetaFromState(IBlockState state)
+    {
+        int i = 0;
+        i = i | ((EnumFacing)state.getValue(FACING)).getIndex();
+
+        if (state.getValue(TYPE) == BlockPistonExtension.EnumPistonType.STICKY)
+        {
+            i |= 8;
+        }
+
+        return i;
+    }
+
+    protected BlockState createBlockState()
+    {
+        return new BlockState(this, new IProperty[] {FACING, TYPE, SHORT});
+    }
+
+    public static enum EnumPistonType implements IStringSerializable
+    {
+        DEFAULT("normal"),
+        STICKY("sticky");
+
+        private final String VARIANT;
+
+        private EnumPistonType(String name)
+        {
+            this.VARIANT = name;
+        }
+
+        public String toString()
+        {
+            return this.VARIANT;
+        }
+
+        public String getName()
+        {
+            return this.VARIANT;
+        }
     }
 }

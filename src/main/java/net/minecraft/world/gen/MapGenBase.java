@@ -1,8 +1,8 @@
 package net.minecraft.world.gen;
 
 import java.util.Random;
-import net.minecraft.block.Block;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.ChunkPrimer;
 import net.minecraft.world.chunk.IChunkProvider;
 
 public class MapGenBase
@@ -15,27 +15,31 @@ public class MapGenBase
 
     /** This world object. */
     protected World worldObj;
-    private static final String __OBFID = "CL_00000394";
 
-    public void func_151539_a(IChunkProvider p_151539_1_, World p_151539_2_, int p_151539_3_, int p_151539_4_, Block[] p_151539_5_)
+    public void generate(IChunkProvider chunkProviderIn, World worldIn, int x, int z, ChunkPrimer chunkPrimerIn)
     {
-        int var6 = this.range;
-        this.worldObj = p_151539_2_;
-        this.rand.setSeed(p_151539_2_.getSeed());
-        long var7 = this.rand.nextLong();
-        long var9 = this.rand.nextLong();
+        int i = this.range;
+        this.worldObj = worldIn;
+        this.rand.setSeed(worldIn.getSeed());
+        long j = this.rand.nextLong();
+        long k = this.rand.nextLong();
 
-        for (int var11 = p_151539_3_ - var6; var11 <= p_151539_3_ + var6; ++var11)
+        for (int l = x - i; l <= x + i; ++l)
         {
-            for (int var12 = p_151539_4_ - var6; var12 <= p_151539_4_ + var6; ++var12)
+            for (int i1 = z - i; i1 <= z + i; ++i1)
             {
-                long var13 = (long)var11 * var7;
-                long var15 = (long)var12 * var9;
-                this.rand.setSeed(var13 ^ var15 ^ p_151539_2_.getSeed());
-                this.func_151538_a(p_151539_2_, var11, var12, p_151539_3_, p_151539_4_, p_151539_5_);
+                long j1 = (long)l * j;
+                long k1 = (long)i1 * k;
+                this.rand.setSeed(j1 ^ k1 ^ worldIn.getSeed());
+                this.recursiveGenerate(worldIn, l, i1, x, z, chunkPrimerIn);
             }
         }
     }
 
-    protected void func_151538_a(World p_151538_1_, int p_151538_2_, int p_151538_3_, int p_151538_4_, int p_151538_5_, Block[] p_151538_6_) {}
+    /**
+     * Recursively called by generate()
+     */
+    protected void recursiveGenerate(World worldIn, int chunkX, int chunkZ, int p_180701_4_, int p_180701_5_, ChunkPrimer chunkPrimerIn)
+    {
+    }
 }

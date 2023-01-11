@@ -1,94 +1,103 @@
 package net.minecraft.world.gen.feature;
 
+import com.google.common.base.Predicates;
 import java.util.Random;
+import net.minecraft.block.BlockSand;
+import net.minecraft.block.BlockSlab;
+import net.minecraft.block.BlockStoneSlab;
+import net.minecraft.block.state.IBlockState;
+import net.minecraft.block.state.pattern.BlockStateHelper;
 import net.minecraft.init.Blocks;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.world.World;
 
 public class WorldGenDesertWells extends WorldGenerator
 {
-    private static final String __OBFID = "CL_00000407";
+    private static final BlockStateHelper field_175913_a = BlockStateHelper.forBlock(Blocks.sand).where(BlockSand.VARIANT, Predicates.equalTo(BlockSand.EnumType.SAND));
+    private final IBlockState field_175911_b = Blocks.stone_slab.getDefaultState().withProperty(BlockStoneSlab.VARIANT, BlockStoneSlab.EnumType.SAND).withProperty(BlockSlab.HALF, BlockSlab.EnumBlockHalf.BOTTOM);
+    private final IBlockState field_175912_c = Blocks.sandstone.getDefaultState();
+    private final IBlockState field_175910_d = Blocks.flowing_water.getDefaultState();
 
-    public boolean generate(World p_76484_1_, Random p_76484_2_, int p_76484_3_, int p_76484_4_, int p_76484_5_)
+    public boolean generate(World worldIn, Random rand, BlockPos position)
     {
-        while (p_76484_1_.isAirBlock(p_76484_3_, p_76484_4_, p_76484_5_) && p_76484_4_ > 2)
+        while (worldIn.isAirBlock(position) && position.getY() > 2)
         {
-            --p_76484_4_;
+            position = position.down();
         }
 
-        if (p_76484_1_.getBlock(p_76484_3_, p_76484_4_, p_76484_5_) != Blocks.sand)
+        if (!field_175913_a.apply(worldIn.getBlockState(position)))
         {
             return false;
         }
         else
         {
-            int var6;
-            int var7;
-
-            for (var6 = -2; var6 <= 2; ++var6)
+            for (int i = -2; i <= 2; ++i)
             {
-                for (var7 = -2; var7 <= 2; ++var7)
+                for (int j = -2; j <= 2; ++j)
                 {
-                    if (p_76484_1_.isAirBlock(p_76484_3_ + var6, p_76484_4_ - 1, p_76484_5_ + var7) && p_76484_1_.isAirBlock(p_76484_3_ + var6, p_76484_4_ - 2, p_76484_5_ + var7))
+                    if (worldIn.isAirBlock(position.add(i, -1, j)) && worldIn.isAirBlock(position.add(i, -2, j)))
                     {
                         return false;
                     }
                 }
             }
 
-            for (var6 = -1; var6 <= 0; ++var6)
+            for (int l = -1; l <= 0; ++l)
             {
-                for (var7 = -2; var7 <= 2; ++var7)
+                for (int l1 = -2; l1 <= 2; ++l1)
                 {
-                    for (int var8 = -2; var8 <= 2; ++var8)
+                    for (int k = -2; k <= 2; ++k)
                     {
-                        p_76484_1_.setBlock(p_76484_3_ + var7, p_76484_4_ + var6, p_76484_5_ + var8, Blocks.sandstone, 0, 2);
+                        worldIn.setBlockState(position.add(l1, l, k), this.field_175912_c, 2);
                     }
                 }
             }
 
-            p_76484_1_.setBlock(p_76484_3_, p_76484_4_, p_76484_5_, Blocks.flowing_water, 0, 2);
-            p_76484_1_.setBlock(p_76484_3_ - 1, p_76484_4_, p_76484_5_, Blocks.flowing_water, 0, 2);
-            p_76484_1_.setBlock(p_76484_3_ + 1, p_76484_4_, p_76484_5_, Blocks.flowing_water, 0, 2);
-            p_76484_1_.setBlock(p_76484_3_, p_76484_4_, p_76484_5_ - 1, Blocks.flowing_water, 0, 2);
-            p_76484_1_.setBlock(p_76484_3_, p_76484_4_, p_76484_5_ + 1, Blocks.flowing_water, 0, 2);
+            worldIn.setBlockState(position, this.field_175910_d, 2);
 
-            for (var6 = -2; var6 <= 2; ++var6)
+            for (EnumFacing enumfacing : EnumFacing.Plane.HORIZONTAL)
             {
-                for (var7 = -2; var7 <= 2; ++var7)
+                worldIn.setBlockState(position.offset(enumfacing), this.field_175910_d, 2);
+            }
+
+            for (int i1 = -2; i1 <= 2; ++i1)
+            {
+                for (int i2 = -2; i2 <= 2; ++i2)
                 {
-                    if (var6 == -2 || var6 == 2 || var7 == -2 || var7 == 2)
+                    if (i1 == -2 || i1 == 2 || i2 == -2 || i2 == 2)
                     {
-                        p_76484_1_.setBlock(p_76484_3_ + var6, p_76484_4_ + 1, p_76484_5_ + var7, Blocks.sandstone, 0, 2);
+                        worldIn.setBlockState(position.add(i1, 1, i2), this.field_175912_c, 2);
                     }
                 }
             }
 
-            p_76484_1_.setBlock(p_76484_3_ + 2, p_76484_4_ + 1, p_76484_5_, Blocks.stone_slab, 1, 2);
-            p_76484_1_.setBlock(p_76484_3_ - 2, p_76484_4_ + 1, p_76484_5_, Blocks.stone_slab, 1, 2);
-            p_76484_1_.setBlock(p_76484_3_, p_76484_4_ + 1, p_76484_5_ + 2, Blocks.stone_slab, 1, 2);
-            p_76484_1_.setBlock(p_76484_3_, p_76484_4_ + 1, p_76484_5_ - 2, Blocks.stone_slab, 1, 2);
+            worldIn.setBlockState(position.add(2, 1, 0), this.field_175911_b, 2);
+            worldIn.setBlockState(position.add(-2, 1, 0), this.field_175911_b, 2);
+            worldIn.setBlockState(position.add(0, 1, 2), this.field_175911_b, 2);
+            worldIn.setBlockState(position.add(0, 1, -2), this.field_175911_b, 2);
 
-            for (var6 = -1; var6 <= 1; ++var6)
+            for (int j1 = -1; j1 <= 1; ++j1)
             {
-                for (var7 = -1; var7 <= 1; ++var7)
+                for (int j2 = -1; j2 <= 1; ++j2)
                 {
-                    if (var6 == 0 && var7 == 0)
+                    if (j1 == 0 && j2 == 0)
                     {
-                        p_76484_1_.setBlock(p_76484_3_ + var6, p_76484_4_ + 4, p_76484_5_ + var7, Blocks.sandstone, 0, 2);
+                        worldIn.setBlockState(position.add(j1, 4, j2), this.field_175912_c, 2);
                     }
                     else
                     {
-                        p_76484_1_.setBlock(p_76484_3_ + var6, p_76484_4_ + 4, p_76484_5_ + var7, Blocks.stone_slab, 1, 2);
+                        worldIn.setBlockState(position.add(j1, 4, j2), this.field_175911_b, 2);
                     }
                 }
             }
 
-            for (var6 = 1; var6 <= 3; ++var6)
+            for (int k1 = 1; k1 <= 3; ++k1)
             {
-                p_76484_1_.setBlock(p_76484_3_ - 1, p_76484_4_ + var6, p_76484_5_ - 1, Blocks.sandstone, 0, 2);
-                p_76484_1_.setBlock(p_76484_3_ - 1, p_76484_4_ + var6, p_76484_5_ + 1, Blocks.sandstone, 0, 2);
-                p_76484_1_.setBlock(p_76484_3_ + 1, p_76484_4_ + var6, p_76484_5_ - 1, Blocks.sandstone, 0, 2);
-                p_76484_1_.setBlock(p_76484_3_ + 1, p_76484_4_ + var6, p_76484_5_ + 1, Blocks.sandstone, 0, 2);
+                worldIn.setBlockState(position.add(-1, k1, -1), this.field_175912_c, 2);
+                worldIn.setBlockState(position.add(-1, k1, 1), this.field_175912_c, 2);
+                worldIn.setBlockState(position.add(1, k1, -1), this.field_175912_c, 2);
+                worldIn.setBlockState(position.add(1, k1, 1), this.field_175912_c, 2);
             }
 
             return true;

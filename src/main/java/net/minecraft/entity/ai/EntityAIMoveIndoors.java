@@ -1,7 +1,7 @@
 package net.minecraft.entity.ai;
 
 import net.minecraft.entity.EntityCreature;
-import net.minecraft.util.MathHelper;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.Vec3;
 import net.minecraft.village.Village;
 import net.minecraft.village.VillageDoorInfo;
@@ -12,11 +12,10 @@ public class EntityAIMoveIndoors extends EntityAIBase
     private VillageDoorInfo doorInfo;
     private int insidePosX = -1;
     private int insidePosZ = -1;
-    private static final String __OBFID = "CL_00001596";
 
-    public EntityAIMoveIndoors(EntityCreature p_i1637_1_)
+    public EntityAIMoveIndoors(EntityCreature entityObjIn)
     {
-        this.entityObj = p_i1637_1_;
+        this.entityObj = entityObjIn;
         this.setMutexBits(1);
     }
 
@@ -25,11 +24,9 @@ public class EntityAIMoveIndoors extends EntityAIBase
      */
     public boolean shouldExecute()
     {
-        int var1 = MathHelper.floor_double(this.entityObj.posX);
-        int var2 = MathHelper.floor_double(this.entityObj.posY);
-        int var3 = MathHelper.floor_double(this.entityObj.posZ);
+        BlockPos blockpos = new BlockPos(this.entityObj);
 
-        if ((!this.entityObj.worldObj.isDaytime() || this.entityObj.worldObj.isRaining() || !this.entityObj.worldObj.getBiomeGenForCoords(var1, var3).canSpawnLightningBolt()) && !this.entityObj.worldObj.provider.hasNoSky)
+        if ((!this.entityObj.worldObj.isDaytime() || this.entityObj.worldObj.isRaining() && !this.entityObj.worldObj.getBiomeGenForCoords(blockpos).canRain()) && !this.entityObj.worldObj.provider.getHasNoSky())
         {
             if (this.entityObj.getRNG().nextInt(50) != 0)
             {
@@ -41,15 +38,15 @@ public class EntityAIMoveIndoors extends EntityAIBase
             }
             else
             {
-                Village var4 = this.entityObj.worldObj.villageCollectionObj.findNearestVillage(var1, var2, var3, 14);
+                Village village = this.entityObj.worldObj.getVillageCollection().getNearestVillage(blockpos, 14);
 
-                if (var4 == null)
+                if (village == null)
                 {
                     return false;
                 }
                 else
                 {
-                    this.doorInfo = var4.findNearestDoorUnrestricted(var1, var2, var3);
+                    this.doorInfo = village.getDoorInfo(blockpos);
                     return this.doorInfo != null;
                 }
             }
@@ -74,19 +71,23 @@ public class EntityAIMoveIndoors extends EntityAIBase
     public void startExecuting()
     {
         this.insidePosX = -1;
+        BlockPos blockpos = this.doorInfo.getInsideBlockPos();
+        int i = blockpos.getX();
+        int j = blockpos.getY();
+        int k = blockpos.getZ();
 
-        if (this.entityObj.getDistanceSq((double)this.doorInfo.getInsidePosX(), (double)this.doorInfo.posY, (double)this.doorInfo.getInsidePosZ()) > 256.0D)
+        if (this.entityObj.getDistanceSq(blockpos) > 256.0D)
         {
-            Vec3 var1 = RandomPositionGenerator.findRandomTargetBlockTowards(this.entityObj, 14, 3, Vec3.createVectorHelper((double)this.doorInfo.getInsidePosX() + 0.5D, (double)this.doorInfo.getInsidePosY(), (double)this.doorInfo.getInsidePosZ() + 0.5D));
+            Vec3 vec3 = RandomPositionGenerator.findRandomTargetBlockTowards(this.entityObj, 14, 3, new Vec3((double)i + 0.5D, (double)j, (double)k + 0.5D));
 
-            if (var1 != null)
+            if (vec3 != null)
             {
-                this.entityObj.getNavigator().tryMoveToXYZ(var1.xCoord, var1.yCoord, var1.zCoord, 1.0D);
+                this.entityObj.getNavigator().tryMoveToXYZ(vec3.xCoord, vec3.yCoord, vec3.zCoord, 1.0D);
             }
         }
         else
         {
-            this.entityObj.getNavigator().tryMoveToXYZ((double)this.doorInfo.getInsidePosX() + 0.5D, (double)this.doorInfo.getInsidePosY(), (double)this.doorInfo.getInsidePosZ() + 0.5D, 1.0D);
+            this.entityObj.getNavigator().tryMoveToXYZ((double)i + 0.5D, (double)j, (double)k + 0.5D, 1.0D);
         }
     }
 
@@ -95,8 +96,8 @@ public class EntityAIMoveIndoors extends EntityAIBase
      */
     public void resetTask()
     {
-        this.insidePosX = this.doorInfo.getInsidePosX();
-        this.insidePosZ = this.doorInfo.getInsidePosZ();
+        this.insidePosX = this.doorInfo.getInsideBlockPos().getX();
+        this.insidePosZ = this.doorInfo.getInsideBlockPos().getZ();
         this.doorInfo = null;
     }
 }

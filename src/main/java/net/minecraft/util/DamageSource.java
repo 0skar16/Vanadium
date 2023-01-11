@@ -10,6 +10,7 @@ import net.minecraft.world.Explosion;
 public class DamageSource
 {
     public static DamageSource inFire = (new DamageSource("inFire")).setFireDamage();
+    public static DamageSource lightningBolt = new DamageSource("lightningBolt");
     public static DamageSource onFire = (new DamageSource("onFire")).setDamageBypassesArmor().setFireDamage();
     public static DamageSource lava = (new DamageSource("lava")).setFireDamage();
     public static DamageSource inWall = (new DamageSource("inWall")).setDamageBypassesArmor();
@@ -44,61 +45,68 @@ public class DamageSource
      * Whether this damage source will have its damage amount scaled based on the current difficulty.
      */
     private boolean difficultyScaled;
+
+    /** Whether the damage is magic based. */
     private boolean magicDamage;
     private boolean explosion;
     public String damageType;
-    private static final String __OBFID = "CL_00001521";
 
-    public static DamageSource causeMobDamage(EntityLivingBase p_76358_0_)
+    public static DamageSource causeMobDamage(EntityLivingBase mob)
     {
-        return new EntityDamageSource("mob", p_76358_0_);
+        return new EntityDamageSource("mob", mob);
     }
 
     /**
      * returns an EntityDamageSource of type player
      */
-    public static DamageSource causePlayerDamage(EntityPlayer p_76365_0_)
+    public static DamageSource causePlayerDamage(EntityPlayer player)
     {
-        return new EntityDamageSource("player", p_76365_0_);
+        return new EntityDamageSource("player", player);
     }
 
     /**
      * returns EntityDamageSourceIndirect of an arrow
+     *  
+     * @param indirectEntityIn The entity that shoot the arrow
      */
-    public static DamageSource causeArrowDamage(EntityArrow p_76353_0_, Entity p_76353_1_)
+    public static DamageSource causeArrowDamage(EntityArrow arrow, Entity indirectEntityIn)
     {
-        return (new EntityDamageSourceIndirect("arrow", p_76353_0_, p_76353_1_)).setProjectile();
+        return (new EntityDamageSourceIndirect("arrow", arrow, indirectEntityIn)).setProjectile();
     }
 
     /**
      * returns EntityDamageSourceIndirect of a fireball
+     *  
+     * @param indirectEntityIn The entity that shoot the fireball
      */
-    public static DamageSource causeFireballDamage(EntityFireball p_76362_0_, Entity p_76362_1_)
+    public static DamageSource causeFireballDamage(EntityFireball fireball, Entity indirectEntityIn)
     {
-        return p_76362_1_ == null ? (new EntityDamageSourceIndirect("onFire", p_76362_0_, p_76362_0_)).setFireDamage().setProjectile() : (new EntityDamageSourceIndirect("fireball", p_76362_0_, p_76362_1_)).setFireDamage().setProjectile();
+        return indirectEntityIn == null ? (new EntityDamageSourceIndirect("onFire", fireball, fireball)).setFireDamage().setProjectile() : (new EntityDamageSourceIndirect("fireball", fireball, indirectEntityIn)).setFireDamage().setProjectile();
     }
 
-    public static DamageSource causeThrownDamage(Entity p_76356_0_, Entity p_76356_1_)
+    public static DamageSource causeThrownDamage(Entity source, Entity indirectEntityIn)
     {
-        return (new EntityDamageSourceIndirect("thrown", p_76356_0_, p_76356_1_)).setProjectile();
+        return (new EntityDamageSourceIndirect("thrown", source, indirectEntityIn)).setProjectile();
     }
 
-    public static DamageSource causeIndirectMagicDamage(Entity p_76354_0_, Entity p_76354_1_)
+    public static DamageSource causeIndirectMagicDamage(Entity source, Entity indirectEntityIn)
     {
-        return (new EntityDamageSourceIndirect("indirectMagic", p_76354_0_, p_76354_1_)).setDamageBypassesArmor().setMagicDamage();
+        return (new EntityDamageSourceIndirect("indirectMagic", source, indirectEntityIn)).setDamageBypassesArmor().setMagicDamage();
     }
 
     /**
      * Returns the EntityDamageSource of the Thorns enchantment
+     *  
+     * @param source The Entity that wears the armor with thorn
      */
-    public static DamageSource causeThornsDamage(Entity p_92087_0_)
+    public static DamageSource causeThornsDamage(Entity source)
     {
-        return (new EntityDamageSource("thorns", p_92087_0_)).setMagicDamage();
+        return (new EntityDamageSource("thorns", source)).setIsThornsDamage().setMagicDamage();
     }
 
-    public static DamageSource setExplosionSource(Explosion p_94539_0_)
+    public static DamageSource setExplosionSource(Explosion explosionIn)
     {
-        return p_94539_0_ != null && p_94539_0_.getExplosivePlacedBy() != null ? (new EntityDamageSource("explosion.player", p_94539_0_.getExplosivePlacedBy())).setDifficultyScaled().setExplosion() : (new DamageSource("explosion")).setDifficultyScaled().setExplosion();
+        return explosionIn != null && explosionIn.getExplosivePlacedBy() != null ? (new EntityDamageSource("explosion.player", explosionIn.getExplosivePlacedBy())).setDifficultyScaled().setExplosion() : (new DamageSource("explosion")).setDifficultyScaled().setExplosion();
     }
 
     /**
@@ -155,9 +163,9 @@ public class DamageSource
         return this.damageIsAbsolute;
     }
 
-    protected DamageSource(String p_i1566_1_)
+    protected DamageSource(String damageTypeIn)
     {
-        this.damageType = p_i1566_1_;
+        this.damageType = damageTypeIn;
     }
 
     public Entity getSourceOfDamage()
@@ -203,12 +211,17 @@ public class DamageSource
         return this;
     }
 
-    public IChatComponent func_151519_b(EntityLivingBase p_151519_1_)
+    /**
+     * Gets the death message that is displayed when the player dies
+     *  
+     * @param entityLivingBaseIn The EntityLivingBase that died
+     */
+    public IChatComponent getDeathMessage(EntityLivingBase entityLivingBaseIn)
     {
-        EntityLivingBase var2 = p_151519_1_.func_94060_bK();
-        String var3 = "death.attack." + this.damageType;
-        String var4 = var3 + ".player";
-        return var2 != null && StatCollector.canTranslate(var4) ? new ChatComponentTranslation(var4, new Object[] {p_151519_1_.func_145748_c_(), var2.func_145748_c_()}): new ChatComponentTranslation(var3, new Object[] {p_151519_1_.func_145748_c_()});
+        EntityLivingBase entitylivingbase = entityLivingBaseIn.getAttackingEntity();
+        String s = "death.attack." + this.damageType;
+        String s1 = s + ".player";
+        return entitylivingbase != null && StatCollector.canTranslate(s1) ? new ChatComponentTranslation(s1, new Object[] {entityLivingBaseIn.getDisplayName(), entitylivingbase.getDisplayName()}): new ChatComponentTranslation(s, new Object[] {entityLivingBaseIn.getDisplayName()});
     }
 
     /**
@@ -259,5 +272,11 @@ public class DamageSource
     {
         this.magicDamage = true;
         return this;
+    }
+
+    public boolean isCreativePlayer()
+    {
+        Entity entity = this.getEntity();
+        return entity instanceof EntityPlayer && ((EntityPlayer)entity).capabilities.isCreativeMode;
     }
 }

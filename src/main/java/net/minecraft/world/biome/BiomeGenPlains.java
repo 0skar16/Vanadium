@@ -1,56 +1,67 @@
 package net.minecraft.world.biome;
 
 import java.util.Random;
+import net.minecraft.block.BlockDoublePlant;
 import net.minecraft.block.BlockFlower;
 import net.minecraft.entity.passive.EntityHorse;
+import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
 
 public class BiomeGenPlains extends BiomeGenBase
 {
     protected boolean field_150628_aC;
-    private static final String __OBFID = "CL_00000180";
 
-    protected BiomeGenPlains(int p_i1986_1_)
+    protected BiomeGenPlains(int id)
     {
-        super(p_i1986_1_);
+        super(id);
         this.setTemperatureRainfall(0.8F, 0.4F);
-        this.func_150570_a(field_150593_e);
+        this.setHeight(height_LowPlains);
         this.spawnableCreatureList.add(new BiomeGenBase.SpawnListEntry(EntityHorse.class, 5, 2, 6));
         this.theBiomeDecorator.treesPerChunk = -999;
         this.theBiomeDecorator.flowersPerChunk = 4;
         this.theBiomeDecorator.grassPerChunk = 10;
     }
 
-    public String func_150572_a(Random p_150572_1_, int p_150572_2_, int p_150572_3_, int p_150572_4_)
+    public BlockFlower.EnumFlowerType pickRandomFlower(Random rand, BlockPos pos)
     {
-        double var5 = field_150606_ad.func_151601_a((double)p_150572_2_ / 200.0D, (double)p_150572_4_ / 200.0D);
-        int var7;
+        double d0 = GRASS_COLOR_NOISE.func_151601_a((double)pos.getX() / 200.0D, (double)pos.getZ() / 200.0D);
 
-        if (var5 < -0.8D)
+        if (d0 < -0.8D)
         {
-            var7 = p_150572_1_.nextInt(4);
-            return BlockFlower.field_149859_a[4 + var7];
+            int j = rand.nextInt(4);
+
+            switch (j)
+            {
+                case 0:
+                    return BlockFlower.EnumFlowerType.ORANGE_TULIP;
+
+                case 1:
+                    return BlockFlower.EnumFlowerType.RED_TULIP;
+
+                case 2:
+                    return BlockFlower.EnumFlowerType.PINK_TULIP;
+
+                case 3:
+                default:
+                    return BlockFlower.EnumFlowerType.WHITE_TULIP;
+            }
         }
-        else if (p_150572_1_.nextInt(3) > 0)
+        else if (rand.nextInt(3) > 0)
         {
-            var7 = p_150572_1_.nextInt(3);
-            return var7 == 0 ? BlockFlower.field_149859_a[0] : (var7 == 1 ? BlockFlower.field_149859_a[3] : BlockFlower.field_149859_a[8]);
+            int i = rand.nextInt(3);
+            return i == 0 ? BlockFlower.EnumFlowerType.POPPY : (i == 1 ? BlockFlower.EnumFlowerType.HOUSTONIA : BlockFlower.EnumFlowerType.OXEYE_DAISY);
         }
         else
         {
-            return BlockFlower.field_149858_b[0];
+            return BlockFlower.EnumFlowerType.DANDELION;
         }
     }
 
-    public void decorate(World p_76728_1_, Random p_76728_2_, int p_76728_3_, int p_76728_4_)
+    public void decorate(World worldIn, Random rand, BlockPos pos)
     {
-        double var5 = field_150606_ad.func_151601_a((double)(p_76728_3_ + 8) / 200.0D, (double)(p_76728_4_ + 8) / 200.0D);
-        int var7;
-        int var8;
-        int var9;
-        int var10;
+        double d0 = GRASS_COLOR_NOISE.func_151601_a((double)(pos.getX() + 8) / 200.0D, (double)(pos.getZ() + 8) / 200.0D);
 
-        if (var5 < -0.8D)
+        if (d0 < -0.8D)
         {
             this.theBiomeDecorator.flowersPerChunk = 15;
             this.theBiomeDecorator.grassPerChunk = 5;
@@ -59,40 +70,40 @@ public class BiomeGenPlains extends BiomeGenBase
         {
             this.theBiomeDecorator.flowersPerChunk = 4;
             this.theBiomeDecorator.grassPerChunk = 10;
-            field_150610_ae.func_150548_a(2);
+            DOUBLE_PLANT_GENERATOR.setPlantType(BlockDoublePlant.EnumPlantType.GRASS);
 
-            for (var7 = 0; var7 < 7; ++var7)
+            for (int i = 0; i < 7; ++i)
             {
-                var8 = p_76728_3_ + p_76728_2_.nextInt(16) + 8;
-                var9 = p_76728_4_ + p_76728_2_.nextInt(16) + 8;
-                var10 = p_76728_2_.nextInt(p_76728_1_.getHeightValue(var8, var9) + 32);
-                field_150610_ae.generate(p_76728_1_, p_76728_2_, var8, var10, var9);
+                int j = rand.nextInt(16) + 8;
+                int k = rand.nextInt(16) + 8;
+                int l = rand.nextInt(worldIn.getHeight(pos.add(j, 0, k)).getY() + 32);
+                DOUBLE_PLANT_GENERATOR.generate(worldIn, rand, pos.add(j, l, k));
             }
         }
 
         if (this.field_150628_aC)
         {
-            field_150610_ae.func_150548_a(0);
+            DOUBLE_PLANT_GENERATOR.setPlantType(BlockDoublePlant.EnumPlantType.SUNFLOWER);
 
-            for (var7 = 0; var7 < 10; ++var7)
+            for (int i1 = 0; i1 < 10; ++i1)
             {
-                var8 = p_76728_3_ + p_76728_2_.nextInt(16) + 8;
-                var9 = p_76728_4_ + p_76728_2_.nextInt(16) + 8;
-                var10 = p_76728_2_.nextInt(p_76728_1_.getHeightValue(var8, var9) + 32);
-                field_150610_ae.generate(p_76728_1_, p_76728_2_, var8, var10, var9);
+                int j1 = rand.nextInt(16) + 8;
+                int k1 = rand.nextInt(16) + 8;
+                int l1 = rand.nextInt(worldIn.getHeight(pos.add(j1, 0, k1)).getY() + 32);
+                DOUBLE_PLANT_GENERATOR.generate(worldIn, rand, pos.add(j1, l1, k1));
             }
         }
 
-        super.decorate(p_76728_1_, p_76728_2_, p_76728_3_, p_76728_4_);
+        super.decorate(worldIn, rand, pos);
     }
 
-    protected BiomeGenBase func_150566_k()
+    protected BiomeGenBase createMutatedBiome(int p_180277_1_)
     {
-        BiomeGenPlains var1 = new BiomeGenPlains(this.biomeID + 128);
-        var1.setBiomeName("Sunflower Plains");
-        var1.field_150628_aC = true;
-        var1.setColor(9286496);
-        var1.field_150609_ah = 14273354;
-        return var1;
+        BiomeGenPlains biomegenplains = new BiomeGenPlains(p_180277_1_);
+        biomegenplains.setBiomeName("Sunflower Plains");
+        biomegenplains.field_150628_aC = true;
+        biomegenplains.setColor(9286496);
+        biomegenplains.field_150609_ah = 14273354;
+        return biomegenplains;
     }
 }

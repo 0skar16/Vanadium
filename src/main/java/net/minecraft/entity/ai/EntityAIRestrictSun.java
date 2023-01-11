@@ -1,15 +1,15 @@
 package net.minecraft.entity.ai;
 
 import net.minecraft.entity.EntityCreature;
+import net.minecraft.pathfinding.PathNavigateGround;
 
 public class EntityAIRestrictSun extends EntityAIBase
 {
     private EntityCreature theEntity;
-    private static final String __OBFID = "CL_00001611";
 
-    public EntityAIRestrictSun(EntityCreature p_i1652_1_)
+    public EntityAIRestrictSun(EntityCreature creature)
     {
-        this.theEntity = p_i1652_1_;
+        this.theEntity = creature;
     }
 
     /**
@@ -25,7 +25,7 @@ public class EntityAIRestrictSun extends EntityAIBase
      */
     public void startExecuting()
     {
-        this.theEntity.getNavigator().setAvoidSun(true);
+        ((PathNavigateGround)this.theEntity.getNavigator()).setAvoidSun(true);
     }
 
     /**
@@ -33,6 +33,6 @@ public class EntityAIRestrictSun extends EntityAIBase
      */
     public void resetTask()
     {
-        this.theEntity.getNavigator().setAvoidSun(false);
+        ((PathNavigateGround)this.theEntity.getNavigator()).setAvoidSun(false);
     }
 }

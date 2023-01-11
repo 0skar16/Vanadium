@@ -1,9 +1,9 @@
 package net.minecraft.realms;
 
-import io.netty.util.concurrent.GenericFutureListener;
-import java.io.IOException;
+import com.google.common.collect.Lists;
+import com.mojang.authlib.GameProfile;
 import java.net.InetAddress;
-import java.util.ArrayList;
+import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -18,95 +18,111 @@ import net.minecraft.network.status.server.S00PacketServerInfo;
 import net.minecraft.network.status.server.S01PacketPong;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.IChatComponent;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class RealmsServerStatusPinger
 {
     private static final Logger LOGGER = LogManager.getLogger();
-    private final List connections = Collections.synchronizedList(new ArrayList());
-    private static final String __OBFID = "CL_00001854";
+    private final List<NetworkManager> connections = Collections.<NetworkManager>synchronizedList(Lists.<NetworkManager>newArrayList());
 
-    public void pingServer(final String p_pingServer_1_, final ServerPing p_pingServer_2_) throws IOException
+    public void pingServer(final String p_pingServer_1_, final RealmsServerPing p_pingServer_2_) throws UnknownHostException
     {
         if (p_pingServer_1_ != null && !p_pingServer_1_.startsWith("0.0.0.0") && !p_pingServer_1_.isEmpty())
         {
-            RealmsServerAddress var3 = RealmsServerAddress.parseString(p_pingServer_1_);
-            final NetworkManager var4 = NetworkManager.provideLanClient(InetAddress.getByName(var3.getHost()), var3.getPort());
-            this.connections.add(var4);
-            var4.setNetHandler(new INetHandlerStatusClient()
+            RealmsServerAddress realmsserveraddress = RealmsServerAddress.parseString(p_pingServer_1_);
+            final NetworkManager networkmanager = NetworkManager.createNetworkManagerAndConnect(InetAddress.getByName(realmsserveraddress.getHost()), realmsserveraddress.getPort(), false);
+            this.connections.add(networkmanager);
+            networkmanager.setNetHandler(new INetHandlerStatusClient()
             {
                 private boolean field_154345_e = false;
-                private static final String __OBFID = "CL_00001807";
-                public void handleServerInfo(S00PacketServerInfo p_147397_1_)
+                public void handleServerInfo(S00PacketServerInfo packetIn)
                 {
-                    ServerStatusResponse var2 = p_147397_1_.func_149294_c();
+                    ServerStatusResponse serverstatusresponse = packetIn.getResponse();
 
-                    if (var2.func_151318_b() != null)
+                    if (serverstatusresponse.getPlayerCountData() != null)
                     {
-                        p_pingServer_2_.nrOfPlayers = String.valueOf(var2.func_151318_b().func_151333_b());
+                        p_pingServer_2_.nrOfPlayers = String.valueOf(serverstatusresponse.getPlayerCountData().getOnlinePlayerCount());
+
+                        if (ArrayUtils.isNotEmpty(serverstatusresponse.getPlayerCountData().getPlayers()))
+                        {
+                            StringBuilder stringbuilder = new StringBuilder();
+
+                            for (GameProfile gameprofile : serverstatusresponse.getPlayerCountData().getPlayers())
+                            {
+                                if (stringbuilder.length() > 0)
+                                {
+                                    stringbuilder.append("\n");
+                                }
+
+                                stringbuilder.append(gameprofile.getName());
+                            }
+
+                            if (serverstatusresponse.getPlayerCountData().getPlayers().length < serverstatusresponse.getPlayerCountData().getOnlinePlayerCount())
+                            {
+                                if (stringbuilder.length() > 0)
+                                {
+                                    stringbuilder.append("\n");
+                                }
+
+                                stringbuilder.append("... and ").append(serverstatusresponse.getPlayerCountData().getOnlinePlayerCount() - serverstatusresponse.getPlayerCountData().getPlayers().length).append(" more ...");
+                            }
+
+                            p_pingServer_2_.playerList = stringbuilder.toString();
+                        }
+                    }
+                    else
+                    {
+                        p_pingServer_2_.playerList = "";
                     }
 
-                    var4.scheduleOutboundPacket(new C01PacketPing(Realms.currentTimeMillis()), new GenericFutureListener[0]);
+                    networkmanager.sendPacket(new C01PacketPing(Realms.currentTimeMillis()));
                     this.field_154345_e = true;
                 }
-                public void handlePong(S01PacketPong p_147398_1_)
+                public void handlePong(S01PacketPong packetIn)
                 {
-                    var4.closeChannel(new ChatComponentText("Finished"));
+                    networkmanager.closeChannel(new ChatComponentText("Finished"));
                 }
-                public void onDisconnect(IChatComponent p_147231_1_)
+                public void onDisconnect(IChatComponent reason)
                 {
                     if (!this.field_154345_e)
                     {
-                        RealmsServerStatusPinger.LOGGER.error("Can\'t ping " + p_pingServer_1_ + ": " + p_147231_1_.getUnformattedText());
+                        RealmsServerStatusPinger.LOGGER.error("Can\'t ping " + p_pingServer_1_ + ": " + reason.getUnformattedText());
                     }
                 }
-                public void onConnectionStateTransition(EnumConnectionState p_147232_1_, EnumConnectionState p_147232_2_)
-                {
-                    if (p_147232_2_ != EnumConnectionState.STATUS)
-                    {
-                        throw new UnsupportedOperationException("Unexpected change in protocol to " + p_147232_2_);
-                    }
-                }
-                public void onNetworkTick() {}
             });
 
             try
             {
-                var4.scheduleOutboundPacket(new C00Handshake(RealmsSharedConstants.NETWORK_PROTOCOL_VERSION, var3.getHost(), var3.getPort(), EnumConnectionState.STATUS), new GenericFutureListener[0]);
-                var4.scheduleOutboundPacket(new C00PacketServerQuery(), new GenericFutureListener[0]);
+                networkmanager.sendPacket(new C00Handshake(RealmsSharedConstants.NETWORK_PROTOCOL_VERSION, realmsserveraddress.getHost(), realmsserveraddress.getPort(), EnumConnectionState.STATUS));
+                networkmanager.sendPacket(new C00PacketServerQuery());
             }
-            catch (Throwable var6)
+            catch (Throwable throwable)
             {
-                LOGGER.error(var6);
+                LOGGER.error((Object)throwable);
             }
         }
     }
 
     public void tick()
     {
-        List var1 = this.connections;
-
         synchronized (this.connections)
         {
-            Iterator var2 = this.connections.iterator();
+            Iterator<NetworkManager> iterator = this.connections.iterator();
 
-            while (var2.hasNext())
+            while (iterator.hasNext())
             {
-                NetworkManager var3 = (NetworkManager)var2.next();
+                NetworkManager networkmanager = (NetworkManager)iterator.next();
 
-                if (var3.isChannelOpen())
+                if (networkmanager.isChannelOpen())
                 {
-                    var3.processReceivedPackets();
+                    networkmanager.processReceivedPackets();
                 }
                 else
                 {
-                    var2.remove();
-
-                    if (var3.getExitMessage() != null)
-                    {
-                        var3.getNetHandler().onDisconnect(var3.getExitMessage());
-                    }
+                    iterator.remove();
+                    networkmanager.checkDisconnected();
                 }
             }
         }
@@ -114,20 +130,18 @@ public class RealmsServerStatusPinger
 
     public void removeAll()
     {
-        List var1 = this.connections;
-
         synchronized (this.connections)
         {
-            Iterator var2 = this.connections.iterator();
+            Iterator<NetworkManager> iterator = this.connections.iterator();
 
-            while (var2.hasNext())
+            while (iterator.hasNext())
             {
-                NetworkManager var3 = (NetworkManager)var2.next();
+                NetworkManager networkmanager = (NetworkManager)iterator.next();
 
-                if (var3.isChannelOpen())
+                if (networkmanager.isChannelOpen())
                 {
-                    var2.remove();
-                    var3.closeChannel(new ChatComponentText("Cancelled"));
+                    iterator.remove();
+                    networkmanager.closeChannel(new ChatComponentText("Cancelled"));
                 }
             }
         }

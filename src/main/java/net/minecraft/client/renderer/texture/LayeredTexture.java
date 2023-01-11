@@ -5,58 +5,66 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Iterator;
 import java.util.List;
-import javax.imageio.ImageIO;
 import net.minecraft.client.resources.IResourceManager;
+import net.minecraft.src.Config;
 import net.minecraft.util.ResourceLocation;
+import net.optifine.shaders.ShadersTex;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class LayeredTexture extends AbstractTexture
 {
     private static final Logger logger = LogManager.getLogger();
-    public final List layeredTextureNames;
-    private static final String __OBFID = "CL_00001051";
+    public final List<String> layeredTextureNames;
+    private ResourceLocation textureLocation;
 
-    public LayeredTexture(String ... p_i1274_1_)
+    public LayeredTexture(String... textureNames)
     {
-        this.layeredTextureNames = Lists.newArrayList(p_i1274_1_);
+        this.layeredTextureNames = Lists.newArrayList(textureNames);
+
+        if (textureNames.length > 0 && textureNames[0] != null)
+        {
+            this.textureLocation = new ResourceLocation(textureNames[0]);
+        }
     }
 
-    public void loadTexture(IResourceManager p_110551_1_) throws IOException
+    public void loadTexture(IResourceManager resourceManager) throws IOException
     {
-        this.func_147631_c();
-        BufferedImage var2 = null;
+        this.deleteGlTexture();
+        BufferedImage bufferedimage = null;
 
         try
         {
-            Iterator var3 = this.layeredTextureNames.iterator();
-
-            while (var3.hasNext())
+            for (String s : this.layeredTextureNames)
             {
-                String var4 = (String)var3.next();
-
-                if (var4 != null)
+                if (s != null)
                 {
-                    InputStream var5 = p_110551_1_.getResource(new ResourceLocation(var4)).getInputStream();
-                    BufferedImage var6 = ImageIO.read(var5);
+                    InputStream inputstream = resourceManager.getResource(new ResourceLocation(s)).getInputStream();
+                    BufferedImage bufferedimage1 = TextureUtil.readBufferedImage(inputstream);
 
-                    if (var2 == null)
+                    if (bufferedimage == null)
                     {
-                        var2 = new BufferedImage(var6.getWidth(), var6.getHeight(), 2);
+                        bufferedimage = new BufferedImage(bufferedimage1.getWidth(), bufferedimage1.getHeight(), 2);
                     }
 
-                    var2.getGraphics().drawImage(var6, 0, 0, (ImageObserver)null);
+                    bufferedimage.getGraphics().drawImage(bufferedimage1, 0, 0, (ImageObserver)null);
                 }
             }
         }
-        catch (IOException var7)
+        catch (IOException ioexception)
         {
-            logger.error("Couldn\'t load layered image", var7);
+            logger.error((String)"Couldn\'t load layered image", (Throwable)ioexception);
             return;
         }
 
-        TextureUtil.uploadTextureImage(this.getGlTextureId(), var2);
+        if (Config.isShaders())
+        {
+            ShadersTex.loadSimpleTexture(this.getGlTextureId(), bufferedimage, false, false, resourceManager, this.textureLocation, this.getMultiTexID());
+        }
+        else
+        {
+            TextureUtil.uploadTextureImage(this.getGlTextureId(), bufferedimage);
+        }
     }
 }

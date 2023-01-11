@@ -1,128 +1,108 @@
 package net.minecraft.network.play.server;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import net.minecraft.block.Block;
-import net.minecraft.network.INetHandler;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
+import net.minecraft.util.BlockPos;
 import net.minecraft.world.ChunkCoordIntPair;
 import net.minecraft.world.chunk.Chunk;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
-public class S22PacketMultiBlockChange extends Packet
+public class S22PacketMultiBlockChange implements Packet<INetHandlerPlayClient>
 {
-    private static final Logger logger = LogManager.getLogger();
-    private ChunkCoordIntPair field_148925_b;
-    private byte[] field_148926_c;
-    private int field_148924_d;
-    private static final String __OBFID = "CL_00001290";
+    private ChunkCoordIntPair chunkPosCoord;
+    private S22PacketMultiBlockChange.BlockUpdateData[] changedBlocks;
 
-    public S22PacketMultiBlockChange() {}
-
-    public S22PacketMultiBlockChange(int p_i45181_1_, short[] p_i45181_2_, Chunk p_i45181_3_)
+    public S22PacketMultiBlockChange()
     {
-        this.field_148925_b = new ChunkCoordIntPair(p_i45181_3_.xPosition, p_i45181_3_.zPosition);
-        this.field_148924_d = p_i45181_1_;
-        int var4 = 4 * p_i45181_1_;
+    }
 
-        try
+    public S22PacketMultiBlockChange(int p_i45181_1_, short[] crammedPositionsIn, Chunk chunkIn)
+    {
+        this.chunkPosCoord = new ChunkCoordIntPair(chunkIn.xPosition, chunkIn.zPosition);
+        this.changedBlocks = new S22PacketMultiBlockChange.BlockUpdateData[p_i45181_1_];
+
+        for (int i = 0; i < this.changedBlocks.length; ++i)
         {
-            ByteArrayOutputStream var5 = new ByteArrayOutputStream(var4);
-            DataOutputStream var6 = new DataOutputStream(var5);
-
-            for (int var7 = 0; var7 < p_i45181_1_; ++var7)
-            {
-                int var8 = p_i45181_2_[var7] >> 12 & 15;
-                int var9 = p_i45181_2_[var7] >> 8 & 15;
-                int var10 = p_i45181_2_[var7] & 255;
-                var6.writeShort(p_i45181_2_[var7]);
-                var6.writeShort((short)((Block.getIdFromBlock(p_i45181_3_.func_150810_a(var8, var10, var9)) & 4095) << 4 | p_i45181_3_.getBlockMetadata(var8, var10, var9) & 15));
-            }
-
-            this.field_148926_c = var5.toByteArray();
-
-            if (this.field_148926_c.length != var4)
-            {
-                throw new RuntimeException("Expected length " + var4 + " doesn\'t match received length " + this.field_148926_c.length);
-            }
-        }
-        catch (IOException var11)
-        {
-            logger.error("Couldn\'t create bulk block update packet", var11);
-            this.field_148926_c = null;
+            this.changedBlocks[i] = new S22PacketMultiBlockChange.BlockUpdateData(crammedPositionsIn[i], chunkIn);
         }
     }
 
     /**
      * Reads the raw packet data from the data stream.
      */
-    public void readPacketData(PacketBuffer p_148837_1_) throws IOException
+    public void readPacketData(PacketBuffer buf) throws IOException
     {
-        this.field_148925_b = new ChunkCoordIntPair(p_148837_1_.readInt(), p_148837_1_.readInt());
-        this.field_148924_d = p_148837_1_.readShort() & 65535;
-        int var2 = p_148837_1_.readInt();
+        this.chunkPosCoord = new ChunkCoordIntPair(buf.readInt(), buf.readInt());
+        this.changedBlocks = new S22PacketMultiBlockChange.BlockUpdateData[buf.readVarIntFromBuffer()];
 
-        if (var2 > 0)
+        for (int i = 0; i < this.changedBlocks.length; ++i)
         {
-            this.field_148926_c = new byte[var2];
-            p_148837_1_.readBytes(this.field_148926_c);
+            this.changedBlocks[i] = new S22PacketMultiBlockChange.BlockUpdateData(buf.readShort(), (IBlockState)Block.BLOCK_STATE_IDS.getByValue(buf.readVarIntFromBuffer()));
         }
     }
 
     /**
      * Writes the raw packet data to the data stream.
      */
-    public void writePacketData(PacketBuffer p_148840_1_) throws IOException
+    public void writePacketData(PacketBuffer buf) throws IOException
     {
-        p_148840_1_.writeInt(this.field_148925_b.chunkXPos);
-        p_148840_1_.writeInt(this.field_148925_b.chunkZPos);
-        p_148840_1_.writeShort((short)this.field_148924_d);
+        buf.writeInt(this.chunkPosCoord.chunkXPos);
+        buf.writeInt(this.chunkPosCoord.chunkZPos);
+        buf.writeVarIntToBuffer(this.changedBlocks.length);
 
-        if (this.field_148926_c != null)
+        for (S22PacketMultiBlockChange.BlockUpdateData s22packetmultiblockchange$blockupdatedata : this.changedBlocks)
         {
-            p_148840_1_.writeInt(this.field_148926_c.length);
-            p_148840_1_.writeBytes(this.field_148926_c);
+            buf.writeShort(s22packetmultiblockchange$blockupdatedata.func_180089_b());
+            buf.writeVarIntToBuffer(Block.BLOCK_STATE_IDS.get(s22packetmultiblockchange$blockupdatedata.getBlockState()));
         }
-        else
-        {
-            p_148840_1_.writeInt(0);
-        }
-    }
-
-    public void processPacket(INetHandlerPlayClient p_148833_1_)
-    {
-        p_148833_1_.handleMultiBlockChange(this);
     }
 
     /**
-     * Returns a string formatted as comma separated [field]=[value] values. Used by Minecraft for logging purposes.
+     * Passes this Packet on to the NetHandler for processing.
      */
-    public String serialize()
+    public void processPacket(INetHandlerPlayClient handler)
     {
-        return String.format("xc=%d, zc=%d, count=%d", new Object[] {Integer.valueOf(this.field_148925_b.chunkXPos), Integer.valueOf(this.field_148925_b.chunkZPos), Integer.valueOf(this.field_148924_d)});
+        handler.handleMultiBlockChange(this);
     }
 
-    public ChunkCoordIntPair func_148920_c()
+    public S22PacketMultiBlockChange.BlockUpdateData[] getChangedBlocks()
     {
-        return this.field_148925_b;
+        return this.changedBlocks;
     }
 
-    public byte[] func_148921_d()
+    public class BlockUpdateData
     {
-        return this.field_148926_c;
-    }
+        private final short chunkPosCrammed;
+        private final IBlockState blockState;
 
-    public int func_148922_e()
-    {
-        return this.field_148924_d;
-    }
+        public BlockUpdateData(short p_i45984_2_, IBlockState state)
+        {
+            this.chunkPosCrammed = p_i45984_2_;
+            this.blockState = state;
+        }
 
-    public void processPacket(INetHandler p_148833_1_)
-    {
-        this.processPacket((INetHandlerPlayClient)p_148833_1_);
+        public BlockUpdateData(short p_i45985_2_, Chunk chunkIn)
+        {
+            this.chunkPosCrammed = p_i45985_2_;
+            this.blockState = chunkIn.getBlockState(this.getPos());
+        }
+
+        public BlockPos getPos()
+        {
+            return new BlockPos(S22PacketMultiBlockChange.this.chunkPosCoord.getBlock(this.chunkPosCrammed >> 12 & 15, this.chunkPosCrammed & 255, this.chunkPosCrammed >> 8 & 15));
+        }
+
+        public short func_180089_b()
+        {
+            return this.chunkPosCrammed;
+        }
+
+        public IBlockState getBlockState()
+        {
+            return this.blockState;
+        }
     }
 }

@@ -1,69 +1,50 @@
 package net.minecraft.network.play.server;
 
 import java.io.IOException;
-import net.minecraft.network.INetHandler;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
+import net.minecraft.util.BlockPos;
 
-public class S36PacketSignEditorOpen extends Packet
+public class S36PacketSignEditorOpen implements Packet<INetHandlerPlayClient>
 {
-    private int field_149133_a;
-    private int field_149131_b;
-    private int field_149132_c;
-    private static final String __OBFID = "CL_00001316";
+    private BlockPos signPosition;
 
-    public S36PacketSignEditorOpen() {}
-
-    public S36PacketSignEditorOpen(int p_i45207_1_, int p_i45207_2_, int p_i45207_3_)
+    public S36PacketSignEditorOpen()
     {
-        this.field_149133_a = p_i45207_1_;
-        this.field_149131_b = p_i45207_2_;
-        this.field_149132_c = p_i45207_3_;
     }
 
-    public void processPacket(INetHandlerPlayClient p_148833_1_)
+    public S36PacketSignEditorOpen(BlockPos signPositionIn)
     {
-        p_148833_1_.handleSignEditorOpen(this);
+        this.signPosition = signPositionIn;
+    }
+
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayClient handler)
+    {
+        handler.handleSignEditorOpen(this);
     }
 
     /**
      * Reads the raw packet data from the data stream.
      */
-    public void readPacketData(PacketBuffer p_148837_1_) throws IOException
+    public void readPacketData(PacketBuffer buf) throws IOException
     {
-        this.field_149133_a = p_148837_1_.readInt();
-        this.field_149131_b = p_148837_1_.readInt();
-        this.field_149132_c = p_148837_1_.readInt();
+        this.signPosition = buf.readBlockPos();
     }
 
     /**
      * Writes the raw packet data to the data stream.
      */
-    public void writePacketData(PacketBuffer p_148840_1_) throws IOException
+    public void writePacketData(PacketBuffer buf) throws IOException
     {
-        p_148840_1_.writeInt(this.field_149133_a);
-        p_148840_1_.writeInt(this.field_149131_b);
-        p_148840_1_.writeInt(this.field_149132_c);
+        buf.writeBlockPos(this.signPosition);
     }
 
-    public int func_149129_c()
+    public BlockPos getSignPosition()
     {
-        return this.field_149133_a;
-    }
-
-    public int func_149128_d()
-    {
-        return this.field_149131_b;
-    }
-
-    public int func_149127_e()
-    {
-        return this.field_149132_c;
-    }
-
-    public void processPacket(INetHandler p_148833_1_)
-    {
-        this.processPacket((INetHandlerPlayClient)p_148833_1_);
+        return this.signPosition;
     }
 }

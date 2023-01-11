@@ -1,116 +1,97 @@
 package net.minecraft.entity;
 
-import java.util.Iterator;
-import java.util.List;
-import net.minecraft.block.material.Material;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockRedstoneDiode;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.DamageSource;
-import net.minecraft.util.Direction;
-import net.minecraft.util.MathHelper;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.world.World;
+import org.apache.commons.lang3.Validate;
 
 public abstract class EntityHanging extends Entity
 {
     private int tickCounter1;
-    public int hangingDirection;
-    public int field_146063_b;
-    public int field_146064_c;
-    public int field_146062_d;
-    private static final String __OBFID = "CL_00001546";
+    protected BlockPos hangingPosition;
 
-    public EntityHanging(World p_i1588_1_)
+    /** The direction the entity is facing */
+    public EnumFacing facingDirection;
+
+    public EntityHanging(World worldIn)
     {
-        super(p_i1588_1_);
-        this.yOffset = 0.0F;
+        super(worldIn);
         this.setSize(0.5F, 0.5F);
     }
 
-    public EntityHanging(World p_i1589_1_, int p_i1589_2_, int p_i1589_3_, int p_i1589_4_, int p_i1589_5_)
+    public EntityHanging(World worldIn, BlockPos hangingPositionIn)
     {
-        this(p_i1589_1_);
-        this.field_146063_b = p_i1589_2_;
-        this.field_146064_c = p_i1589_3_;
-        this.field_146062_d = p_i1589_4_;
+        this(worldIn);
+        this.hangingPosition = hangingPositionIn;
     }
 
-    protected void entityInit() {}
-
-    public void setDirection(int p_82328_1_)
+    protected void entityInit()
     {
-        this.hangingDirection = p_82328_1_;
-        this.prevRotationYaw = this.rotationYaw = (float)(p_82328_1_ * 90);
-        float var2 = (float)this.getWidthPixels();
-        float var3 = (float)this.getHeightPixels();
-        float var4 = (float)this.getWidthPixels();
-
-        if (p_82328_1_ != 2 && p_82328_1_ != 0)
-        {
-            var2 = 0.5F;
-        }
-        else
-        {
-            var4 = 0.5F;
-            this.rotationYaw = this.prevRotationYaw = (float)(Direction.rotateOpposite[p_82328_1_] * 90);
-        }
-
-        var2 /= 32.0F;
-        var3 /= 32.0F;
-        var4 /= 32.0F;
-        float var5 = (float)this.field_146063_b + 0.5F;
-        float var6 = (float)this.field_146064_c + 0.5F;
-        float var7 = (float)this.field_146062_d + 0.5F;
-        float var8 = 0.5625F;
-
-        if (p_82328_1_ == 2)
-        {
-            var7 -= var8;
-        }
-
-        if (p_82328_1_ == 1)
-        {
-            var5 -= var8;
-        }
-
-        if (p_82328_1_ == 0)
-        {
-            var7 += var8;
-        }
-
-        if (p_82328_1_ == 3)
-        {
-            var5 += var8;
-        }
-
-        if (p_82328_1_ == 2)
-        {
-            var5 -= this.func_70517_b(this.getWidthPixels());
-        }
-
-        if (p_82328_1_ == 1)
-        {
-            var7 += this.func_70517_b(this.getWidthPixels());
-        }
-
-        if (p_82328_1_ == 0)
-        {
-            var5 += this.func_70517_b(this.getWidthPixels());
-        }
-
-        if (p_82328_1_ == 3)
-        {
-            var7 -= this.func_70517_b(this.getWidthPixels());
-        }
-
-        var6 += this.func_70517_b(this.getHeightPixels());
-        this.setPosition((double)var5, (double)var6, (double)var7);
-        float var9 = -0.03125F;
-        this.boundingBox.setBounds((double)(var5 - var2 - var9), (double)(var6 - var3 - var9), (double)(var7 - var4 - var9), (double)(var5 + var2 + var9), (double)(var6 + var3 + var9), (double)(var7 + var4 + var9));
     }
 
-    private float func_70517_b(int p_70517_1_)
+    /**
+     * Updates facing and bounding box based on it
+     */
+    protected void updateFacingWithBoundingBox(EnumFacing facingDirectionIn)
     {
-        return p_70517_1_ == 32 ? 0.5F : (p_70517_1_ == 64 ? 0.5F : 0.0F);
+        Validate.notNull(facingDirectionIn);
+        Validate.isTrue(facingDirectionIn.getAxis().isHorizontal());
+        this.facingDirection = facingDirectionIn;
+        this.prevRotationYaw = this.rotationYaw = (float)(this.facingDirection.getHorizontalIndex() * 90);
+        this.updateBoundingBox();
+    }
+
+    /**
+     * Updates the entity bounding box based on current facing
+     */
+    private void updateBoundingBox()
+    {
+        if (this.facingDirection != null)
+        {
+            double d0 = (double)this.hangingPosition.getX() + 0.5D;
+            double d1 = (double)this.hangingPosition.getY() + 0.5D;
+            double d2 = (double)this.hangingPosition.getZ() + 0.5D;
+            double d3 = 0.46875D;
+            double d4 = this.func_174858_a(this.getWidthPixels());
+            double d5 = this.func_174858_a(this.getHeightPixels());
+            d0 = d0 - (double)this.facingDirection.getFrontOffsetX() * 0.46875D;
+            d2 = d2 - (double)this.facingDirection.getFrontOffsetZ() * 0.46875D;
+            d1 = d1 + d5;
+            EnumFacing enumfacing = this.facingDirection.rotateYCCW();
+            d0 = d0 + d4 * (double)enumfacing.getFrontOffsetX();
+            d2 = d2 + d4 * (double)enumfacing.getFrontOffsetZ();
+            this.posX = d0;
+            this.posY = d1;
+            this.posZ = d2;
+            double d6 = (double)this.getWidthPixels();
+            double d7 = (double)this.getHeightPixels();
+            double d8 = (double)this.getWidthPixels();
+
+            if (this.facingDirection.getAxis() == EnumFacing.Axis.Z)
+            {
+                d8 = 1.0D;
+            }
+            else
+            {
+                d6 = 1.0D;
+            }
+
+            d6 = d6 / 32.0D;
+            d7 = d7 / 32.0D;
+            d8 = d8 / 32.0D;
+            this.setEntityBoundingBox(new AxisAlignedBB(d0 - d6, d1 - d7, d2 - d8, d0 + d6, d1 + d7, d2 + d8));
+        }
+    }
+
+    private double func_174858_a(int p_174858_1_)
+    {
+        return p_174858_1_ % 32 == 0 ? 0.5D : 0.0D;
     }
 
     /**
@@ -122,7 +103,7 @@ public abstract class EntityHanging extends Entity
         this.prevPosY = this.posY;
         this.prevPosZ = this.posZ;
 
-        if (this.tickCounter1++ == 100 && !this.worldObj.isClient)
+        if (this.tickCounter1++ == 100 && !this.worldObj.isRemote)
         {
             this.tickCounter1 = 0;
 
@@ -139,78 +120,40 @@ public abstract class EntityHanging extends Entity
      */
     public boolean onValidSurface()
     {
-        if (!this.worldObj.getCollidingBoundingBoxes(this, this.boundingBox).isEmpty())
+        if (!this.worldObj.getCollidingBoundingBoxes(this, this.getEntityBoundingBox()).isEmpty())
         {
             return false;
         }
         else
         {
-            int var1 = Math.max(1, this.getWidthPixels() / 16);
-            int var2 = Math.max(1, this.getHeightPixels() / 16);
-            int var3 = this.field_146063_b;
-            int var4 = this.field_146064_c;
-            int var5 = this.field_146062_d;
+            int i = Math.max(1, this.getWidthPixels() / 16);
+            int j = Math.max(1, this.getHeightPixels() / 16);
+            BlockPos blockpos = this.hangingPosition.offset(this.facingDirection.getOpposite());
+            EnumFacing enumfacing = this.facingDirection.rotateYCCW();
 
-            if (this.hangingDirection == 2)
+            for (int k = 0; k < i; ++k)
             {
-                var3 = MathHelper.floor_double(this.posX - (double)((float)this.getWidthPixels() / 32.0F));
-            }
-
-            if (this.hangingDirection == 1)
-            {
-                var5 = MathHelper.floor_double(this.posZ - (double)((float)this.getWidthPixels() / 32.0F));
-            }
-
-            if (this.hangingDirection == 0)
-            {
-                var3 = MathHelper.floor_double(this.posX - (double)((float)this.getWidthPixels() / 32.0F));
-            }
-
-            if (this.hangingDirection == 3)
-            {
-                var5 = MathHelper.floor_double(this.posZ - (double)((float)this.getWidthPixels() / 32.0F));
-            }
-
-            var4 = MathHelper.floor_double(this.posY - (double)((float)this.getHeightPixels() / 32.0F));
-
-            for (int var6 = 0; var6 < var1; ++var6)
-            {
-                for (int var7 = 0; var7 < var2; ++var7)
+                for (int l = 0; l < j; ++l)
                 {
-                    Material var8;
+                    BlockPos blockpos1 = blockpos.offset(enumfacing, k).up(l);
+                    Block block = this.worldObj.getBlockState(blockpos1).getBlock();
 
-                    if (this.hangingDirection != 2 && this.hangingDirection != 0)
-                    {
-                        var8 = this.worldObj.getBlock(this.field_146063_b, var4 + var7, var5 + var6).getMaterial();
-                    }
-                    else
-                    {
-                        var8 = this.worldObj.getBlock(var3 + var6, var4 + var7, this.field_146062_d).getMaterial();
-                    }
-
-                    if (!var8.isSolid())
+                    if (!block.getMaterial().isSolid() && !BlockRedstoneDiode.isRedstoneRepeaterBlockID(block))
                     {
                         return false;
                     }
                 }
             }
 
-            List var9 = this.worldObj.getEntitiesWithinAABBExcludingEntity(this, this.boundingBox);
-            Iterator var10 = var9.iterator();
-            Entity var11;
-
-            do
+            for (Entity entity : this.worldObj.getEntitiesWithinAABBExcludingEntity(this, this.getEntityBoundingBox()))
             {
-                if (!var10.hasNext())
+                if (entity instanceof EntityHanging)
                 {
-                    return true;
+                    return false;
                 }
-
-                var11 = (Entity)var10.next();
             }
-            while (!(var11 instanceof EntityHanging));
 
-            return false;
+            return true;
         }
     }
 
@@ -225,32 +168,32 @@ public abstract class EntityHanging extends Entity
     /**
      * Called when a player attacks an entity. If this returns true the attack will not happen.
      */
-    public boolean hitByEntity(Entity p_85031_1_)
+    public boolean hitByEntity(Entity entityIn)
     {
-        return p_85031_1_ instanceof EntityPlayer ? this.attackEntityFrom(DamageSource.causePlayerDamage((EntityPlayer)p_85031_1_), 0.0F) : false;
+        return entityIn instanceof EntityPlayer ? this.attackEntityFrom(DamageSource.causePlayerDamage((EntityPlayer)entityIn), 0.0F) : false;
     }
 
-    public void func_145781_i(int p_145781_1_)
+    public EnumFacing getHorizontalFacing()
     {
-        this.worldObj.func_147450_X();
+        return this.facingDirection;
     }
 
     /**
      * Called when the entity is attacked.
      */
-    public boolean attackEntityFrom(DamageSource p_70097_1_, float p_70097_2_)
+    public boolean attackEntityFrom(DamageSource source, float amount)
     {
-        if (this.isEntityInvulnerable())
+        if (this.isEntityInvulnerable(source))
         {
             return false;
         }
         else
         {
-            if (!this.isDead && !this.worldObj.isClient)
+            if (!this.isDead && !this.worldObj.isRemote)
             {
                 this.setDead();
                 this.setBeenAttacked();
-                this.onBroken(p_70097_1_.getEntity());
+                this.onBroken(source.getEntity());
             }
 
             return true;
@@ -260,9 +203,9 @@ public abstract class EntityHanging extends Entity
     /**
      * Tries to moves the entity by the passed in displacement. Args: x, y, z
      */
-    public void moveEntity(double p_70091_1_, double p_70091_3_, double p_70091_5_)
+    public void moveEntity(double x, double y, double z)
     {
-        if (!this.worldObj.isClient && !this.isDead && p_70091_1_ * p_70091_1_ + p_70091_3_ * p_70091_3_ + p_70091_5_ * p_70091_5_ > 0.0D)
+        if (!this.worldObj.isRemote && !this.isDead && x * x + y * y + z * z > 0.0D)
         {
             this.setDead();
             this.onBroken((Entity)null);
@@ -272,9 +215,9 @@ public abstract class EntityHanging extends Entity
     /**
      * Adds to the current velocity of the entity. Args: x, y, z
      */
-    public void addVelocity(double p_70024_1_, double p_70024_3_, double p_70024_5_)
+    public void addVelocity(double x, double y, double z)
     {
-        if (!this.worldObj.isClient && !this.isDead && p_70024_1_ * p_70024_1_ + p_70024_3_ * p_70024_3_ + p_70024_5_ * p_70024_5_ > 0.0D)
+        if (!this.worldObj.isRemote && !this.isDead && x * x + y * y + z * z > 0.0D)
         {
             this.setDead();
             this.onBroken((Entity)null);
@@ -284,66 +227,37 @@ public abstract class EntityHanging extends Entity
     /**
      * (abstract) Protected helper method to write subclass entity data to NBT.
      */
-    public void writeEntityToNBT(NBTTagCompound p_70014_1_)
+    public void writeEntityToNBT(NBTTagCompound tagCompound)
     {
-        p_70014_1_.setByte("Direction", (byte)this.hangingDirection);
-        p_70014_1_.setInteger("TileX", this.field_146063_b);
-        p_70014_1_.setInteger("TileY", this.field_146064_c);
-        p_70014_1_.setInteger("TileZ", this.field_146062_d);
-
-        switch (this.hangingDirection)
-        {
-            case 0:
-                p_70014_1_.setByte("Dir", (byte)2);
-                break;
-
-            case 1:
-                p_70014_1_.setByte("Dir", (byte)1);
-                break;
-
-            case 2:
-                p_70014_1_.setByte("Dir", (byte)0);
-                break;
-
-            case 3:
-                p_70014_1_.setByte("Dir", (byte)3);
-        }
+        tagCompound.setByte("Facing", (byte)this.facingDirection.getHorizontalIndex());
+        tagCompound.setInteger("TileX", this.getHangingPosition().getX());
+        tagCompound.setInteger("TileY", this.getHangingPosition().getY());
+        tagCompound.setInteger("TileZ", this.getHangingPosition().getZ());
     }
 
     /**
      * (abstract) Protected helper method to read subclass entity data from NBT.
      */
-    public void readEntityFromNBT(NBTTagCompound p_70037_1_)
+    public void readEntityFromNBT(NBTTagCompound tagCompund)
     {
-        if (p_70037_1_.func_150297_b("Direction", 99))
+        this.hangingPosition = new BlockPos(tagCompund.getInteger("TileX"), tagCompund.getInteger("TileY"), tagCompund.getInteger("TileZ"));
+        EnumFacing enumfacing;
+
+        if (tagCompund.hasKey("Direction", 99))
         {
-            this.hangingDirection = p_70037_1_.getByte("Direction");
+            enumfacing = EnumFacing.getHorizontal(tagCompund.getByte("Direction"));
+            this.hangingPosition = this.hangingPosition.offset(enumfacing);
+        }
+        else if (tagCompund.hasKey("Facing", 99))
+        {
+            enumfacing = EnumFacing.getHorizontal(tagCompund.getByte("Facing"));
         }
         else
         {
-            switch (p_70037_1_.getByte("Dir"))
-            {
-                case 0:
-                    this.hangingDirection = 2;
-                    break;
-
-                case 1:
-                    this.hangingDirection = 1;
-                    break;
-
-                case 2:
-                    this.hangingDirection = 0;
-                    break;
-
-                case 3:
-                    this.hangingDirection = 3;
-            }
+            enumfacing = EnumFacing.getHorizontal(tagCompund.getByte("Dir"));
         }
 
-        this.field_146063_b = p_70037_1_.getInteger("TileX");
-        this.field_146064_c = p_70037_1_.getInteger("TileY");
-        this.field_146062_d = p_70037_1_.getInteger("TileZ");
-        this.setDirection(this.hangingDirection);
+        this.updateFacingWithBoundingBox(enumfacing);
     }
 
     public abstract int getWidthPixels();
@@ -353,10 +267,33 @@ public abstract class EntityHanging extends Entity
     /**
      * Called when this entity is broken. Entity parameter may be null.
      */
-    public abstract void onBroken(Entity p_110128_1_);
+    public abstract void onBroken(Entity brokenEntity);
 
     protected boolean shouldSetPosAfterLoading()
     {
         return false;
+    }
+
+    /**
+     * Sets the x,y,z of the entity from the given parameters. Also seems to set up a bounding box.
+     */
+    public void setPosition(double x, double y, double z)
+    {
+        this.posX = x;
+        this.posY = y;
+        this.posZ = z;
+        BlockPos blockpos = this.hangingPosition;
+        this.hangingPosition = new BlockPos(x, y, z);
+
+        if (!this.hangingPosition.equals(blockpos))
+        {
+            this.updateBoundingBox();
+            this.isAirBorne = true;
+        }
+    }
+
+    public BlockPos getHangingPosition()
+    {
+        return this.hangingPosition;
     }
 }

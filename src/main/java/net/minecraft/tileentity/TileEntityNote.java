@@ -3,70 +3,68 @@ package net.minecraft.tileentity;
 import net.minecraft.block.material.Material;
 import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 
 public class TileEntityNote extends TileEntity
 {
-    public byte field_145879_a;
-    public boolean field_145880_i;
-    private static final String __OBFID = "CL_00000362";
+    /** Note to play */
+    public byte note;
 
-    public void writeToNBT(NBTTagCompound p_145841_1_)
+    /** stores the latest redstone state */
+    public boolean previousRedstoneState;
+
+    public void writeToNBT(NBTTagCompound compound)
     {
-        super.writeToNBT(p_145841_1_);
-        p_145841_1_.setByte("note", this.field_145879_a);
+        super.writeToNBT(compound);
+        compound.setByte("note", this.note);
     }
 
-    public void readFromNBT(NBTTagCompound p_145839_1_)
+    public void readFromNBT(NBTTagCompound compound)
     {
-        super.readFromNBT(p_145839_1_);
-        this.field_145879_a = p_145839_1_.getByte("note");
-
-        if (this.field_145879_a < 0)
-        {
-            this.field_145879_a = 0;
-        }
-
-        if (this.field_145879_a > 24)
-        {
-            this.field_145879_a = 24;
-        }
+        super.readFromNBT(compound);
+        this.note = compound.getByte("note");
+        this.note = (byte)MathHelper.clamp_int(this.note, 0, 24);
     }
 
-    public void func_145877_a()
+    /**
+     * change pitch by -> (currentPitch + 1) % 25
+     */
+    public void changePitch()
     {
-        this.field_145879_a = (byte)((this.field_145879_a + 1) % 25);
-        this.onInventoryChanged();
+        this.note = (byte)((this.note + 1) % 25);
+        this.markDirty();
     }
 
-    public void func_145878_a(World p_145878_1_, int p_145878_2_, int p_145878_3_, int p_145878_4_)
+    public void triggerNote(World worldIn, BlockPos p_175108_2_)
     {
-        if (p_145878_1_.getBlock(p_145878_2_, p_145878_3_ + 1, p_145878_4_).getMaterial() == Material.air)
+        if (worldIn.getBlockState(p_175108_2_.up()).getBlock().getMaterial() == Material.air)
         {
-            Material var5 = p_145878_1_.getBlock(p_145878_2_, p_145878_3_ - 1, p_145878_4_).getMaterial();
-            byte var6 = 0;
+            Material material = worldIn.getBlockState(p_175108_2_.down()).getBlock().getMaterial();
+            int i = 0;
 
-            if (var5 == Material.rock)
+            if (material == Material.rock)
             {
-                var6 = 1;
+                i = 1;
             }
 
-            if (var5 == Material.sand)
+            if (material == Material.sand)
             {
-                var6 = 2;
+                i = 2;
             }
 
-            if (var5 == Material.glass)
+            if (material == Material.glass)
             {
-                var6 = 3;
+                i = 3;
             }
 
-            if (var5 == Material.wood)
+            if (material == Material.wood)
             {
-                var6 = 4;
+                i = 4;
             }
 
-            p_145878_1_.func_147452_c(p_145878_2_, p_145878_3_, p_145878_4_, Blocks.noteblock, var6, this.field_145879_a);
+            worldIn.addBlockEvent(p_175108_2_, Blocks.noteblock, i, this.note);
         }
     }
 }

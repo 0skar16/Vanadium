@@ -6,7 +6,7 @@ public class VanadiumTestStart {
     public static void main(String[] args)
     {
 
-        Vanadium.main(concat(new String[] {"--version", "vanadium", "--accessToken", "0", "--assetsDir", "assets", "--assetIndex", "1.7.10", "--userProperties", "{}"}, args));
+        Vanadium.main(concat(new String[] {"--version", "vanadium", "--accessToken", "0", "--assetsDir", "assets", "--assetIndex", "1.8.9", "--userProperties", "{}"}, args));
     }
     public static <T> T[] concat(T[] first, T[] second)
     {

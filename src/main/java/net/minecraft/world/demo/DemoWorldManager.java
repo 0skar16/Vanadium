@@ -4,7 +4,9 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.play.server.S2BPacketChangeGameState;
 import net.minecraft.server.management.ItemInWorldManager;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.ChatComponentTranslation;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.world.World;
 
 public class DemoWorldManager extends ItemInWorldManager
@@ -13,19 +15,18 @@ public class DemoWorldManager extends ItemInWorldManager
     private boolean demoTimeExpired;
     private int field_73104_e;
     private int field_73102_f;
-    private static final String __OBFID = "CL_00001429";
 
-    public DemoWorldManager(World p_i1513_1_)
+    public DemoWorldManager(World worldIn)
     {
-        super(p_i1513_1_);
+        super(worldIn);
     }
 
     public void updateBlockRemoving()
     {
         super.updateBlockRemoving();
         ++this.field_73102_f;
-        long var1 = this.theWorld.getTotalWorldTime();
-        long var3 = var1 / 24000L + 1L;
+        long i = this.theWorld.getTotalWorldTime();
+        long j = i / 24000L + 1L;
 
         if (!this.field_73105_c && this.field_73102_f > 20)
         {
@@ -33,36 +34,36 @@ public class DemoWorldManager extends ItemInWorldManager
             this.thisPlayerMP.playerNetServerHandler.sendPacket(new S2BPacketChangeGameState(5, 0.0F));
         }
 
-        this.demoTimeExpired = var1 > 120500L;
+        this.demoTimeExpired = i > 120500L;
 
         if (this.demoTimeExpired)
         {
             ++this.field_73104_e;
         }
 
-        if (var1 % 24000L == 500L)
+        if (i % 24000L == 500L)
         {
-            if (var3 <= 6L)
+            if (j <= 6L)
             {
-                this.thisPlayerMP.addChatMessage(new ChatComponentTranslation("demo.day." + var3, new Object[0]));
+                this.thisPlayerMP.addChatMessage(new ChatComponentTranslation("demo.day." + j, new Object[0]));
             }
         }
-        else if (var3 == 1L)
+        else if (j == 1L)
         {
-            if (var1 == 100L)
+            if (i == 100L)
             {
                 this.thisPlayerMP.playerNetServerHandler.sendPacket(new S2BPacketChangeGameState(5, 101.0F));
             }
-            else if (var1 == 175L)
+            else if (i == 175L)
             {
                 this.thisPlayerMP.playerNetServerHandler.sendPacket(new S2BPacketChangeGameState(5, 102.0F));
             }
-            else if (var1 == 250L)
+            else if (i == 250L)
             {
                 this.thisPlayerMP.playerNetServerHandler.sendPacket(new S2BPacketChangeGameState(5, 103.0F));
             }
         }
-        else if (var3 == 5L && var1 % 24000L == 22000L)
+        else if (j == 5L && i % 24000L == 22000L)
         {
             this.thisPlayerMP.addChatMessage(new ChatComponentTranslation("demo.day.warning", new Object[0]));
         }
@@ -81,10 +82,10 @@ public class DemoWorldManager extends ItemInWorldManager
     }
 
     /**
-     * if not creative, it calls destroyBlockInWorldPartially untill the block is broken first. par4 is the specific
-     * side. tryHarvestBlock can also be the result of this call
+     * If not creative, it calls sendBlockBreakProgress until the block is broken first. tryHarvestBlock can also be the
+     * result of this call.
      */
-    public void onBlockClicked(int p_73074_1_, int p_73074_2_, int p_73074_3_, int p_73074_4_)
+    public void onBlockClicked(BlockPos pos, EnumFacing side)
     {
         if (this.demoTimeExpired)
         {
@@ -92,30 +93,30 @@ public class DemoWorldManager extends ItemInWorldManager
         }
         else
         {
-            super.onBlockClicked(p_73074_1_, p_73074_2_, p_73074_3_, p_73074_4_);
+            super.onBlockClicked(pos, side);
         }
     }
 
-    public void uncheckedTryHarvestBlock(int p_73082_1_, int p_73082_2_, int p_73082_3_)
+    public void blockRemoving(BlockPos pos)
     {
         if (!this.demoTimeExpired)
         {
-            super.uncheckedTryHarvestBlock(p_73082_1_, p_73082_2_, p_73082_3_);
+            super.blockRemoving(pos);
         }
     }
 
     /**
-     * Attempts to harvest a block at the given coordinate
+     * Attempts to harvest a block
      */
-    public boolean tryHarvestBlock(int p_73084_1_, int p_73084_2_, int p_73084_3_)
+    public boolean tryHarvestBlock(BlockPos pos)
     {
-        return this.demoTimeExpired ? false : super.tryHarvestBlock(p_73084_1_, p_73084_2_, p_73084_3_);
+        return this.demoTimeExpired ? false : super.tryHarvestBlock(pos);
     }
 
     /**
      * Attempts to right-click use an item by the given EntityPlayer in the given World
      */
-    public boolean tryUseItem(EntityPlayer p_73085_1_, World p_73085_2_, ItemStack p_73085_3_)
+    public boolean tryUseItem(EntityPlayer player, World worldIn, ItemStack stack)
     {
         if (this.demoTimeExpired)
         {
@@ -124,15 +125,14 @@ public class DemoWorldManager extends ItemInWorldManager
         }
         else
         {
-            return super.tryUseItem(p_73085_1_, p_73085_2_, p_73085_3_);
+            return super.tryUseItem(player, worldIn, stack);
         }
     }
 
     /**
-     * Activate the clicked on block, otherwise use the held item. Args: player, world, itemStack, x, y, z, side,
-     * xOffset, yOffset, zOffset
+     * Activate the clicked on block, otherwise use the held item.
      */
-    public boolean activateBlockOrUseItem(EntityPlayer p_73078_1_, World p_73078_2_, ItemStack p_73078_3_, int p_73078_4_, int p_73078_5_, int p_73078_6_, int p_73078_7_, float p_73078_8_, float p_73078_9_, float p_73078_10_)
+    public boolean activateBlockOrUseItem(EntityPlayer player, World worldIn, ItemStack stack, BlockPos pos, EnumFacing side, float offsetX, float offsetY, float offsetZ)
     {
         if (this.demoTimeExpired)
         {
@@ -141,7 +141,7 @@ public class DemoWorldManager extends ItemInWorldManager
         }
         else
         {
-            return super.activateBlockOrUseItem(p_73078_1_, p_73078_2_, p_73078_3_, p_73078_4_, p_73078_5_, p_73078_6_, p_73078_7_, p_73078_8_, p_73078_9_, p_73078_10_);
+            return super.activateBlockOrUseItem(player, worldIn, stack, pos, side, offsetX, offsetY, offsetZ);
         }
     }
 }

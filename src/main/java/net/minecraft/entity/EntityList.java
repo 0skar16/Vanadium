@@ -1,13 +1,15 @@
 package net.minecraft.entity;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import net.minecraft.entity.ai.EntityMinecartMobSpawner;
 import net.minecraft.entity.boss.EntityDragon;
 import net.minecraft.entity.boss.EntityWither;
+import net.minecraft.entity.effect.EntityLightningBolt;
+import net.minecraft.entity.item.EntityArmorStand;
 import net.minecraft.entity.item.EntityBoat;
 import net.minecraft.entity.item.EntityEnderCrystal;
 import net.minecraft.entity.item.EntityEnderEye;
@@ -17,6 +19,7 @@ import net.minecraft.entity.item.EntityFallingBlock;
 import net.minecraft.entity.item.EntityFireworkRocket;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.item.EntityItemFrame;
+import net.minecraft.entity.item.EntityMinecart;
 import net.minecraft.entity.item.EntityMinecartChest;
 import net.minecraft.entity.item.EntityMinecartEmpty;
 import net.minecraft.entity.item.EntityMinecartFurnace;
@@ -29,8 +32,10 @@ import net.minecraft.entity.monster.EntityBlaze;
 import net.minecraft.entity.monster.EntityCaveSpider;
 import net.minecraft.entity.monster.EntityCreeper;
 import net.minecraft.entity.monster.EntityEnderman;
+import net.minecraft.entity.monster.EntityEndermite;
 import net.minecraft.entity.monster.EntityGhast;
 import net.minecraft.entity.monster.EntityGiantZombie;
+import net.minecraft.entity.monster.EntityGuardian;
 import net.minecraft.entity.monster.EntityIronGolem;
 import net.minecraft.entity.monster.EntityMagmaCube;
 import net.minecraft.entity.monster.EntityMob;
@@ -49,11 +54,14 @@ import net.minecraft.entity.passive.EntityHorse;
 import net.minecraft.entity.passive.EntityMooshroom;
 import net.minecraft.entity.passive.EntityOcelot;
 import net.minecraft.entity.passive.EntityPig;
+import net.minecraft.entity.passive.EntityRabbit;
 import net.minecraft.entity.passive.EntitySheep;
 import net.minecraft.entity.passive.EntitySquid;
 import net.minecraft.entity.passive.EntityVillager;
 import net.minecraft.entity.passive.EntityWolf;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.projectile.EntityArrow;
+import net.minecraft.entity.projectile.EntityEgg;
 import net.minecraft.entity.projectile.EntityLargeFireball;
 import net.minecraft.entity.projectile.EntityPotion;
 import net.minecraft.entity.projectile.EntitySmallFireball;
@@ -69,208 +77,233 @@ import org.apache.logging.log4j.Logger;
 public class EntityList
 {
     private static final Logger logger = LogManager.getLogger();
-
-    /** Provides a mapping between entity classes and a string */
-    private static Map stringToClassMapping = new HashMap();
-
-    /** Provides a mapping between a string and an entity classes */
-    private static Map classToStringMapping = new HashMap();
-
-    /** provides a mapping between an entityID and an Entity Class */
-    private static Map IDtoClassMapping = new HashMap();
-
-    /** provides a mapping between an Entity Class and an entity ID */
-    private static Map classToIDMapping = new HashMap();
-
-    /** Maps entity names to their numeric identifiers */
-    private static Map stringToIDMapping = new HashMap();
-
-    /** This is a HashMap of the Creative Entity Eggs/Spawners. */
-    public static HashMap entityEggs = new LinkedHashMap();
-    private static final String __OBFID = "CL_00001538";
+    private static final Map < String, Class <? extends Entity >> stringToClassMapping = Maps. < String, Class <? extends Entity >> newHashMap();
+    private static final Map < Class <? extends Entity > , String > classToStringMapping = Maps. < Class <? extends Entity > , String > newHashMap();
+    private static final Map < Integer, Class <? extends Entity >> idToClassMapping = Maps. < Integer, Class <? extends Entity >> newHashMap();
+    private static final Map < Class <? extends Entity > , Integer > classToIDMapping = Maps. < Class <? extends Entity > , Integer > newHashMap();
+    private static final Map<String, Integer> stringToIDMapping = Maps.<String, Integer>newHashMap();
+    public static final Map<Integer, EntityList.EntityEggInfo> entityEggs = Maps.<Integer, EntityList.EntityEggInfo>newLinkedHashMap();
 
     /**
      * adds a mapping between Entity classes and both a string representation and an ID
      */
-    private static void addMapping(Class p_75618_0_, String p_75618_1_, int p_75618_2_)
+    private static void addMapping(Class <? extends Entity > entityClass, String entityName, int id)
     {
-        if (stringToClassMapping.containsKey(p_75618_1_))
+        if (stringToClassMapping.containsKey(entityName))
         {
-            throw new IllegalArgumentException("ID is already registered: " + p_75618_1_);
+            throw new IllegalArgumentException("ID is already registered: " + entityName);
         }
-        else if (IDtoClassMapping.containsKey(Integer.valueOf(p_75618_2_)))
+        else if (idToClassMapping.containsKey(Integer.valueOf(id)))
         {
-            throw new IllegalArgumentException("ID is already registered: " + p_75618_2_);
+            throw new IllegalArgumentException("ID is already registered: " + id);
+        }
+        else if (id == 0)
+        {
+            throw new IllegalArgumentException("Cannot register to reserved id: " + id);
+        }
+        else if (entityClass == null)
+        {
+            throw new IllegalArgumentException("Cannot register null clazz for id: " + id);
         }
         else
         {
-            stringToClassMapping.put(p_75618_1_, p_75618_0_);
-            classToStringMapping.put(p_75618_0_, p_75618_1_);
-            IDtoClassMapping.put(Integer.valueOf(p_75618_2_), p_75618_0_);
-            classToIDMapping.put(p_75618_0_, Integer.valueOf(p_75618_2_));
-            stringToIDMapping.put(p_75618_1_, Integer.valueOf(p_75618_2_));
+            stringToClassMapping.put(entityName, entityClass);
+            classToStringMapping.put(entityClass, entityName);
+            idToClassMapping.put(Integer.valueOf(id), entityClass);
+            classToIDMapping.put(entityClass, Integer.valueOf(id));
+            stringToIDMapping.put(entityName, Integer.valueOf(id));
         }
     }
 
     /**
      * Adds a entity mapping with egg info.
      */
-    private static void addMapping(Class p_75614_0_, String p_75614_1_, int p_75614_2_, int p_75614_3_, int p_75614_4_)
+    private static void addMapping(Class <? extends Entity > entityClass, String entityName, int entityID, int baseColor, int spotColor)
     {
-        addMapping(p_75614_0_, p_75614_1_, p_75614_2_);
-        entityEggs.put(Integer.valueOf(p_75614_2_), new EntityList.EntityEggInfo(p_75614_2_, p_75614_3_, p_75614_4_));
+        addMapping(entityClass, entityName, entityID);
+        entityEggs.put(Integer.valueOf(entityID), new EntityList.EntityEggInfo(entityID, baseColor, spotColor));
     }
 
     /**
      * Create a new instance of an entity in the world by using the entity name.
      */
-    public static Entity createEntityByName(String p_75620_0_, World p_75620_1_)
+    public static Entity createEntityByName(String entityName, World worldIn)
     {
-        Entity var2 = null;
+        Entity entity = null;
 
         try
         {
-            Class var3 = (Class)stringToClassMapping.get(p_75620_0_);
+            Class <? extends Entity > oclass = (Class)stringToClassMapping.get(entityName);
 
-            if (var3 != null)
+            if (oclass != null)
             {
-                var2 = (Entity)var3.getConstructor(new Class[] {World.class}).newInstance(new Object[] {p_75620_1_});
+                entity = (Entity)oclass.getConstructor(new Class[] {World.class}).newInstance(new Object[] {worldIn});
             }
         }
-        catch (Exception var4)
+        catch (Exception exception)
         {
-            var4.printStackTrace();
+            exception.printStackTrace();
         }
 
-        return var2;
+        return entity;
     }
 
     /**
      * create a new instance of an entity from NBT store
      */
-    public static Entity createEntityFromNBT(NBTTagCompound p_75615_0_, World p_75615_1_)
+    public static Entity createEntityFromNBT(NBTTagCompound nbt, World worldIn)
     {
-        Entity var2 = null;
+        Entity entity = null;
 
-        if ("Minecart".equals(p_75615_0_.getString("id")))
+        if ("Minecart".equals(nbt.getString("id")))
         {
-            switch (p_75615_0_.getInteger("Type"))
-            {
-                case 0:
-                    p_75615_0_.setString("id", "MinecartRideable");
-                    break;
-
-                case 1:
-                    p_75615_0_.setString("id", "MinecartChest");
-                    break;
-
-                case 2:
-                    p_75615_0_.setString("id", "MinecartFurnace");
-            }
-
-            p_75615_0_.removeTag("Type");
+            nbt.setString("id", EntityMinecart.EnumMinecartType.byNetworkID(nbt.getInteger("Type")).getName());
+            nbt.removeTag("Type");
         }
 
         try
         {
-            Class var3 = (Class)stringToClassMapping.get(p_75615_0_.getString("id"));
+            Class <? extends Entity > oclass = (Class)stringToClassMapping.get(nbt.getString("id"));
 
-            if (var3 != null)
+            if (oclass != null)
             {
-                var2 = (Entity)var3.getConstructor(new Class[] {World.class}).newInstance(new Object[] {p_75615_1_});
+                entity = (Entity)oclass.getConstructor(new Class[] {World.class}).newInstance(new Object[] {worldIn});
             }
         }
-        catch (Exception var4)
+        catch (Exception exception)
         {
-            var4.printStackTrace();
+            exception.printStackTrace();
         }
 
-        if (var2 != null)
+        if (entity != null)
         {
-            var2.readFromNBT(p_75615_0_);
+            entity.readFromNBT(nbt);
         }
         else
         {
-            logger.warn("Skipping Entity with id " + p_75615_0_.getString("id"));
+            logger.warn("Skipping Entity with id " + nbt.getString("id"));
         }
 
-        return var2;
+        return entity;
     }
 
     /**
      * Create a new instance of an entity in the world by using an entity ID.
      */
-    public static Entity createEntityByID(int p_75616_0_, World p_75616_1_)
+    public static Entity createEntityByID(int entityID, World worldIn)
     {
-        Entity var2 = null;
+        Entity entity = null;
 
         try
         {
-            Class var3 = getClassFromID(p_75616_0_);
+            Class <? extends Entity > oclass = getClassFromID(entityID);
 
-            if (var3 != null)
+            if (oclass != null)
             {
-                var2 = (Entity)var3.getConstructor(new Class[] {World.class}).newInstance(new Object[] {p_75616_1_});
+                entity = (Entity)oclass.getConstructor(new Class[] {World.class}).newInstance(new Object[] {worldIn});
             }
         }
-        catch (Exception var4)
+        catch (Exception exception)
         {
-            var4.printStackTrace();
+            exception.printStackTrace();
         }
 
-        if (var2 == null)
+        if (entity == null)
         {
-            logger.warn("Skipping Entity with id " + p_75616_0_);
+            logger.warn("Skipping Entity with id " + entityID);
         }
 
-        return var2;
+        return entity;
     }
 
     /**
      * gets the entityID of a specific entity
      */
-    public static int getEntityID(Entity p_75619_0_)
+    public static int getEntityID(Entity entityIn)
     {
-        Class var1 = p_75619_0_.getClass();
-        return classToIDMapping.containsKey(var1) ? ((Integer)classToIDMapping.get(var1)).intValue() : 0;
+        Integer integer = (Integer)classToIDMapping.get(entityIn.getClass());
+        return integer == null ? 0 : integer.intValue();
     }
 
-    /**
-     * Return the class assigned to this entity ID.
-     */
-    public static Class getClassFromID(int p_90035_0_)
+    public static Class <? extends Entity > getClassFromID(int entityID)
     {
-        return (Class)IDtoClassMapping.get(Integer.valueOf(p_90035_0_));
+        return (Class)idToClassMapping.get(Integer.valueOf(entityID));
     }
 
     /**
      * Gets the string representation of a specific entity.
      */
-    public static String getEntityString(Entity p_75621_0_)
+    public static String getEntityString(Entity entityIn)
     {
-        return (String)classToStringMapping.get(p_75621_0_.getClass());
+        return (String)classToStringMapping.get(entityIn.getClass());
+    }
+
+    /**
+     * Returns the ID assigned to it's string representation
+     */
+    public static int getIDFromString(String entityName)
+    {
+        Integer integer = (Integer)stringToIDMapping.get(entityName);
+        return integer == null ? 90 : integer.intValue();
     }
 
     /**
      * Finds the class using IDtoClassMapping and classToStringMapping
      */
-    public static String getStringFromID(int p_75617_0_)
+    public static String getStringFromID(int entityID)
     {
-        Class var1 = getClassFromID(p_75617_0_);
-        return var1 != null ? (String)classToStringMapping.get(var1) : null;
+        return (String)classToStringMapping.get(getClassFromID(entityID));
     }
 
-    public static void func_151514_a() {}
-
-    public static Set func_151515_b()
+    public static void func_151514_a()
     {
-        return Collections.unmodifiableSet(stringToIDMapping.keySet());
+    }
+
+    public static List<String> getEntityNameList()
+    {
+        Set<String> set = stringToClassMapping.keySet();
+        List<String> list = Lists.<String>newArrayList();
+
+        for (String s : set)
+        {
+            Class <? extends Entity > oclass = (Class)stringToClassMapping.get(s);
+
+            if ((oclass.getModifiers() & 1024) != 1024)
+            {
+                list.add(s);
+            }
+        }
+
+        list.add("LightningBolt");
+        return list;
+    }
+
+    public static boolean isStringEntityName(Entity entityIn, String entityName)
+    {
+        String s = getEntityString(entityIn);
+
+        if (s == null && entityIn instanceof EntityPlayer)
+        {
+            s = "Player";
+        }
+        else if (s == null && entityIn instanceof EntityLightningBolt)
+        {
+            s = "LightningBolt";
+        }
+
+        return entityName.equals(s);
+    }
+
+    public static boolean isStringValidEntityName(String entityName)
+    {
+        return "Player".equals(entityName) || getEntityNameList().contains(entityName);
     }
 
     static
     {
         addMapping(EntityItem.class, "Item", 1);
         addMapping(EntityXPOrb.class, "XPOrb", 2);
+        addMapping(EntityEgg.class, "ThrownEgg", 7);
         addMapping(EntityLeashKnot.class, "LeashKnot", 8);
         addMapping(EntityPainting.class, "Painting", 9);
         addMapping(EntityArrow.class, "Arrow", 10);
@@ -286,14 +319,15 @@ public class EntityList
         addMapping(EntityTNTPrimed.class, "PrimedTnt", 20);
         addMapping(EntityFallingBlock.class, "FallingSand", 21);
         addMapping(EntityFireworkRocket.class, "FireworksRocketEntity", 22);
+        addMapping(EntityArmorStand.class, "ArmorStand", 30);
         addMapping(EntityBoat.class, "Boat", 41);
-        addMapping(EntityMinecartEmpty.class, "MinecartRideable", 42);
-        addMapping(EntityMinecartChest.class, "MinecartChest", 43);
-        addMapping(EntityMinecartFurnace.class, "MinecartFurnace", 44);
-        addMapping(EntityMinecartTNT.class, "MinecartTNT", 45);
-        addMapping(EntityMinecartHopper.class, "MinecartHopper", 46);
-        addMapping(EntityMinecartMobSpawner.class, "MinecartSpawner", 47);
-        addMapping(EntityMinecartCommandBlock.class, "MinecartCommandBlock", 40);
+        addMapping(EntityMinecartEmpty.class, EntityMinecart.EnumMinecartType.RIDEABLE.getName(), 42);
+        addMapping(EntityMinecartChest.class, EntityMinecart.EnumMinecartType.CHEST.getName(), 43);
+        addMapping(EntityMinecartFurnace.class, EntityMinecart.EnumMinecartType.FURNACE.getName(), 44);
+        addMapping(EntityMinecartTNT.class, EntityMinecart.EnumMinecartType.TNT.getName(), 45);
+        addMapping(EntityMinecartHopper.class, EntityMinecart.EnumMinecartType.HOPPER.getName(), 46);
+        addMapping(EntityMinecartMobSpawner.class, EntityMinecart.EnumMinecartType.SPAWNER.getName(), 47);
+        addMapping(EntityMinecartCommandBlock.class, EntityMinecart.EnumMinecartType.COMMAND_BLOCK.getName(), 40);
         addMapping(EntityLiving.class, "Mob", 48);
         addMapping(EntityMob.class, "Monster", 49);
         addMapping(EntityCreeper.class, "Creeper", 50, 894731, 0);
@@ -313,6 +347,8 @@ public class EntityList
         addMapping(EntityWither.class, "WitherBoss", 64);
         addMapping(EntityBat.class, "Bat", 65, 4996656, 986895);
         addMapping(EntityWitch.class, "Witch", 66, 3407872, 5349438);
+        addMapping(EntityEndermite.class, "Endermite", 67, 1447446, 7237230);
+        addMapping(EntityGuardian.class, "Guardian", 68, 5931634, 15826224);
         addMapping(EntityPig.class, "Pig", 90, 15771042, 14377823);
         addMapping(EntitySheep.class, "Sheep", 91, 15198183, 16758197);
         addMapping(EntityCow.class, "Cow", 92, 4470310, 10592673);
@@ -324,6 +360,7 @@ public class EntityList
         addMapping(EntityOcelot.class, "Ozelot", 98, 15720061, 5653556);
         addMapping(EntityIronGolem.class, "VillagerGolem", 99);
         addMapping(EntityHorse.class, "EntityHorse", 100, 12623485, 15656192);
+        addMapping(EntityRabbit.class, "Rabbit", 101, 10051392, 7555121);
         addMapping(EntityVillager.class, "Villager", 120, 5651507, 12422002);
         addMapping(EntityEnderCrystal.class, "EnderCrystal", 200);
     }
@@ -335,15 +372,14 @@ public class EntityList
         public final int secondaryColor;
         public final StatBase field_151512_d;
         public final StatBase field_151513_e;
-        private static final String __OBFID = "CL_00001539";
 
-        public EntityEggInfo(int p_i1583_1_, int p_i1583_2_, int p_i1583_3_)
+        public EntityEggInfo(int id, int baseColor, int spotColor)
         {
-            this.spawnedID = p_i1583_1_;
-            this.primaryColor = p_i1583_2_;
-            this.secondaryColor = p_i1583_3_;
-            this.field_151512_d = StatList.func_151182_a(this);
-            this.field_151513_e = StatList.func_151176_b(this);
+            this.spawnedID = id;
+            this.primaryColor = baseColor;
+            this.secondaryColor = spotColor;
+            this.field_151512_d = StatList.getStatKillEntity(this);
+            this.field_151513_e = StatList.getStatEntityKilledBy(this);
         }
     }
 }

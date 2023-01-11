@@ -2,35 +2,33 @@ package net.minecraft.scoreboard;
 
 import java.util.Comparator;
 import java.util.List;
+import net.minecraft.entity.player.EntityPlayer;
 
 public class Score
 {
-    public static final Comparator field_96658_a = new Comparator()
+    public static final Comparator<Score> scoreComparator = new Comparator<Score>()
     {
-        private static final String __OBFID = "CL_00000618";
         public int compare(Score p_compare_1_, Score p_compare_2_)
         {
-            return p_compare_1_.getScorePoints() > p_compare_2_.getScorePoints() ? 1 : (p_compare_1_.getScorePoints() < p_compare_2_.getScorePoints() ? -1 : 0);
-        }
-        public int compare(Object p_compare_1_, Object p_compare_2_)
-        {
-            return this.compare((Score)p_compare_1_, (Score)p_compare_2_);
+            return p_compare_1_.getScorePoints() > p_compare_2_.getScorePoints() ? 1 : (p_compare_1_.getScorePoints() < p_compare_2_.getScorePoints() ? -1 : p_compare_2_.getPlayerName().compareToIgnoreCase(p_compare_1_.getPlayerName()));
         }
     };
     private final Scoreboard theScoreboard;
     private final ScoreObjective theScoreObjective;
-    private final String field_96654_d;
-    private int field_96655_e;
-    private static final String __OBFID = "CL_00000617";
+    private final String scorePlayerName;
+    private int scorePoints;
+    private boolean locked;
+    private boolean forceUpdate;
 
-    public Score(Scoreboard p_i2309_1_, ScoreObjective p_i2309_2_, String p_i2309_3_)
+    public Score(Scoreboard theScoreboardIn, ScoreObjective theScoreObjectiveIn, String scorePlayerNameIn)
     {
-        this.theScoreboard = p_i2309_1_;
-        this.theScoreObjective = p_i2309_2_;
-        this.field_96654_d = p_i2309_3_;
+        this.theScoreboard = theScoreboardIn;
+        this.theScoreObjective = theScoreObjectiveIn;
+        this.scorePlayerName = scorePlayerNameIn;
+        this.forceUpdate = true;
     }
 
-    public void func_96649_a(int p_96649_1_)
+    public void increseScore(int amount)
     {
         if (this.theScoreObjective.getCriteria().isReadOnly())
         {
@@ -38,11 +36,11 @@ public class Score
         }
         else
         {
-            this.func_96647_c(this.getScorePoints() + p_96649_1_);
+            this.setScorePoints(this.getScorePoints() + amount);
         }
     }
 
-    public void func_96646_b(int p_96646_1_)
+    public void decreaseScore(int amount)
     {
         if (this.theScoreObjective.getCriteria().isReadOnly())
         {
@@ -50,7 +48,7 @@ public class Score
         }
         else
         {
-            this.func_96647_c(this.getScorePoints() - p_96646_1_);
+            this.setScorePoints(this.getScorePoints() - amount);
         }
     }
 
@@ -62,43 +60,57 @@ public class Score
         }
         else
         {
-            this.func_96649_a(1);
+            this.increseScore(1);
         }
     }
 
     public int getScorePoints()
     {
-        return this.field_96655_e;
+        return this.scorePoints;
     }
 
-    public void func_96647_c(int p_96647_1_)
+    public void setScorePoints(int points)
     {
-        int var2 = this.field_96655_e;
-        this.field_96655_e = p_96647_1_;
+        int i = this.scorePoints;
+        this.scorePoints = points;
 
-        if (var2 != p_96647_1_)
+        if (i != points || this.forceUpdate)
         {
-            this.func_96650_f().func_96536_a(this);
+            this.forceUpdate = false;
+            this.getScoreScoreboard().func_96536_a(this);
         }
     }
 
-    public ScoreObjective func_96645_d()
+    public ScoreObjective getObjective()
     {
         return this.theScoreObjective;
     }
 
+    /**
+     * Returns the name of the player this score belongs to
+     */
     public String getPlayerName()
     {
-        return this.field_96654_d;
+        return this.scorePlayerName;
     }
 
-    public Scoreboard func_96650_f()
+    public Scoreboard getScoreScoreboard()
     {
         return this.theScoreboard;
     }
 
-    public void func_96651_a(List p_96651_1_)
+    public boolean isLocked()
     {
-        this.func_96647_c(this.theScoreObjective.getCriteria().func_96635_a(p_96651_1_));
+        return this.locked;
+    }
+
+    public void setLocked(boolean locked)
+    {
+        this.locked = locked;
+    }
+
+    public void func_96651_a(List<EntityPlayer> p_96651_1_)
+    {
+        this.setScorePoints(this.theScoreObjective.getCriteria().setScore(p_96651_1_));
     }
 }

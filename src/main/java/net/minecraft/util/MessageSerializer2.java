@@ -5,30 +5,23 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
 import net.minecraft.network.PacketBuffer;
 
-public class MessageSerializer2 extends MessageToByteEncoder
+public class MessageSerializer2 extends MessageToByteEncoder<ByteBuf>
 {
-    private static final String __OBFID = "CL_00001256";
-
-    protected void encode(ChannelHandlerContext p_encode_1_, ByteBuf p_encode_2_, ByteBuf p_encode_3_)
+    protected void encode(ChannelHandlerContext p_encode_1_, ByteBuf p_encode_2_, ByteBuf p_encode_3_) throws Exception
     {
-        int var4 = p_encode_2_.readableBytes();
-        int var5 = PacketBuffer.getVarIntSize(var4);
+        int i = p_encode_2_.readableBytes();
+        int j = PacketBuffer.getVarIntSize(i);
 
-        if (var5 > 3)
+        if (j > 3)
         {
-            throw new IllegalArgumentException("unable to fit " + var4 + " into " + 3);
+            throw new IllegalArgumentException("unable to fit " + i + " into " + 3);
         }
         else
         {
-            PacketBuffer var6 = new PacketBuffer(p_encode_3_);
-            var6.ensureWritable(var5 + var4);
-            var6.writeVarIntToBuffer(var4);
-            var6.writeBytes(p_encode_2_, p_encode_2_.readerIndex(), var4);
+            PacketBuffer packetbuffer = new PacketBuffer(p_encode_3_);
+            packetbuffer.ensureWritable(j + i);
+            packetbuffer.writeVarIntToBuffer(i);
+            packetbuffer.writeBytes(p_encode_2_, p_encode_2_.readerIndex(), i);
         }
-    }
-
-    protected void encode(ChannelHandlerContext p_encode_1_, Object p_encode_2_, ByteBuf p_encode_3_)
-    {
-        this.encode(p_encode_1_, (ByteBuf)p_encode_2_, p_encode_3_);
     }
 }

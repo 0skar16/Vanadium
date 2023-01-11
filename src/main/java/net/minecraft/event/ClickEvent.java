@@ -7,12 +7,11 @@ public class ClickEvent
 {
     private final ClickEvent.Action action;
     private final String value;
-    private static final String __OBFID = "CL_00001260";
 
-    public ClickEvent(ClickEvent.Action p_i45156_1_, String p_i45156_2_)
+    public ClickEvent(ClickEvent.Action theAction, String theValue)
     {
-        this.action = p_i45156_1_;
-        this.value = p_i45156_2_;
+        this.action = theAction;
+        this.value = theValue;
     }
 
     /**
@@ -40,9 +39,9 @@ public class ClickEvent
         }
         else if (p_equals_1_ != null && this.getClass() == p_equals_1_.getClass())
         {
-            ClickEvent var2 = (ClickEvent)p_equals_1_;
+            ClickEvent clickevent = (ClickEvent)p_equals_1_;
 
-            if (this.action != var2.action)
+            if (this.action != clickevent.action)
             {
                 return false;
             }
@@ -50,12 +49,12 @@ public class ClickEvent
             {
                 if (this.value != null)
                 {
-                    if (!this.value.equals(var2.value))
+                    if (!this.value.equals(clickevent.value))
                     {
                         return false;
                     }
                 }
-                else if (var2.value != null)
+                else if (clickevent.value != null)
                 {
                     return false;
                 }
@@ -76,29 +75,28 @@ public class ClickEvent
 
     public int hashCode()
     {
-        int var1 = this.action.hashCode();
-        var1 = 31 * var1 + (this.value != null ? this.value.hashCode() : 0);
-        return var1;
+        int i = this.action.hashCode();
+        i = 31 * i + (this.value != null ? this.value.hashCode() : 0);
+        return i;
     }
 
     public static enum Action
     {
-        OPEN_URL("OPEN_URL", 0, "open_url", true),
-        OPEN_FILE("OPEN_FILE", 1, "open_file", false),
-        RUN_COMMAND("RUN_COMMAND", 2, "run_command", true),
-        TWITCH_USER_INFO("TWITCH_USER_INFO", 3, "twitch_user_info", false),
-        SUGGEST_COMMAND("SUGGEST_COMMAND", 4, "suggest_command", true);
-        private static final Map nameMapping = Maps.newHashMap();
+        OPEN_URL("open_url", true),
+        OPEN_FILE("open_file", false),
+        RUN_COMMAND("run_command", true),
+        TWITCH_USER_INFO("twitch_user_info", false),
+        SUGGEST_COMMAND("suggest_command", true),
+        CHANGE_PAGE("change_page", true);
+
+        private static final Map<String, ClickEvent.Action> nameMapping = Maps.<String, ClickEvent.Action>newHashMap();
         private final boolean allowedInChat;
         private final String canonicalName;
 
-        private static final ClickEvent.Action[] $VALUES = new ClickEvent.Action[]{OPEN_URL, OPEN_FILE, RUN_COMMAND, TWITCH_USER_INFO, SUGGEST_COMMAND};
-        private static final String __OBFID = "CL_00001261";
-
-        private Action(String p_i45155_1_, int p_i45155_2_, String p_i45155_3_, boolean p_i45155_4_)
+        private Action(String canonicalNameIn, boolean allowedInChatIn)
         {
-            this.canonicalName = p_i45155_3_;
-            this.allowedInChat = p_i45155_4_;
+            this.canonicalName = canonicalNameIn;
+            this.allowedInChat = allowedInChatIn;
         }
 
         public boolean shouldAllowInChat()
@@ -111,19 +109,15 @@ public class ClickEvent
             return this.canonicalName;
         }
 
-        public static ClickEvent.Action getValueByCanonicalName(String p_150672_0_)
+        public static ClickEvent.Action getValueByCanonicalName(String canonicalNameIn)
         {
-            return (ClickEvent.Action)nameMapping.get(p_150672_0_);
+            return (ClickEvent.Action)nameMapping.get(canonicalNameIn);
         }
 
         static {
-            ClickEvent.Action[] var0 = values();
-            int var1 = var0.length;
-
-            for (int var2 = 0; var2 < var1; ++var2)
+            for (ClickEvent.Action clickevent$action : values())
             {
-                ClickEvent.Action var3 = var0[var2];
-                nameMapping.put(var3.getCanonicalName(), var3);
+                nameMapping.put(clickevent$action.getCanonicalName(), clickevent$action);
             }
         }
     }

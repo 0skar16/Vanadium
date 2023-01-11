@@ -3,31 +3,30 @@ package net.minecraft.enchantment;
 import java.util.Random;
 import net.minecraft.item.ItemArmor;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.ResourceLocation;
 
 public class EnchantmentDurability extends Enchantment
 {
-    private static final String __OBFID = "CL_00000103";
-
-    protected EnchantmentDurability(int p_i1924_1_, int p_i1924_2_)
+    protected EnchantmentDurability(int enchID, ResourceLocation enchName, int enchWeight)
     {
-        super(p_i1924_1_, p_i1924_2_, EnumEnchantmentType.breakable);
+        super(enchID, enchName, enchWeight, EnumEnchantmentType.BREAKABLE);
         this.setName("durability");
     }
 
     /**
      * Returns the minimal value of enchantability needed on the enchantment level passed.
      */
-    public int getMinEnchantability(int p_77321_1_)
+    public int getMinEnchantability(int enchantmentLevel)
     {
-        return 5 + (p_77321_1_ - 1) * 8;
+        return 5 + (enchantmentLevel - 1) * 8;
     }
 
     /**
      * Returns the maximum value of enchantability nedded on the enchantment level passed.
      */
-    public int getMaxEnchantability(int p_77317_1_)
+    public int getMaxEnchantability(int enchantmentLevel)
     {
-        return super.getMinEnchantability(p_77317_1_) + 50;
+        return super.getMinEnchantability(enchantmentLevel) + 50;
     }
 
     /**
@@ -38,9 +37,12 @@ public class EnchantmentDurability extends Enchantment
         return 3;
     }
 
-    public boolean canApply(ItemStack p_92089_1_)
+    /**
+     * Determines if this enchantment can be applied to a specific ItemStack.
+     */
+    public boolean canApply(ItemStack stack)
     {
-        return p_92089_1_.isItemStackDamageable() ? true : super.canApply(p_92089_1_);
+        return stack.isItemStackDamageable() ? true : super.canApply(stack);
     }
 
     /**

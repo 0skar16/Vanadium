@@ -2,30 +2,25 @@ package net.minecraft.network.play.server;
 
 import io.netty.buffer.ByteBuf;
 import java.io.IOException;
-import net.minecraft.network.INetHandler;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 
-public class S3FPacketCustomPayload extends Packet
+public class S3FPacketCustomPayload implements Packet<INetHandlerPlayClient>
 {
-    private String field_149172_a;
-    private byte[] field_149171_b;
-    private static final String __OBFID = "CL_00001297";
+    private String channel;
+    private PacketBuffer data;
 
-    public S3FPacketCustomPayload() {}
-
-    public S3FPacketCustomPayload(String p_i45189_1_, ByteBuf p_i45189_2_)
+    public S3FPacketCustomPayload()
     {
-        this(p_i45189_1_, p_i45189_2_.array());
     }
 
-    public S3FPacketCustomPayload(String p_i45190_1_, byte[] p_i45190_2_)
+    public S3FPacketCustomPayload(String channelName, PacketBuffer dataIn)
     {
-        this.field_149172_a = p_i45190_1_;
-        this.field_149171_b = p_i45190_2_;
+        this.channel = channelName;
+        this.data = dataIn;
 
-        if (p_i45190_2_.length >= 1048576)
+        if (dataIn.writerIndex() > 1048576)
         {
             throw new IllegalArgumentException("Payload may not be larger than 1048576 bytes");
         }
@@ -34,40 +29,45 @@ public class S3FPacketCustomPayload extends Packet
     /**
      * Reads the raw packet data from the data stream.
      */
-    public void readPacketData(PacketBuffer p_148837_1_) throws IOException
+    public void readPacketData(PacketBuffer buf) throws IOException
     {
-        this.field_149172_a = p_148837_1_.readStringFromBuffer(20);
-        this.field_149171_b = new byte[p_148837_1_.readUnsignedShort()];
-        p_148837_1_.readBytes(this.field_149171_b);
+        this.channel = buf.readStringFromBuffer(20);
+        int i = buf.readableBytes();
+
+        if (i >= 0 && i <= 1048576)
+        {
+            this.data = new PacketBuffer(buf.readBytes(i));
+        }
+        else
+        {
+            throw new IOException("Payload may not be larger than 1048576 bytes");
+        }
     }
 
     /**
      * Writes the raw packet data to the data stream.
      */
-    public void writePacketData(PacketBuffer p_148840_1_) throws IOException
+    public void writePacketData(PacketBuffer buf) throws IOException
     {
-        p_148840_1_.writeStringToBuffer(this.field_149172_a);
-        p_148840_1_.writeShort(this.field_149171_b.length);
-        p_148840_1_.writeBytes(this.field_149171_b);
+        buf.writeString(this.channel);
+        buf.writeBytes((ByteBuf)this.data);
     }
 
-    public void processPacket(INetHandlerPlayClient p_148833_1_)
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayClient handler)
     {
-        p_148833_1_.handleCustomPayload(this);
+        handler.handleCustomPayload(this);
     }
 
-    public String func_149169_c()
+    public String getChannelName()
     {
-        return this.field_149172_a;
+        return this.channel;
     }
 
-    public byte[] func_149168_d()
+    public PacketBuffer getBufferData()
     {
-        return this.field_149171_b;
-    }
-
-    public void processPacket(INetHandler p_148833_1_)
-    {
-        this.processPacket((INetHandlerPlayClient)p_148833_1_);
+        return this.data;
     }
 }

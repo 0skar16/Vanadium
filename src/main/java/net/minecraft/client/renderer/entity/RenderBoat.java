@@ -2,83 +2,60 @@ package net.minecraft.client.renderer.entity;
 
 import net.minecraft.client.model.ModelBase;
 import net.minecraft.client.model.ModelBoat;
-import net.minecraft.entity.Entity;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.entity.item.EntityBoat;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.ResourceLocation;
-import org.lwjgl.opengl.GL11;
 
-public class RenderBoat extends Render
+public class RenderBoat extends Render<EntityBoat>
 {
     private static final ResourceLocation boatTextures = new ResourceLocation("textures/entity/boat.png");
 
     /** instance of ModelBoat for rendering */
-    protected ModelBase modelBoat;
-    private static final String __OBFID = "CL_00000981";
+    protected ModelBase modelBoat = new ModelBoat();
 
-    public RenderBoat()
+    public RenderBoat(RenderManager renderManagerIn)
     {
+        super(renderManagerIn);
         this.shadowSize = 0.5F;
-        this.modelBoat = new ModelBoat();
     }
 
     /**
-     * Actually renders the given argument. This is a synthetic bridge method, always casting down its argument and then
-     * handing it off to a worker function which does the actual work. In all probabilty, the class Render is generic
-     * (Render<T extends Entity) and this method has signature public void doRender(T entity, double d, double d1,
-     * double d2, float f, float f1). But JAD is pre 1.5 so doesn't do that.
+     * Renders the desired {@code T} type Entity.
      */
-    public void doRender(EntityBoat p_76986_1_, double p_76986_2_, double p_76986_4_, double p_76986_6_, float p_76986_8_, float p_76986_9_)
+    public void doRender(EntityBoat entity, double x, double y, double z, float entityYaw, float partialTicks)
     {
-        GL11.glPushMatrix();
-        GL11.glTranslatef((float)p_76986_2_, (float)p_76986_4_, (float)p_76986_6_);
-        GL11.glRotatef(180.0F - p_76986_8_, 0.0F, 1.0F, 0.0F);
-        float var10 = (float)p_76986_1_.getTimeSinceHit() - p_76986_9_;
-        float var11 = p_76986_1_.getDamageTaken() - p_76986_9_;
+        GlStateManager.pushMatrix();
+        GlStateManager.translate((float)x, (float)y + 0.25F, (float)z);
+        GlStateManager.rotate(180.0F - entityYaw, 0.0F, 1.0F, 0.0F);
+        float f = (float)entity.getTimeSinceHit() - partialTicks;
+        float f1 = entity.getDamageTaken() - partialTicks;
 
-        if (var11 < 0.0F)
+        if (f1 < 0.0F)
         {
-            var11 = 0.0F;
+            f1 = 0.0F;
         }
 
-        if (var10 > 0.0F)
+        if (f > 0.0F)
         {
-            GL11.glRotatef(MathHelper.sin(var10) * var10 * var11 / 10.0F * (float)p_76986_1_.getForwardDirection(), 1.0F, 0.0F, 0.0F);
+            GlStateManager.rotate(MathHelper.sin(f) * f * f1 / 10.0F * (float)entity.getForwardDirection(), 1.0F, 0.0F, 0.0F);
         }
 
-        float var12 = 0.75F;
-        GL11.glScalef(var12, var12, var12);
-        GL11.glScalef(1.0F / var12, 1.0F / var12, 1.0F / var12);
-        this.bindEntityTexture(p_76986_1_);
-        GL11.glScalef(-1.0F, -1.0F, 1.0F);
-        this.modelBoat.render(p_76986_1_, 0.0F, 0.0F, -0.1F, 0.0F, 0.0F, 0.0625F);
-        GL11.glPopMatrix();
+        float f2 = 0.75F;
+        GlStateManager.scale(f2, f2, f2);
+        GlStateManager.scale(1.0F / f2, 1.0F / f2, 1.0F / f2);
+        this.bindEntityTexture(entity);
+        GlStateManager.scale(-1.0F, -1.0F, 1.0F);
+        this.modelBoat.render(entity, 0.0F, 0.0F, -0.1F, 0.0F, 0.0F, 0.0625F);
+        GlStateManager.popMatrix();
+        super.doRender(entity, x, y, z, entityYaw, partialTicks);
     }
 
     /**
      * Returns the location of an entity's texture. Doesn't seem to be called unless you call Render.bindEntityTexture.
      */
-    protected ResourceLocation getEntityTexture(EntityBoat p_110775_1_)
+    protected ResourceLocation getEntityTexture(EntityBoat entity)
     {
         return boatTextures;
-    }
-
-    /**
-     * Returns the location of an entity's texture. Doesn't seem to be called unless you call Render.bindEntityTexture.
-     */
-    protected ResourceLocation getEntityTexture(Entity p_110775_1_)
-    {
-        return this.getEntityTexture((EntityBoat)p_110775_1_);
-    }
-
-    /**
-     * Actually renders the given argument. This is a synthetic bridge method, always casting down its argument and then
-     * handing it off to a worker function which does the actual work. In all probabilty, the class Render is generic
-     * (Render<T extends Entity) and this method has signature public void doRender(T entity, double d, double d1,
-     * double d2, float f, float f1). But JAD is pre 1.5 so doesn't do that.
-     */
-    public void doRender(Entity p_76986_1_, double p_76986_2_, double p_76986_4_, double p_76986_6_, float p_76986_8_, float p_76986_9_)
-    {
-        this.doRender((EntityBoat)p_76986_1_, p_76986_2_, p_76986_4_, p_76986_6_, p_76986_8_, p_76986_9_);
     }
 }

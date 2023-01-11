@@ -4,55 +4,54 @@ import net.minecraft.util.ResourceLocation;
 
 public class SoundPoolEntry
 {
-    private final ResourceLocation field_148656_a;
-    private final boolean field_148654_b;
-    private double field_148655_c;
-    private double field_148653_d;
-    private static final String __OBFID = "CL_00001140";
+    private final ResourceLocation location;
+    private final boolean streamingSound;
+    private double pitch;
+    private double volume;
 
-    public SoundPoolEntry(ResourceLocation p_i45113_1_, double p_i45113_2_, double p_i45113_4_, boolean p_i45113_6_)
+    public SoundPoolEntry(ResourceLocation locationIn, double pitchIn, double volumeIn, boolean streamingSoundIn)
     {
-        this.field_148656_a = p_i45113_1_;
-        this.field_148655_c = p_i45113_2_;
-        this.field_148653_d = p_i45113_4_;
-        this.field_148654_b = p_i45113_6_;
+        this.location = locationIn;
+        this.pitch = pitchIn;
+        this.volume = volumeIn;
+        this.streamingSound = streamingSoundIn;
     }
 
-    public SoundPoolEntry(SoundPoolEntry p_i45114_1_)
+    public SoundPoolEntry(SoundPoolEntry locationIn)
     {
-        this.field_148656_a = p_i45114_1_.field_148656_a;
-        this.field_148655_c = p_i45114_1_.field_148655_c;
-        this.field_148653_d = p_i45114_1_.field_148653_d;
-        this.field_148654_b = p_i45114_1_.field_148654_b;
+        this.location = locationIn.location;
+        this.pitch = locationIn.pitch;
+        this.volume = locationIn.volume;
+        this.streamingSound = locationIn.streamingSound;
     }
 
-    public ResourceLocation func_148652_a()
+    public ResourceLocation getSoundPoolEntryLocation()
     {
-        return this.field_148656_a;
+        return this.location;
     }
 
-    public double func_148650_b()
+    public double getPitch()
     {
-        return this.field_148655_c;
+        return this.pitch;
     }
 
-    public void func_148651_a(double p_148651_1_)
+    public void setPitch(double pitchIn)
     {
-        this.field_148655_c = p_148651_1_;
+        this.pitch = pitchIn;
     }
 
-    public double func_148649_c()
+    public double getVolume()
     {
-        return this.field_148653_d;
+        return this.volume;
     }
 
-    public void func_148647_b(double p_148647_1_)
+    public void setVolume(double volumeIn)
     {
-        this.field_148653_d = p_148647_1_;
+        this.volume = volumeIn;
     }
 
-    public boolean func_148648_d()
+    public boolean isStreamingSound()
     {
-        return this.field_148654_b;
+        return this.streamingSound;
     }
 }

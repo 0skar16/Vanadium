@@ -1,70 +1,134 @@
 package net.minecraft.network.play.server;
 
 import java.io.IOException;
-import net.minecraft.network.INetHandler;
+import java.util.Collection;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
+import net.minecraft.util.Vec4b;
+import net.minecraft.world.storage.MapData;
 
-public class S34PacketMaps extends Packet
+public class S34PacketMaps implements Packet<INetHandlerPlayClient>
 {
-    private int field_149191_a;
-    private byte[] field_149190_b;
-    private static final String __OBFID = "CL_00001311";
+    private int mapId;
+    private byte mapScale;
+    private Vec4b[] mapVisiblePlayersVec4b;
+    private int mapMinX;
+    private int mapMinY;
+    private int mapMaxX;
+    private int mapMaxY;
+    private byte[] mapDataBytes;
 
-    public S34PacketMaps() {}
-
-    public S34PacketMaps(int p_i45202_1_, byte[] p_i45202_2_)
+    public S34PacketMaps()
     {
-        this.field_149191_a = p_i45202_1_;
-        this.field_149190_b = p_i45202_2_;
+    }
+
+    public S34PacketMaps(int mapIdIn, byte scale, Collection<Vec4b> visiblePlayers, byte[] colors, int minX, int minY, int maxX, int maxY)
+    {
+        this.mapId = mapIdIn;
+        this.mapScale = scale;
+        this.mapVisiblePlayersVec4b = (Vec4b[])visiblePlayers.toArray(new Vec4b[visiblePlayers.size()]);
+        this.mapMinX = minX;
+        this.mapMinY = minY;
+        this.mapMaxX = maxX;
+        this.mapMaxY = maxY;
+        this.mapDataBytes = new byte[maxX * maxY];
+
+        for (int i = 0; i < maxX; ++i)
+        {
+            for (int j = 0; j < maxY; ++j)
+            {
+                this.mapDataBytes[i + j * maxX] = colors[minX + i + (minY + j) * 128];
+            }
+        }
     }
 
     /**
      * Reads the raw packet data from the data stream.
      */
-    public void readPacketData(PacketBuffer p_148837_1_) throws IOException
+    public void readPacketData(PacketBuffer buf) throws IOException
     {
-        this.field_149191_a = p_148837_1_.readVarIntFromBuffer();
-        this.field_149190_b = new byte[p_148837_1_.readUnsignedShort()];
-        p_148837_1_.readBytes(this.field_149190_b);
+        this.mapId = buf.readVarIntFromBuffer();
+        this.mapScale = buf.readByte();
+        this.mapVisiblePlayersVec4b = new Vec4b[buf.readVarIntFromBuffer()];
+
+        for (int i = 0; i < this.mapVisiblePlayersVec4b.length; ++i)
+        {
+            short short1 = (short)buf.readByte();
+            this.mapVisiblePlayersVec4b[i] = new Vec4b((byte)(short1 >> 4 & 15), buf.readByte(), buf.readByte(), (byte)(short1 & 15));
+        }
+
+        this.mapMaxX = buf.readUnsignedByte();
+
+        if (this.mapMaxX > 0)
+        {
+            this.mapMaxY = buf.readUnsignedByte();
+            this.mapMinX = buf.readUnsignedByte();
+            this.mapMinY = buf.readUnsignedByte();
+            this.mapDataBytes = buf.readByteArray();
+        }
     }
 
     /**
      * Writes the raw packet data to the data stream.
      */
-    public void writePacketData(PacketBuffer p_148840_1_) throws IOException
+    public void writePacketData(PacketBuffer buf) throws IOException
     {
-        p_148840_1_.writeVarIntToBuffer(this.field_149191_a);
-        p_148840_1_.writeShort(this.field_149190_b.length);
-        p_148840_1_.writeBytes(this.field_149190_b);
-    }
+        buf.writeVarIntToBuffer(this.mapId);
+        buf.writeByte(this.mapScale);
+        buf.writeVarIntToBuffer(this.mapVisiblePlayersVec4b.length);
 
-    public void processPacket(INetHandlerPlayClient p_148833_1_)
-    {
-        p_148833_1_.handleMaps(this);
+        for (Vec4b vec4b : this.mapVisiblePlayersVec4b)
+        {
+            buf.writeByte((vec4b.func_176110_a() & 15) << 4 | vec4b.func_176111_d() & 15);
+            buf.writeByte(vec4b.func_176112_b());
+            buf.writeByte(vec4b.func_176113_c());
+        }
+
+        buf.writeByte(this.mapMaxX);
+
+        if (this.mapMaxX > 0)
+        {
+            buf.writeByte(this.mapMaxY);
+            buf.writeByte(this.mapMinX);
+            buf.writeByte(this.mapMinY);
+            buf.writeByteArray(this.mapDataBytes);
+        }
     }
 
     /**
-     * Returns a string formatted as comma separated [field]=[value] values. Used by Minecraft for logging purposes.
+     * Passes this Packet on to the NetHandler for processing.
      */
-    public String serialize()
+    public void processPacket(INetHandlerPlayClient handler)
     {
-        return String.format("id=%d, length=%d", new Object[] {Integer.valueOf(this.field_149191_a), Integer.valueOf(this.field_149190_b.length)});
+        handler.handleMaps(this);
     }
 
-    public int func_149188_c()
+    public int getMapId()
     {
-        return this.field_149191_a;
+        return this.mapId;
     }
 
-    public byte[] func_149187_d()
+    /**
+     * Sets new MapData from the packet to given MapData param
+     */
+    public void setMapdataTo(MapData mapdataIn)
     {
-        return this.field_149190_b;
-    }
+        mapdataIn.scale = this.mapScale;
+        mapdataIn.mapDecorations.clear();
 
-    public void processPacket(INetHandler p_148833_1_)
-    {
-        this.processPacket((INetHandlerPlayClient)p_148833_1_);
+        for (int i = 0; i < this.mapVisiblePlayersVec4b.length; ++i)
+        {
+            Vec4b vec4b = this.mapVisiblePlayersVec4b[i];
+            mapdataIn.mapDecorations.put("icon-" + i, vec4b);
+        }
+
+        for (int j = 0; j < this.mapMaxX; ++j)
+        {
+            for (int k = 0; k < this.mapMaxY; ++k)
+            {
+                mapdataIn.colors[this.mapMinX + j + (this.mapMinY + k) * 128] = this.mapDataBytes[j + k * this.mapMaxX];
+            }
+        }
     }
 }

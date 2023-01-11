@@ -3,80 +3,75 @@ package net.minecraft.network.play.server;
 import java.io.IOException;
 import java.util.List;
 import net.minecraft.item.ItemStack;
-import net.minecraft.network.INetHandler;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 
-public class S30PacketWindowItems extends Packet
+public class S30PacketWindowItems implements Packet<INetHandlerPlayClient>
 {
-    private int field_148914_a;
-    private ItemStack[] field_148913_b;
-    private static final String __OBFID = "CL_00001294";
+    private int windowId;
+    private ItemStack[] itemStacks;
 
-    public S30PacketWindowItems() {}
-
-    public S30PacketWindowItems(int p_i45186_1_, List p_i45186_2_)
+    public S30PacketWindowItems()
     {
-        this.field_148914_a = p_i45186_1_;
-        this.field_148913_b = new ItemStack[p_i45186_2_.size()];
+    }
 
-        for (int var3 = 0; var3 < this.field_148913_b.length; ++var3)
+    public S30PacketWindowItems(int windowIdIn, List<ItemStack> p_i45186_2_)
+    {
+        this.windowId = windowIdIn;
+        this.itemStacks = new ItemStack[p_i45186_2_.size()];
+
+        for (int i = 0; i < this.itemStacks.length; ++i)
         {
-            ItemStack var4 = (ItemStack)p_i45186_2_.get(var3);
-            this.field_148913_b[var3] = var4 == null ? null : var4.copy();
+            ItemStack itemstack = (ItemStack)p_i45186_2_.get(i);
+            this.itemStacks[i] = itemstack == null ? null : itemstack.copy();
         }
     }
 
     /**
      * Reads the raw packet data from the data stream.
      */
-    public void readPacketData(PacketBuffer p_148837_1_) throws IOException
+    public void readPacketData(PacketBuffer buf) throws IOException
     {
-        this.field_148914_a = p_148837_1_.readUnsignedByte();
-        short var2 = p_148837_1_.readShort();
-        this.field_148913_b = new ItemStack[var2];
+        this.windowId = buf.readUnsignedByte();
+        int i = buf.readShort();
+        this.itemStacks = new ItemStack[i];
 
-        for (int var3 = 0; var3 < var2; ++var3)
+        for (int j = 0; j < i; ++j)
         {
-            this.field_148913_b[var3] = p_148837_1_.readItemStackFromBuffer();
+            this.itemStacks[j] = buf.readItemStackFromBuffer();
         }
     }
 
     /**
      * Writes the raw packet data to the data stream.
      */
-    public void writePacketData(PacketBuffer p_148840_1_) throws IOException
+    public void writePacketData(PacketBuffer buf) throws IOException
     {
-        p_148840_1_.writeByte(this.field_148914_a);
-        p_148840_1_.writeShort(this.field_148913_b.length);
-        ItemStack[] var2 = this.field_148913_b;
-        int var3 = var2.length;
+        buf.writeByte(this.windowId);
+        buf.writeShort(this.itemStacks.length);
 
-        for (int var4 = 0; var4 < var3; ++var4)
+        for (ItemStack itemstack : this.itemStacks)
         {
-            ItemStack var5 = var2[var4];
-            p_148840_1_.writeItemStackToBuffer(var5);
+            buf.writeItemStackToBuffer(itemstack);
         }
     }
 
-    public void processPacket(INetHandlerPlayClient p_148833_1_)
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayClient handler)
     {
-        p_148833_1_.handleWindowItems(this);
+        handler.handleWindowItems(this);
     }
 
     public int func_148911_c()
     {
-        return this.field_148914_a;
+        return this.windowId;
     }
 
-    public ItemStack[] func_148910_d()
+    public ItemStack[] getItemStacks()
     {
-        return this.field_148913_b;
-    }
-
-    public void processPacket(INetHandler p_148833_1_)
-    {
-        this.processPacket((INetHandlerPlayClient)p_148833_1_);
+        return this.itemStacks;
     }
 }

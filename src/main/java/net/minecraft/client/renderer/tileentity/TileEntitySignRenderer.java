@@ -1,95 +1,173 @@
 package net.minecraft.client.renderer.tileentity;
 
+import java.util.List;
 import net.minecraft.block.Block;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
+import net.minecraft.client.gui.GuiUtilRenderComponents;
+import net.minecraft.client.gui.inventory.GuiEditSign;
 import net.minecraft.client.model.ModelSign;
+import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.entity.Entity;
 import net.minecraft.init.Blocks;
-import net.minecraft.tileentity.TileEntity;
+import net.minecraft.src.Config;
 import net.minecraft.tileentity.TileEntitySign;
+import net.minecraft.util.IChatComponent;
 import net.minecraft.util.ResourceLocation;
+import net.optifine.CustomColors;
+import net.optifine.shaders.Shaders;
 import org.lwjgl.opengl.GL11;
 
-public class TileEntitySignRenderer extends TileEntitySpecialRenderer
+public class TileEntitySignRenderer extends TileEntitySpecialRenderer<TileEntitySign>
 {
-    private static final ResourceLocation field_147513_b = new ResourceLocation("textures/entity/sign.png");
-    private final ModelSign field_147514_c = new ModelSign();
-    private static final String __OBFID = "CL_00000970";
+    private static final ResourceLocation SIGN_TEXTURE = new ResourceLocation("textures/entity/sign.png");
 
-    public void renderTileEntityAt(TileEntitySign p_147500_1_, double p_147500_2_, double p_147500_4_, double p_147500_6_, float p_147500_8_)
+    /** The ModelSign instance for use in this renderer */
+    private final ModelSign model = new ModelSign();
+    private static double textRenderDistanceSq = 4096.0D;
+
+    public void renderTileEntityAt(TileEntitySign te, double x, double y, double z, float partialTicks, int destroyStage)
     {
-        Block var9 = p_147500_1_.getBlockType();
-        GL11.glPushMatrix();
-        float var10 = 0.6666667F;
-        float var12;
+        Block block = te.getBlockType();
+        GlStateManager.pushMatrix();
+        float f = 0.6666667F;
 
-        if (var9 == Blocks.standing_sign)
+        if (block == Blocks.standing_sign)
         {
-            GL11.glTranslatef((float)p_147500_2_ + 0.5F, (float)p_147500_4_ + 0.75F * var10, (float)p_147500_6_ + 0.5F);
-            float var11 = (float)(p_147500_1_.getBlockMetadata() * 360) / 16.0F;
-            GL11.glRotatef(-var11, 0.0F, 1.0F, 0.0F);
-            this.field_147514_c.signStick.showModel = true;
+            GlStateManager.translate((float)x + 0.5F, (float)y + 0.75F * f, (float)z + 0.5F);
+            float f1 = (float)(te.getBlockMetadata() * 360) / 16.0F;
+            GlStateManager.rotate(-f1, 0.0F, 1.0F, 0.0F);
+            this.model.signStick.showModel = true;
         }
         else
         {
-            int var16 = p_147500_1_.getBlockMetadata();
-            var12 = 0.0F;
+            int k = te.getBlockMetadata();
+            float f2 = 0.0F;
 
-            if (var16 == 2)
+            if (k == 2)
             {
-                var12 = 180.0F;
+                f2 = 180.0F;
             }
 
-            if (var16 == 4)
+            if (k == 4)
             {
-                var12 = 90.0F;
+                f2 = 90.0F;
             }
 
-            if (var16 == 5)
+            if (k == 5)
             {
-                var12 = -90.0F;
+                f2 = -90.0F;
             }
 
-            GL11.glTranslatef((float)p_147500_2_ + 0.5F, (float)p_147500_4_ + 0.75F * var10, (float)p_147500_6_ + 0.5F);
-            GL11.glRotatef(-var12, 0.0F, 1.0F, 0.0F);
-            GL11.glTranslatef(0.0F, -0.3125F, -0.4375F);
-            this.field_147514_c.signStick.showModel = false;
+            GlStateManager.translate((float)x + 0.5F, (float)y + 0.75F * f, (float)z + 0.5F);
+            GlStateManager.rotate(-f2, 0.0F, 1.0F, 0.0F);
+            GlStateManager.translate(0.0F, -0.3125F, -0.4375F);
+            this.model.signStick.showModel = false;
         }
 
-        this.bindTexture(field_147513_b);
-        GL11.glPushMatrix();
-        GL11.glScalef(var10, -var10, -var10);
-        this.field_147514_c.renderSign();
-        GL11.glPopMatrix();
-        FontRenderer var17 = this.func_147498_b();
-        var12 = 0.016666668F * var10;
-        GL11.glTranslatef(0.0F, 0.5F * var10, 0.07F * var10);
-        GL11.glScalef(var12, -var12, var12);
-        GL11.glNormal3f(0.0F, 0.0F, -1.0F * var12);
-        GL11.glDepthMask(false);
-        byte var13 = 0;
-
-        for (int var14 = 0; var14 < p_147500_1_.field_145915_a.length; ++var14)
+        if (destroyStage >= 0)
         {
-            String var15 = p_147500_1_.field_145915_a[var14];
+            this.bindTexture(DESTROY_STAGES[destroyStage]);
+            GlStateManager.matrixMode(5890);
+            GlStateManager.pushMatrix();
+            GlStateManager.scale(4.0F, 2.0F, 1.0F);
+            GlStateManager.translate(0.0625F, 0.0625F, 0.0625F);
+            GlStateManager.matrixMode(5888);
+        }
+        else
+        {
+            this.bindTexture(SIGN_TEXTURE);
+        }
 
-            if (var14 == p_147500_1_.field_145918_i)
+        GlStateManager.enableRescaleNormal();
+        GlStateManager.pushMatrix();
+        GlStateManager.scale(f, -f, -f);
+        this.model.renderSign();
+        GlStateManager.popMatrix();
+
+        if (isRenderText(te))
+        {
+            FontRenderer fontrenderer = this.getFontRenderer();
+            float f3 = 0.015625F * f;
+            GlStateManager.translate(0.0F, 0.5F * f, 0.07F * f);
+            GlStateManager.scale(f3, -f3, f3);
+            GL11.glNormal3f(0.0F, 0.0F, -1.0F * f3);
+            GlStateManager.depthMask(false);
+            int i = 0;
+
+            if (Config.isCustomColors())
             {
-                var15 = "> " + var15 + " <";
-                var17.drawString(var15, -var17.getStringWidth(var15) / 2, var14 * 10 - p_147500_1_.field_145915_a.length * 5, var13);
+                i = CustomColors.getSignTextColor(i);
             }
-            else
+
+            if (destroyStage < 0)
             {
-                var17.drawString(var15, -var17.getStringWidth(var15) / 2, var14 * 10 - p_147500_1_.field_145915_a.length * 5, var13);
+                for (int j = 0; j < te.signText.length; ++j)
+                {
+                    if (te.signText[j] != null)
+                    {
+                        IChatComponent ichatcomponent = te.signText[j];
+                        List<IChatComponent> list = GuiUtilRenderComponents.splitText(ichatcomponent, 90, fontrenderer, false, true);
+                        String s = list != null && list.size() > 0 ? ((IChatComponent)list.get(0)).getFormattedText() : "";
+
+                        if (j == te.lineBeingEdited)
+                        {
+                            s = "> " + s + " <";
+                            fontrenderer.drawString(s, -fontrenderer.getStringWidth(s) / 2, j * 10 - te.signText.length * 5, i);
+                        }
+                        else
+                        {
+                            fontrenderer.drawString(s, -fontrenderer.getStringWidth(s) / 2, j * 10 - te.signText.length * 5, i);
+                        }
+                    }
+                }
             }
         }
 
-        GL11.glDepthMask(true);
-        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-        GL11.glPopMatrix();
+        GlStateManager.depthMask(true);
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        GlStateManager.popMatrix();
+
+        if (destroyStage >= 0)
+        {
+            GlStateManager.matrixMode(5890);
+            GlStateManager.popMatrix();
+            GlStateManager.matrixMode(5888);
+        }
     }
 
-    public void renderTileEntityAt(TileEntity p_147500_1_, double p_147500_2_, double p_147500_4_, double p_147500_6_, float p_147500_8_)
+    private static boolean isRenderText(TileEntitySign p_isRenderText_0_)
     {
-        this.renderTileEntityAt((TileEntitySign)p_147500_1_, p_147500_2_, p_147500_4_, p_147500_6_, p_147500_8_);
+        if (Shaders.isShadowPass)
+        {
+            return false;
+        }
+        else if (Config.getMinecraft().currentScreen instanceof GuiEditSign)
+        {
+            return true;
+        }
+        else
+        {
+            if (!Config.zoomMode && p_isRenderText_0_.lineBeingEdited < 0)
+            {
+                Entity entity = Config.getMinecraft().getRenderViewEntity();
+                double d0 = p_isRenderText_0_.getDistanceSq(entity.posX, entity.posY, entity.posZ);
+
+                if (d0 > textRenderDistanceSq)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+    }
+
+    public static void updateTextRenderDistance()
+    {
+        Minecraft minecraft = Config.getMinecraft();
+        double d0 = (double)Config.limit(minecraft.gameSettings.gammaSetting, 1.0F, 120.0F);
+        double d1 = Math.max(1.5D * (double)minecraft.displayHeight / d0, 16.0D);
+        textRenderDistanceSq = d1 * d1;
     }
 }

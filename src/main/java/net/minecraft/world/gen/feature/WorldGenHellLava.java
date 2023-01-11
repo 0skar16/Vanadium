@@ -4,13 +4,13 @@ import java.util.Random;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.init.Blocks;
+import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
 
 public class WorldGenHellLava extends WorldGenerator
 {
-    private Block field_150553_a;
-    private boolean field_94524_b;
-    private static final String __OBFID = "CL_00000414";
+    private final Block field_150553_a;
+    private final boolean field_94524_b;
 
     public WorldGenHellLava(Block p_i45453_1_, boolean p_i45453_2_)
     {
@@ -18,78 +18,76 @@ public class WorldGenHellLava extends WorldGenerator
         this.field_94524_b = p_i45453_2_;
     }
 
-    public boolean generate(World p_76484_1_, Random p_76484_2_, int p_76484_3_, int p_76484_4_, int p_76484_5_)
+    public boolean generate(World worldIn, Random rand, BlockPos position)
     {
-        if (p_76484_1_.getBlock(p_76484_3_, p_76484_4_ + 1, p_76484_5_) != Blocks.netherrack)
+        if (worldIn.getBlockState(position.up()).getBlock() != Blocks.netherrack)
         {
             return false;
         }
-        else if (p_76484_1_.getBlock(p_76484_3_, p_76484_4_, p_76484_5_).getMaterial() != Material.air && p_76484_1_.getBlock(p_76484_3_, p_76484_4_, p_76484_5_) != Blocks.netherrack)
+        else if (worldIn.getBlockState(position).getBlock().getMaterial() != Material.air && worldIn.getBlockState(position).getBlock() != Blocks.netherrack)
         {
             return false;
         }
         else
         {
-            int var6 = 0;
+            int i = 0;
 
-            if (p_76484_1_.getBlock(p_76484_3_ - 1, p_76484_4_, p_76484_5_) == Blocks.netherrack)
+            if (worldIn.getBlockState(position.west()).getBlock() == Blocks.netherrack)
             {
-                ++var6;
+                ++i;
             }
 
-            if (p_76484_1_.getBlock(p_76484_3_ + 1, p_76484_4_, p_76484_5_) == Blocks.netherrack)
+            if (worldIn.getBlockState(position.east()).getBlock() == Blocks.netherrack)
             {
-                ++var6;
+                ++i;
             }
 
-            if (p_76484_1_.getBlock(p_76484_3_, p_76484_4_, p_76484_5_ - 1) == Blocks.netherrack)
+            if (worldIn.getBlockState(position.north()).getBlock() == Blocks.netherrack)
             {
-                ++var6;
+                ++i;
             }
 
-            if (p_76484_1_.getBlock(p_76484_3_, p_76484_4_, p_76484_5_ + 1) == Blocks.netherrack)
+            if (worldIn.getBlockState(position.south()).getBlock() == Blocks.netherrack)
             {
-                ++var6;
+                ++i;
             }
 
-            if (p_76484_1_.getBlock(p_76484_3_, p_76484_4_ - 1, p_76484_5_) == Blocks.netherrack)
+            if (worldIn.getBlockState(position.down()).getBlock() == Blocks.netherrack)
             {
-                ++var6;
+                ++i;
             }
 
-            int var7 = 0;
+            int j = 0;
 
-            if (p_76484_1_.isAirBlock(p_76484_3_ - 1, p_76484_4_, p_76484_5_))
+            if (worldIn.isAirBlock(position.west()))
             {
-                ++var7;
+                ++j;
             }
 
-            if (p_76484_1_.isAirBlock(p_76484_3_ + 1, p_76484_4_, p_76484_5_))
+            if (worldIn.isAirBlock(position.east()))
             {
-                ++var7;
+                ++j;
             }
 
-            if (p_76484_1_.isAirBlock(p_76484_3_, p_76484_4_, p_76484_5_ - 1))
+            if (worldIn.isAirBlock(position.north()))
             {
-                ++var7;
+                ++j;
             }
 
-            if (p_76484_1_.isAirBlock(p_76484_3_, p_76484_4_, p_76484_5_ + 1))
+            if (worldIn.isAirBlock(position.south()))
             {
-                ++var7;
+                ++j;
             }
 
-            if (p_76484_1_.isAirBlock(p_76484_3_, p_76484_4_ - 1, p_76484_5_))
+            if (worldIn.isAirBlock(position.down()))
             {
-                ++var7;
+                ++j;
             }
 
-            if (!this.field_94524_b && var6 == 4 && var7 == 1 || var6 == 5)
+            if (!this.field_94524_b && i == 4 && j == 1 || i == 5)
             {
-                p_76484_1_.setBlock(p_76484_3_, p_76484_4_, p_76484_5_, this.field_150553_a, 0, 2);
-                p_76484_1_.scheduledUpdatesAreImmediate = true;
-                this.field_150553_a.updateTick(p_76484_1_, p_76484_3_, p_76484_4_, p_76484_5_, p_76484_2_);
-                p_76484_1_.scheduledUpdatesAreImmediate = false;
+                worldIn.setBlockState(position, this.field_150553_a.getDefaultState(), 2);
+                worldIn.forceBlockUpdateTick(this.field_150553_a, position, rand);
             }
 
             return true;

@@ -5,171 +5,195 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockChest;
 import net.minecraft.client.model.ModelChest;
 import net.minecraft.client.model.ModelLargeChest;
-import net.minecraft.tileentity.TileEntity;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.tileentity.TileEntityChest;
 import net.minecraft.util.ResourceLocation;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL12;
 
-public class TileEntityChestRenderer extends TileEntitySpecialRenderer
+public class TileEntityChestRenderer extends TileEntitySpecialRenderer<TileEntityChest>
 {
-    private static final ResourceLocation field_147507_b = new ResourceLocation("textures/entity/chest/trapped_double.png");
-    private static final ResourceLocation field_147508_c = new ResourceLocation("textures/entity/chest/christmas_double.png");
-    private static final ResourceLocation field_147505_d = new ResourceLocation("textures/entity/chest/normal_double.png");
-    private static final ResourceLocation field_147506_e = new ResourceLocation("textures/entity/chest/trapped.png");
-    private static final ResourceLocation field_147503_f = new ResourceLocation("textures/entity/chest/christmas.png");
-    private static final ResourceLocation field_147504_g = new ResourceLocation("textures/entity/chest/normal.png");
-    private ModelChest field_147510_h = new ModelChest();
-    private ModelChest field_147511_i = new ModelLargeChest();
-    private boolean field_147509_j;
-    private static final String __OBFID = "CL_00000965";
+    private static final ResourceLocation textureTrappedDouble = new ResourceLocation("textures/entity/chest/trapped_double.png");
+    private static final ResourceLocation textureChristmasDouble = new ResourceLocation("textures/entity/chest/christmas_double.png");
+    private static final ResourceLocation textureNormalDouble = new ResourceLocation("textures/entity/chest/normal_double.png");
+    private static final ResourceLocation textureTrapped = new ResourceLocation("textures/entity/chest/trapped.png");
+    private static final ResourceLocation textureChristmas = new ResourceLocation("textures/entity/chest/christmas.png");
+    private static final ResourceLocation textureNormal = new ResourceLocation("textures/entity/chest/normal.png");
+    private ModelChest simpleChest = new ModelChest();
+    private ModelChest largeChest = new ModelLargeChest();
+    private boolean isChristmas;
 
     public TileEntityChestRenderer()
     {
-        Calendar var1 = Calendar.getInstance();
+        Calendar calendar = Calendar.getInstance();
 
-        if (var1.get(2) + 1 == 12 && var1.get(5) >= 24 && var1.get(5) <= 26)
+        if (calendar.get(2) + 1 == 12 && calendar.get(5) >= 24 && calendar.get(5) <= 26)
         {
-            this.field_147509_j = true;
+            this.isChristmas = true;
         }
     }
 
-    public void renderTileEntityAt(TileEntityChest p_147500_1_, double p_147500_2_, double p_147500_4_, double p_147500_6_, float p_147500_8_)
+    public void renderTileEntityAt(TileEntityChest te, double x, double y, double z, float partialTicks, int destroyStage)
     {
-        int var9;
+        GlStateManager.enableDepth();
+        GlStateManager.depthFunc(515);
+        GlStateManager.depthMask(true);
+        int i;
 
-        if (!p_147500_1_.hasWorldObj())
+        if (!te.hasWorldObj())
         {
-            var9 = 0;
+            i = 0;
         }
         else
         {
-            Block var10 = p_147500_1_.getBlockType();
-            var9 = p_147500_1_.getBlockMetadata();
+            Block block = te.getBlockType();
+            i = te.getBlockMetadata();
 
-            if (var10 instanceof BlockChest && var9 == 0)
+            if (block instanceof BlockChest && i == 0)
             {
-                ((BlockChest)var10).func_149954_e(p_147500_1_.getWorldObj(), p_147500_1_.field_145851_c, p_147500_1_.field_145848_d, p_147500_1_.field_145849_e);
-                var9 = p_147500_1_.getBlockMetadata();
+                ((BlockChest)block).checkForSurroundingChests(te.getWorld(), te.getPos(), te.getWorld().getBlockState(te.getPos()));
+                i = te.getBlockMetadata();
             }
 
-            p_147500_1_.func_145979_i();
+            te.checkForAdjacentChests();
         }
 
-        if (p_147500_1_.field_145992_i == null && p_147500_1_.field_145991_k == null)
+        if (te.adjacentChestZNeg == null && te.adjacentChestXNeg == null)
         {
-            ModelChest var14;
+            ModelChest modelchest;
 
-            if (p_147500_1_.field_145990_j == null && p_147500_1_.field_145988_l == null)
+            if (te.adjacentChestXPos == null && te.adjacentChestZPos == null)
             {
-                var14 = this.field_147510_h;
+                modelchest = this.simpleChest;
 
-                if (p_147500_1_.func_145980_j() == 1)
+                if (destroyStage >= 0)
                 {
-                    this.bindTexture(field_147506_e);
+                    this.bindTexture(DESTROY_STAGES[destroyStage]);
+                    GlStateManager.matrixMode(5890);
+                    GlStateManager.pushMatrix();
+                    GlStateManager.scale(4.0F, 4.0F, 1.0F);
+                    GlStateManager.translate(0.0625F, 0.0625F, 0.0625F);
+                    GlStateManager.matrixMode(5888);
                 }
-                else if (this.field_147509_j)
+                else if (this.isChristmas)
                 {
-                    this.bindTexture(field_147503_f);
+                    this.bindTexture(textureChristmas);
+                }
+                else if (te.getChestType() == 1)
+                {
+                    this.bindTexture(textureTrapped);
                 }
                 else
                 {
-                    this.bindTexture(field_147504_g);
+                    this.bindTexture(textureNormal);
                 }
             }
             else
             {
-                var14 = this.field_147511_i;
+                modelchest = this.largeChest;
 
-                if (p_147500_1_.func_145980_j() == 1)
+                if (destroyStage >= 0)
                 {
-                    this.bindTexture(field_147507_b);
+                    this.bindTexture(DESTROY_STAGES[destroyStage]);
+                    GlStateManager.matrixMode(5890);
+                    GlStateManager.pushMatrix();
+                    GlStateManager.scale(8.0F, 4.0F, 1.0F);
+                    GlStateManager.translate(0.0625F, 0.0625F, 0.0625F);
+                    GlStateManager.matrixMode(5888);
                 }
-                else if (this.field_147509_j)
+                else if (this.isChristmas)
                 {
-                    this.bindTexture(field_147508_c);
+                    this.bindTexture(textureChristmasDouble);
+                }
+                else if (te.getChestType() == 1)
+                {
+                    this.bindTexture(textureTrappedDouble);
                 }
                 else
                 {
-                    this.bindTexture(field_147505_d);
+                    this.bindTexture(textureNormalDouble);
                 }
             }
 
-            GL11.glPushMatrix();
-            GL11.glEnable(GL12.GL_RESCALE_NORMAL);
-            GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-            GL11.glTranslatef((float)p_147500_2_, (float)p_147500_4_ + 1.0F, (float)p_147500_6_ + 1.0F);
-            GL11.glScalef(1.0F, -1.0F, -1.0F);
-            GL11.glTranslatef(0.5F, 0.5F, 0.5F);
-            short var11 = 0;
+            GlStateManager.pushMatrix();
+            GlStateManager.enableRescaleNormal();
 
-            if (var9 == 2)
+            if (destroyStage < 0)
             {
-                var11 = 180;
+                GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
             }
 
-            if (var9 == 3)
+            GlStateManager.translate((float)x, (float)y + 1.0F, (float)z + 1.0F);
+            GlStateManager.scale(1.0F, -1.0F, -1.0F);
+            GlStateManager.translate(0.5F, 0.5F, 0.5F);
+            int j = 0;
+
+            if (i == 2)
             {
-                var11 = 0;
+                j = 180;
             }
 
-            if (var9 == 4)
+            if (i == 3)
             {
-                var11 = 90;
+                j = 0;
             }
 
-            if (var9 == 5)
+            if (i == 4)
             {
-                var11 = -90;
+                j = 90;
             }
 
-            if (var9 == 2 && p_147500_1_.field_145990_j != null)
+            if (i == 5)
             {
-                GL11.glTranslatef(1.0F, 0.0F, 0.0F);
+                j = -90;
             }
 
-            if (var9 == 5 && p_147500_1_.field_145988_l != null)
+            if (i == 2 && te.adjacentChestXPos != null)
             {
-                GL11.glTranslatef(0.0F, 0.0F, -1.0F);
+                GlStateManager.translate(1.0F, 0.0F, 0.0F);
             }
 
-            GL11.glRotatef((float)var11, 0.0F, 1.0F, 0.0F);
-            GL11.glTranslatef(-0.5F, -0.5F, -0.5F);
-            float var12 = p_147500_1_.field_145986_n + (p_147500_1_.field_145989_m - p_147500_1_.field_145986_n) * p_147500_8_;
-            float var13;
-
-            if (p_147500_1_.field_145992_i != null)
+            if (i == 5 && te.adjacentChestZPos != null)
             {
-                var13 = p_147500_1_.field_145992_i.field_145986_n + (p_147500_1_.field_145992_i.field_145989_m - p_147500_1_.field_145992_i.field_145986_n) * p_147500_8_;
+                GlStateManager.translate(0.0F, 0.0F, -1.0F);
+            }
 
-                if (var13 > var12)
+            GlStateManager.rotate((float)j, 0.0F, 1.0F, 0.0F);
+            GlStateManager.translate(-0.5F, -0.5F, -0.5F);
+            float f = te.prevLidAngle + (te.lidAngle - te.prevLidAngle) * partialTicks;
+
+            if (te.adjacentChestZNeg != null)
+            {
+                float f1 = te.adjacentChestZNeg.prevLidAngle + (te.adjacentChestZNeg.lidAngle - te.adjacentChestZNeg.prevLidAngle) * partialTicks;
+
+                if (f1 > f)
                 {
-                    var12 = var13;
+                    f = f1;
                 }
             }
 
-            if (p_147500_1_.field_145991_k != null)
+            if (te.adjacentChestXNeg != null)
             {
-                var13 = p_147500_1_.field_145991_k.field_145986_n + (p_147500_1_.field_145991_k.field_145989_m - p_147500_1_.field_145991_k.field_145986_n) * p_147500_8_;
+                float f2 = te.adjacentChestXNeg.prevLidAngle + (te.adjacentChestXNeg.lidAngle - te.adjacentChestXNeg.prevLidAngle) * partialTicks;
 
-                if (var13 > var12)
+                if (f2 > f)
                 {
-                    var12 = var13;
+                    f = f2;
                 }
             }
 
-            var12 = 1.0F - var12;
-            var12 = 1.0F - var12 * var12 * var12;
-            var14.chestLid.rotateAngleX = -(var12 * (float)Math.PI / 2.0F);
-            var14.renderAll();
-            GL11.glDisable(GL12.GL_RESCALE_NORMAL);
-            GL11.glPopMatrix();
-            GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+            f = 1.0F - f;
+            f = 1.0F - f * f * f;
+            modelchest.chestLid.rotateAngleX = -(f * (float)Math.PI / 2.0F);
+            modelchest.renderAll();
+            GlStateManager.disableRescaleNormal();
+            GlStateManager.popMatrix();
+            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+
+            if (destroyStage >= 0)
+            {
+                GlStateManager.matrixMode(5890);
+                GlStateManager.popMatrix();
+                GlStateManager.matrixMode(5888);
+            }
         }
-    }
-
-    public void renderTileEntityAt(TileEntity p_147500_1_, double p_147500_2_, double p_147500_4_, double p_147500_6_, float p_147500_8_)
-    {
-        this.renderTileEntityAt((TileEntityChest)p_147500_1_, p_147500_2_, p_147500_4_, p_147500_6_, p_147500_8_);
     }
 }

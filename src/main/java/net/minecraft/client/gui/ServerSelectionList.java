@@ -1,7 +1,6 @@
 package net.minecraft.client.gui;
 
 import com.google.common.collect.Lists;
-import java.util.Iterator;
 import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ServerList;
@@ -9,90 +8,96 @@ import net.minecraft.client.network.LanServerDetector;
 
 public class ServerSelectionList extends GuiListExtended
 {
-    private final GuiMultiplayer field_148200_k;
-    private final List field_148198_l = Lists.newArrayList();
-    private final List field_148199_m = Lists.newArrayList();
-    private final GuiListExtended.IGuiListEntry field_148196_n = new ServerListEntryLanScan();
-    private int field_148197_o = -1;
-    private static final String __OBFID = "CL_00000819";
+    private final GuiMultiplayer owner;
+    private final List<ServerListEntryNormal> serverListInternet = Lists.<ServerListEntryNormal>newArrayList();
+    private final List<ServerListEntryLanDetected> serverListLan = Lists.<ServerListEntryLanDetected>newArrayList();
+    private final GuiListExtended.IGuiListEntry lanScanEntry = new ServerListEntryLanScan();
+    private int selectedSlotIndex = -1;
 
-    public ServerSelectionList(GuiMultiplayer p_i45049_1_, Minecraft p_i45049_2_, int p_i45049_3_, int p_i45049_4_, int p_i45049_5_, int p_i45049_6_, int p_i45049_7_)
+    public ServerSelectionList(GuiMultiplayer ownerIn, Minecraft mcIn, int widthIn, int heightIn, int topIn, int bottomIn, int slotHeightIn)
     {
-        super(p_i45049_2_, p_i45049_3_, p_i45049_4_, p_i45049_5_, p_i45049_6_, p_i45049_7_);
-        this.field_148200_k = p_i45049_1_;
+        super(mcIn, widthIn, heightIn, topIn, bottomIn, slotHeightIn);
+        this.owner = ownerIn;
     }
 
-    public GuiListExtended.IGuiListEntry func_148180_b(int p_148180_1_)
+    /**
+     * Gets the IGuiListEntry object for the given index
+     */
+    public GuiListExtended.IGuiListEntry getListEntry(int index)
     {
-        if (p_148180_1_ < this.field_148198_l.size())
+        if (index < this.serverListInternet.size())
         {
-            return (GuiListExtended.IGuiListEntry)this.field_148198_l.get(p_148180_1_);
+            return (GuiListExtended.IGuiListEntry)this.serverListInternet.get(index);
         }
         else
         {
-            p_148180_1_ -= this.field_148198_l.size();
+            index = index - this.serverListInternet.size();
 
-            if (p_148180_1_ == 0)
+            if (index == 0)
             {
-                return this.field_148196_n;
+                return this.lanScanEntry;
             }
             else
             {
-                --p_148180_1_;
-                return (GuiListExtended.IGuiListEntry)this.field_148199_m.get(p_148180_1_);
+                --index;
+                return (GuiListExtended.IGuiListEntry)this.serverListLan.get(index);
             }
         }
     }
 
     protected int getSize()
     {
-        return this.field_148198_l.size() + 1 + this.field_148199_m.size();
+        return this.serverListInternet.size() + 1 + this.serverListLan.size();
     }
 
-    public void func_148192_c(int p_148192_1_)
+    public void setSelectedSlotIndex(int selectedSlotIndexIn)
     {
-        this.field_148197_o = p_148192_1_;
+        this.selectedSlotIndex = selectedSlotIndexIn;
     }
 
-    protected boolean isSelected(int p_148131_1_)
+    /**
+     * Returns true if the element passed in is currently selected
+     */
+    protected boolean isSelected(int slotIndex)
     {
-        return p_148131_1_ == this.field_148197_o;
+        return slotIndex == this.selectedSlotIndex;
     }
 
     public int func_148193_k()
     {
-        return this.field_148197_o;
+        return this.selectedSlotIndex;
     }
 
     public void func_148195_a(ServerList p_148195_1_)
     {
-        this.field_148198_l.clear();
+        this.serverListInternet.clear();
 
-        for (int var2 = 0; var2 < p_148195_1_.countServers(); ++var2)
+        for (int i = 0; i < p_148195_1_.countServers(); ++i)
         {
-            this.field_148198_l.add(new ServerListEntryNormal(this.field_148200_k, p_148195_1_.getServerData(var2)));
+            this.serverListInternet.add(new ServerListEntryNormal(this.owner, p_148195_1_.getServerData(i)));
         }
     }
 
-    public void func_148194_a(List p_148194_1_)
+    public void func_148194_a(List<LanServerDetector.LanServer> p_148194_1_)
     {
-        this.field_148199_m.clear();
-        Iterator var2 = p_148194_1_.iterator();
+        this.serverListLan.clear();
 
-        while (var2.hasNext())
+        for (LanServerDetector.LanServer lanserverdetector$lanserver : p_148194_1_)
         {
-            LanServerDetector.LanServer var3 = (LanServerDetector.LanServer)var2.next();
-            this.field_148199_m.add(new ServerListEntryLanDetected(this.field_148200_k, var3));
+            this.serverListLan.add(new ServerListEntryLanDetected(this.owner, lanserverdetector$lanserver));
         }
     }
 
-    protected int func_148137_d()
+    protected int getScrollBarX()
     {
-        return super.func_148137_d() + 30;
+        return super.getScrollBarX() + 30;
     }
 
-    public int func_148139_c()
+    /**
+     * Gets the width of the list
+     */
+    public int getListWidth()
     {
-        return super.func_148139_c() + 85;
+        return super.getListWidth() + 85;
     }
 }

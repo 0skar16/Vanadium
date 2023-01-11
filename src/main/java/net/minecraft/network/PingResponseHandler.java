@@ -14,121 +14,112 @@ import org.apache.logging.log4j.Logger;
 public class PingResponseHandler extends ChannelInboundHandlerAdapter
 {
     private static final Logger logger = LogManager.getLogger();
-    private NetworkSystem field_151257_b;
-    private static final String __OBFID = "CL_00001444";
+    private NetworkSystem networkSystem;
 
-    public PingResponseHandler(NetworkSystem p_i45286_1_)
+    public PingResponseHandler(NetworkSystem networkSystemIn)
     {
-        this.field_151257_b = p_i45286_1_;
+        this.networkSystem = networkSystemIn;
     }
 
-    public void channelRead(ChannelHandlerContext p_channelRead_1_, Object p_channelRead_2_)
+    public void channelRead(ChannelHandlerContext p_channelRead_1_, Object p_channelRead_2_) throws Exception
     {
-        ByteBuf var3 = (ByteBuf)p_channelRead_2_;
-        var3.markReaderIndex();
-        boolean var4 = true;
+        ByteBuf bytebuf = (ByteBuf)p_channelRead_2_;
+        bytebuf.markReaderIndex();
+        boolean flag = true;
 
         try
         {
-            try
+            if (bytebuf.readUnsignedByte() == 254)
             {
-                if (var3.readUnsignedByte() != 254)
-                {
-                    return;
-                }
+                InetSocketAddress inetsocketaddress = (InetSocketAddress)p_channelRead_1_.channel().remoteAddress();
+                MinecraftServer minecraftserver = this.networkSystem.getServer();
+                int i = bytebuf.readableBytes();
 
-                InetSocketAddress var5 = (InetSocketAddress)p_channelRead_1_.channel().remoteAddress();
-                MinecraftServer var6 = this.field_151257_b.func_151267_d();
-                int var7 = var3.readableBytes();
-                String var8;
-
-                switch (var7)
+                switch (i)
                 {
                     case 0:
-                        logger.debug("Ping: (<1.3.x) from {}:{}", new Object[] {var5.getAddress(), Integer.valueOf(var5.getPort())});
-                        var8 = String.format("%s\u00a7%d\u00a7%d", new Object[] {var6.getMOTD(), Integer.valueOf(var6.getCurrentPlayerCount()), Integer.valueOf(var6.getMaxPlayers())});
-                        this.func_151256_a(p_channelRead_1_, this.func_151255_a(var8));
+                        logger.debug("Ping: (<1.3.x) from {}:{}", new Object[] {inetsocketaddress.getAddress(), Integer.valueOf(inetsocketaddress.getPort())});
+                        String s2 = String.format("%s\u00a7%d\u00a7%d", new Object[] {minecraftserver.getMOTD(), Integer.valueOf(minecraftserver.getCurrentPlayerCount()), Integer.valueOf(minecraftserver.getMaxPlayers())});
+                        this.writeAndFlush(p_channelRead_1_, this.getStringBuffer(s2));
                         break;
 
                     case 1:
-                        if (var3.readUnsignedByte() != 1)
+                        if (bytebuf.readUnsignedByte() != 1)
                         {
                             return;
                         }
 
-                        logger.debug("Ping: (1.4-1.5.x) from {}:{}", new Object[] {var5.getAddress(), Integer.valueOf(var5.getPort())});
-                        var8 = String.format("\u00a71\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d", new Object[] {Integer.valueOf(127), var6.getMinecraftVersion(), var6.getMOTD(), Integer.valueOf(var6.getCurrentPlayerCount()), Integer.valueOf(var6.getMaxPlayers())});
-                        this.func_151256_a(p_channelRead_1_, this.func_151255_a(var8));
+                        logger.debug("Ping: (1.4-1.5.x) from {}:{}", new Object[] {inetsocketaddress.getAddress(), Integer.valueOf(inetsocketaddress.getPort())});
+                        String s = String.format("\u00a71\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d", new Object[] {Integer.valueOf(127), minecraftserver.getMinecraftVersion(), minecraftserver.getMOTD(), Integer.valueOf(minecraftserver.getCurrentPlayerCount()), Integer.valueOf(minecraftserver.getMaxPlayers())});
+                        this.writeAndFlush(p_channelRead_1_, this.getStringBuffer(s));
                         break;
 
                     default:
-                        boolean var23 = var3.readUnsignedByte() == 1;
-                        var23 &= var3.readUnsignedByte() == 250;
-                        var23 &= "MC|PingHost".equals(new String(var3.readBytes(var3.readShort() * 2).array(), Charsets.UTF_16BE));
-                        int var9 = var3.readUnsignedShort();
-                        var23 &= var3.readUnsignedByte() >= 73;
-                        var23 &= 3 + var3.readBytes(var3.readShort() * 2).array().length + 4 == var9;
-                        var23 &= var3.readInt() <= 65535;
-                        var23 &= var3.readableBytes() == 0;
+                        boolean flag1 = bytebuf.readUnsignedByte() == 1;
+                        flag1 = flag1 & bytebuf.readUnsignedByte() == 250;
+                        flag1 = flag1 & "MC|PingHost".equals(new String(bytebuf.readBytes(bytebuf.readShort() * 2).array(), Charsets.UTF_16BE));
+                        int j = bytebuf.readUnsignedShort();
+                        flag1 = flag1 & bytebuf.readUnsignedByte() >= 73;
+                        flag1 = flag1 & 3 + bytebuf.readBytes(bytebuf.readShort() * 2).array().length + 4 == j;
+                        flag1 = flag1 & bytebuf.readInt() <= 65535;
+                        flag1 = flag1 & bytebuf.readableBytes() == 0;
 
-                        if (!var23)
+                        if (!flag1)
                         {
                             return;
                         }
 
-                        logger.debug("Ping: (1.6) from {}:{}", new Object[] {var5.getAddress(), Integer.valueOf(var5.getPort())});
-                        String var10 = String.format("\u00a71\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d", new Object[] {Integer.valueOf(127), var6.getMinecraftVersion(), var6.getMOTD(), Integer.valueOf(var6.getCurrentPlayerCount()), Integer.valueOf(var6.getMaxPlayers())});
-                        ByteBuf var11 = this.func_151255_a(var10);
+                        logger.debug("Ping: (1.6) from {}:{}", new Object[] {inetsocketaddress.getAddress(), Integer.valueOf(inetsocketaddress.getPort())});
+                        String s1 = String.format("\u00a71\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d", new Object[] {Integer.valueOf(127), minecraftserver.getMinecraftVersion(), minecraftserver.getMOTD(), Integer.valueOf(minecraftserver.getCurrentPlayerCount()), Integer.valueOf(minecraftserver.getMaxPlayers())});
+                        ByteBuf bytebuf1 = this.getStringBuffer(s1);
 
                         try
                         {
-                            this.func_151256_a(p_channelRead_1_, var11);
+                            this.writeAndFlush(p_channelRead_1_, bytebuf1);
                         }
                         finally
                         {
-                            var11.release();
+                            bytebuf1.release();
                         }
                 }
 
-                var3.release();
-                var4 = false;
+                bytebuf.release();
+                flag = false;
+                return;
             }
-            catch (RuntimeException var21)
-            {
-                ;
-            }
+        }
+        catch (RuntimeException var21)
+        {
+            return;
         }
         finally
         {
-            if (var4)
+            if (flag)
             {
-                var3.resetReaderIndex();
+                bytebuf.resetReaderIndex();
                 p_channelRead_1_.channel().pipeline().remove("legacy_query");
                 p_channelRead_1_.fireChannelRead(p_channelRead_2_);
             }
         }
     }
 
-    private void func_151256_a(ChannelHandlerContext p_151256_1_, ByteBuf p_151256_2_)
+    private void writeAndFlush(ChannelHandlerContext ctx, ByteBuf data)
     {
-        p_151256_1_.pipeline().firstContext().writeAndFlush(p_151256_2_).addListener(ChannelFutureListener.CLOSE);
+        ctx.pipeline().firstContext().writeAndFlush(data).addListener(ChannelFutureListener.CLOSE);
     }
 
-    private ByteBuf func_151255_a(String p_151255_1_)
+    private ByteBuf getStringBuffer(String string)
     {
-        ByteBuf var2 = Unpooled.buffer();
-        var2.writeByte(255);
-        char[] var3 = p_151255_1_.toCharArray();
-        var2.writeShort(var3.length);
-        char[] var4 = var3;
-        int var5 = var3.length;
+        ByteBuf bytebuf = Unpooled.buffer();
+        bytebuf.writeByte(255);
+        char[] achar = string.toCharArray();
+        bytebuf.writeShort(achar.length);
 
-        for (int var6 = 0; var6 < var5; ++var6)
+        for (char c0 : achar)
         {
-            char var7 = var4[var6];
-            var2.writeChar(var7);
+            bytebuf.writeChar(c0);
         }
 
-        return var2;
+        return bytebuf;
     }
 }

@@ -2,162 +2,139 @@ package net.minecraft.block;
 
 import java.util.Random;
 import net.minecraft.block.material.Material;
-import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.block.properties.IProperty;
+import net.minecraft.block.properties.PropertyInteger;
+import net.minecraft.block.state.BlockState;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.util.AxisAlignedBB;
-import net.minecraft.util.IIcon;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.EnumParticleTypes;
+import net.minecraft.util.EnumWorldBlockLayer;
+import net.minecraft.util.MathHelper;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
+import net.minecraft.world.biome.BiomeColorHelper;
 
 public abstract class BlockLiquid extends Block
 {
-    private IIcon[] field_149806_a;
-    private static final String __OBFID = "CL_00000265";
+    public static final PropertyInteger LEVEL = PropertyInteger.create("level", 0, 15);
 
-    protected BlockLiquid(Material p_i45413_1_)
+    protected BlockLiquid(Material materialIn)
     {
-        super(p_i45413_1_);
-        float var2 = 0.0F;
-        float var3 = 0.0F;
-        this.setBlockBounds(0.0F + var3, 0.0F + var2, 0.0F + var3, 1.0F + var3, 1.0F + var2, 1.0F + var3);
+        super(materialIn);
+        this.setDefaultState(this.blockState.getBaseState().withProperty(LEVEL, Integer.valueOf(0)));
+        this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
         this.setTickRandomly(true);
     }
 
-    public boolean getBlocksMovement(IBlockAccess p_149655_1_, int p_149655_2_, int p_149655_3_, int p_149655_4_)
+    public boolean isPassable(IBlockAccess worldIn, BlockPos pos)
     {
         return this.blockMaterial != Material.lava;
     }
 
-    public int getBlockColor()
+    public int colorMultiplier(IBlockAccess worldIn, BlockPos pos, int renderPass)
     {
-        return 16777215;
+        return this.blockMaterial == Material.water ? BiomeColorHelper.getWaterColorAtPos(worldIn, pos) : 16777215;
     }
 
     /**
-     * Returns a integer with hex for 0xrrggbb with this color multiplied against the blocks color. Note only called
-     * when first determining what to render.
+     * Returns the percentage of the liquid block that is air, based on the given flow decay of the liquid
      */
-    public int colorMultiplier(IBlockAccess p_149720_1_, int p_149720_2_, int p_149720_3_, int p_149720_4_)
+    public static float getLiquidHeightPercent(int meta)
     {
-        if (this.blockMaterial != Material.water)
+        if (meta >= 8)
         {
-            return 16777215;
-        }
-        else
-        {
-            int var5 = 0;
-            int var6 = 0;
-            int var7 = 0;
-
-            for (int var8 = -1; var8 <= 1; ++var8)
-            {
-                for (int var9 = -1; var9 <= 1; ++var9)
-                {
-                    int var10 = p_149720_1_.getBiomeGenForCoords(p_149720_2_ + var9, p_149720_4_ + var8).waterColorMultiplier;
-                    var5 += (var10 & 16711680) >> 16;
-                    var6 += (var10 & 65280) >> 8;
-                    var7 += var10 & 255;
-                }
-            }
-
-            return (var5 / 9 & 255) << 16 | (var6 / 9 & 255) << 8 | var7 / 9 & 255;
-        }
-    }
-
-    public static float func_149801_b(int p_149801_0_)
-    {
-        if (p_149801_0_ >= 8)
-        {
-            p_149801_0_ = 0;
+            meta = 0;
         }
 
-        return (float)(p_149801_0_ + 1) / 9.0F;
+        return (float)(meta + 1) / 9.0F;
     }
 
-    /**
-     * Gets the block's texture. Args: side, meta
-     */
-    public IIcon getIcon(int p_149691_1_, int p_149691_2_)
+    protected int getLevel(IBlockAccess worldIn, BlockPos pos)
     {
-        return p_149691_1_ != 0 && p_149691_1_ != 1 ? this.field_149806_a[1] : this.field_149806_a[0];
+        return worldIn.getBlockState(pos).getBlock().getMaterial() == this.blockMaterial ? ((Integer)worldIn.getBlockState(pos).getValue(LEVEL)).intValue() : -1;
     }
 
-    protected int func_149804_e(World p_149804_1_, int p_149804_2_, int p_149804_3_, int p_149804_4_)
+    protected int getEffectiveFlowDecay(IBlockAccess worldIn, BlockPos pos)
     {
-        return p_149804_1_.getBlock(p_149804_2_, p_149804_3_, p_149804_4_).getMaterial() == this.blockMaterial ? p_149804_1_.getBlockMetadata(p_149804_2_, p_149804_3_, p_149804_4_) : -1;
+        int i = this.getLevel(worldIn, pos);
+        return i >= 8 ? 0 : i;
     }
 
-    protected int func_149798_e(IBlockAccess p_149798_1_, int p_149798_2_, int p_149798_3_, int p_149798_4_)
-    {
-        if (p_149798_1_.getBlock(p_149798_2_, p_149798_3_, p_149798_4_).getMaterial() != this.blockMaterial)
-        {
-            return -1;
-        }
-        else
-        {
-            int var5 = p_149798_1_.getBlockMetadata(p_149798_2_, p_149798_3_, p_149798_4_);
-
-            if (var5 >= 8)
-            {
-                var5 = 0;
-            }
-
-            return var5;
-        }
-    }
-
-    public boolean renderAsNormalBlock()
+    public boolean isFullCube()
     {
         return false;
     }
 
+    /**
+     * Used to determine ambient occlusion and culling when rebuilding chunks for render
+     */
     public boolean isOpaqueCube()
     {
         return false;
     }
 
-    /**
-     * Returns whether this block is collideable based on the arguments passed in \n@param par1 block metaData \n@param
-     * par2 whether the player right-clicked while holding a boat
-     */
-    public boolean canCollideCheck(int p_149678_1_, boolean p_149678_2_)
+    public boolean canCollideCheck(IBlockState state, boolean hitIfLiquid)
     {
-        return p_149678_2_ && p_149678_1_ == 0;
-    }
-
-    public boolean isBlockSolid(IBlockAccess p_149747_1_, int p_149747_2_, int p_149747_3_, int p_149747_4_, int p_149747_5_)
-    {
-        Material var6 = p_149747_1_.getBlock(p_149747_2_, p_149747_3_, p_149747_4_).getMaterial();
-        return var6 == this.blockMaterial ? false : (p_149747_5_ == 1 ? true : (var6 == Material.ice ? false : super.isBlockSolid(p_149747_1_, p_149747_2_, p_149747_3_, p_149747_4_, p_149747_5_)));
-    }
-
-    public boolean shouldSideBeRendered(IBlockAccess p_149646_1_, int p_149646_2_, int p_149646_3_, int p_149646_4_, int p_149646_5_)
-    {
-        Material var6 = p_149646_1_.getBlock(p_149646_2_, p_149646_3_, p_149646_4_).getMaterial();
-        return var6 == this.blockMaterial ? false : (p_149646_5_ == 1 ? true : super.shouldSideBeRendered(p_149646_1_, p_149646_2_, p_149646_3_, p_149646_4_, p_149646_5_));
+        return hitIfLiquid && ((Integer)state.getValue(LEVEL)).intValue() == 0;
     }
 
     /**
-     * Returns a bounding box from the pool of bounding boxes (this means this box can change after the pool has been
-     * cleared to be reused)
+     * Whether this Block is solid on the given Side
      */
-    public AxisAlignedBB getCollisionBoundingBoxFromPool(World p_149668_1_, int p_149668_2_, int p_149668_3_, int p_149668_4_)
+    public boolean isBlockSolid(IBlockAccess worldIn, BlockPos pos, EnumFacing side)
+    {
+        Material material = worldIn.getBlockState(pos).getBlock().getMaterial();
+        return material == this.blockMaterial ? false : (side == EnumFacing.UP ? true : (material == Material.ice ? false : super.isBlockSolid(worldIn, pos, side)));
+    }
+
+    public boolean shouldSideBeRendered(IBlockAccess worldIn, BlockPos pos, EnumFacing side)
+    {
+        return worldIn.getBlockState(pos).getBlock().getMaterial() == this.blockMaterial ? false : (side == EnumFacing.UP ? true : super.shouldSideBeRendered(worldIn, pos, side));
+    }
+
+    public boolean shouldRenderSides(IBlockAccess blockAccess, BlockPos pos)
+    {
+        for (int i = -1; i <= 1; ++i)
+        {
+            for (int j = -1; j <= 1; ++j)
+            {
+                IBlockState iblockstate = blockAccess.getBlockState(pos.add(i, 0, j));
+                Block block = iblockstate.getBlock();
+                Material material = block.getMaterial();
+
+                if (material != this.blockMaterial && !block.isFullBlock())
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public AxisAlignedBB getCollisionBoundingBox(World worldIn, BlockPos pos, IBlockState state)
     {
         return null;
     }
 
     /**
-     * The type of render function that is called for this block
+     * The type of render function called. 3 for standard block models, 2 for TESR's, 1 for liquids, -1 is no render
      */
     public int getRenderType()
     {
-        return 4;
+        return 1;
     }
 
-    public Item getItemDropped(int p_149650_1_, Random p_149650_2_, int p_149650_3_)
+    /**
+     * Get the Item that this Block should drop when harvested.
+     */
+    public Item getItemDropped(IBlockState state, Random rand, int fortune)
     {
         return null;
     }
@@ -165,401 +142,269 @@ public abstract class BlockLiquid extends Block
     /**
      * Returns the quantity of items to drop on block destruction.
      */
-    public int quantityDropped(Random p_149745_1_)
+    public int quantityDropped(Random random)
     {
         return 0;
     }
 
-    private Vec3 func_149800_f(IBlockAccess p_149800_1_, int p_149800_2_, int p_149800_3_, int p_149800_4_)
+    protected Vec3 getFlowVector(IBlockAccess worldIn, BlockPos pos)
     {
-        Vec3 var5 = Vec3.createVectorHelper(0.0D, 0.0D, 0.0D);
-        int var6 = this.func_149798_e(p_149800_1_, p_149800_2_, p_149800_3_, p_149800_4_);
+        Vec3 vec3 = new Vec3(0.0D, 0.0D, 0.0D);
+        int i = this.getEffectiveFlowDecay(worldIn, pos);
 
-        for (int var7 = 0; var7 < 4; ++var7)
+        for (EnumFacing enumfacing : EnumFacing.Plane.HORIZONTAL)
         {
-            int var8 = p_149800_2_;
-            int var10 = p_149800_4_;
+            BlockPos blockpos = pos.offset(enumfacing);
+            int j = this.getEffectiveFlowDecay(worldIn, blockpos);
 
-            if (var7 == 0)
+            if (j < 0)
             {
-                var8 = p_149800_2_ - 1;
-            }
-
-            if (var7 == 1)
-            {
-                var10 = p_149800_4_ - 1;
-            }
-
-            if (var7 == 2)
-            {
-                ++var8;
-            }
-
-            if (var7 == 3)
-            {
-                ++var10;
-            }
-
-            int var11 = this.func_149798_e(p_149800_1_, var8, p_149800_3_, var10);
-            int var12;
-
-            if (var11 < 0)
-            {
-                if (!p_149800_1_.getBlock(var8, p_149800_3_, var10).getMaterial().blocksMovement())
+                if (!worldIn.getBlockState(blockpos).getBlock().getMaterial().blocksMovement())
                 {
-                    var11 = this.func_149798_e(p_149800_1_, var8, p_149800_3_ - 1, var10);
+                    j = this.getEffectiveFlowDecay(worldIn, blockpos.down());
 
-                    if (var11 >= 0)
+                    if (j >= 0)
                     {
-                        var12 = var11 - (var6 - 8);
-                        var5 = var5.addVector((double)((var8 - p_149800_2_) * var12), (double)((p_149800_3_ - p_149800_3_) * var12), (double)((var10 - p_149800_4_) * var12));
+                        int k = j - (i - 8);
+                        vec3 = vec3.addVector((double)((blockpos.getX() - pos.getX()) * k), (double)((blockpos.getY() - pos.getY()) * k), (double)((blockpos.getZ() - pos.getZ()) * k));
                     }
                 }
             }
-            else if (var11 >= 0)
+            else if (j >= 0)
             {
-                var12 = var11 - var6;
-                var5 = var5.addVector((double)((var8 - p_149800_2_) * var12), (double)((p_149800_3_ - p_149800_3_) * var12), (double)((var10 - p_149800_4_) * var12));
+                int l = j - i;
+                vec3 = vec3.addVector((double)((blockpos.getX() - pos.getX()) * l), (double)((blockpos.getY() - pos.getY()) * l), (double)((blockpos.getZ() - pos.getZ()) * l));
             }
         }
 
-        if (p_149800_1_.getBlockMetadata(p_149800_2_, p_149800_3_, p_149800_4_) >= 8)
+        if (((Integer)worldIn.getBlockState(pos).getValue(LEVEL)).intValue() >= 8)
         {
-            boolean var13 = false;
-
-            if (var13 || this.isBlockSolid(p_149800_1_, p_149800_2_, p_149800_3_, p_149800_4_ - 1, 2))
+            for (EnumFacing enumfacing1 : EnumFacing.Plane.HORIZONTAL)
             {
-                var13 = true;
-            }
+                BlockPos blockpos1 = pos.offset(enumfacing1);
 
-            if (var13 || this.isBlockSolid(p_149800_1_, p_149800_2_, p_149800_3_, p_149800_4_ + 1, 3))
-            {
-                var13 = true;
-            }
-
-            if (var13 || this.isBlockSolid(p_149800_1_, p_149800_2_ - 1, p_149800_3_, p_149800_4_, 4))
-            {
-                var13 = true;
-            }
-
-            if (var13 || this.isBlockSolid(p_149800_1_, p_149800_2_ + 1, p_149800_3_, p_149800_4_, 5))
-            {
-                var13 = true;
-            }
-
-            if (var13 || this.isBlockSolid(p_149800_1_, p_149800_2_, p_149800_3_ + 1, p_149800_4_ - 1, 2))
-            {
-                var13 = true;
-            }
-
-            if (var13 || this.isBlockSolid(p_149800_1_, p_149800_2_, p_149800_3_ + 1, p_149800_4_ + 1, 3))
-            {
-                var13 = true;
-            }
-
-            if (var13 || this.isBlockSolid(p_149800_1_, p_149800_2_ - 1, p_149800_3_ + 1, p_149800_4_, 4))
-            {
-                var13 = true;
-            }
-
-            if (var13 || this.isBlockSolid(p_149800_1_, p_149800_2_ + 1, p_149800_3_ + 1, p_149800_4_, 5))
-            {
-                var13 = true;
-            }
-
-            if (var13)
-            {
-                var5 = var5.normalize().addVector(0.0D, -6.0D, 0.0D);
+                if (this.isBlockSolid(worldIn, blockpos1, enumfacing1) || this.isBlockSolid(worldIn, blockpos1.up(), enumfacing1))
+                {
+                    vec3 = vec3.normalize().addVector(0.0D, -6.0D, 0.0D);
+                    break;
+                }
             }
         }
 
-        var5 = var5.normalize();
-        return var5;
+        return vec3.normalize();
     }
 
-    public void velocityToAddToEntity(World p_149640_1_, int p_149640_2_, int p_149640_3_, int p_149640_4_, Entity p_149640_5_, Vec3 p_149640_6_)
+    public Vec3 modifyAcceleration(World worldIn, BlockPos pos, Entity entityIn, Vec3 motion)
     {
-        Vec3 var7 = this.func_149800_f(p_149640_1_, p_149640_2_, p_149640_3_, p_149640_4_);
-        p_149640_6_.xCoord += var7.xCoord;
-        p_149640_6_.yCoord += var7.yCoord;
-        p_149640_6_.zCoord += var7.zCoord;
-    }
-
-    public int func_149738_a(World p_149738_1_)
-    {
-        return this.blockMaterial == Material.water ? 5 : (this.blockMaterial == Material.lava ? (p_149738_1_.provider.hasNoSky ? 10 : 30) : 0);
-    }
-
-    public int getBlockBrightness(IBlockAccess p_149677_1_, int p_149677_2_, int p_149677_3_, int p_149677_4_)
-    {
-        int var5 = p_149677_1_.getLightBrightnessForSkyBlocks(p_149677_2_, p_149677_3_, p_149677_4_, 0);
-        int var6 = p_149677_1_.getLightBrightnessForSkyBlocks(p_149677_2_, p_149677_3_ + 1, p_149677_4_, 0);
-        int var7 = var5 & 255;
-        int var8 = var6 & 255;
-        int var9 = var5 >> 16 & 255;
-        int var10 = var6 >> 16 & 255;
-        return (var7 > var8 ? var7 : var8) | (var9 > var10 ? var9 : var10) << 16;
+        return motion.add(this.getFlowVector(worldIn, pos));
     }
 
     /**
-     * Returns which pass should this block be rendered on. 0 for solids and 1 for alpha
+     * How many world ticks before ticking
      */
-    public int getRenderBlockPass()
+    public int tickRate(World worldIn)
     {
-        return this.blockMaterial == Material.water ? 1 : 0;
+        return this.blockMaterial == Material.water ? 5 : (this.blockMaterial == Material.lava ? (worldIn.provider.getHasNoSky() ? 10 : 30) : 0);
     }
 
-    /**
-     * A randomly called display update to be able to add particles or other items for display
-     */
-    public void randomDisplayTick(World p_149734_1_, int p_149734_2_, int p_149734_3_, int p_149734_4_, Random p_149734_5_)
+    public int getMixedBrightnessForBlock(IBlockAccess worldIn, BlockPos pos)
     {
-        int var6;
+        int i = worldIn.getCombinedLight(pos, 0);
+        int j = worldIn.getCombinedLight(pos.up(), 0);
+        int k = i & 255;
+        int l = j & 255;
+        int i1 = i >> 16 & 255;
+        int j1 = j >> 16 & 255;
+        return (k > l ? k : l) | (i1 > j1 ? i1 : j1) << 16;
+    }
+
+    public EnumWorldBlockLayer getBlockLayer()
+    {
+        return this.blockMaterial == Material.water ? EnumWorldBlockLayer.TRANSLUCENT : EnumWorldBlockLayer.SOLID;
+    }
+
+    public void randomDisplayTick(World worldIn, BlockPos pos, IBlockState state, Random rand)
+    {
+        double d0 = (double)pos.getX();
+        double d1 = (double)pos.getY();
+        double d2 = (double)pos.getZ();
 
         if (this.blockMaterial == Material.water)
         {
-            if (p_149734_5_.nextInt(10) == 0)
-            {
-                var6 = p_149734_1_.getBlockMetadata(p_149734_2_, p_149734_3_, p_149734_4_);
+            int i = ((Integer)state.getValue(LEVEL)).intValue();
 
-                if (var6 <= 0 || var6 >= 8)
+            if (i > 0 && i < 8)
+            {
+                if (rand.nextInt(64) == 0)
                 {
-                    p_149734_1_.spawnParticle("suspended", (double)((float)p_149734_2_ + p_149734_5_.nextFloat()), (double)((float)p_149734_3_ + p_149734_5_.nextFloat()), (double)((float)p_149734_4_ + p_149734_5_.nextFloat()), 0.0D, 0.0D, 0.0D);
+                    worldIn.playSound(d0 + 0.5D, d1 + 0.5D, d2 + 0.5D, "liquid.water", rand.nextFloat() * 0.25F + 0.75F, rand.nextFloat() * 1.0F + 0.5F, false);
                 }
             }
-
-            for (var6 = 0; var6 < 0; ++var6)
+            else if (rand.nextInt(10) == 0)
             {
-                int var7 = p_149734_5_.nextInt(4);
-                int var8 = p_149734_2_;
-                int var9 = p_149734_4_;
-
-                if (var7 == 0)
-                {
-                    var8 = p_149734_2_ - 1;
-                }
-
-                if (var7 == 1)
-                {
-                    ++var8;
-                }
-
-                if (var7 == 2)
-                {
-                    var9 = p_149734_4_ - 1;
-                }
-
-                if (var7 == 3)
-                {
-                    ++var9;
-                }
-
-                if (p_149734_1_.getBlock(var8, p_149734_3_, var9).getMaterial() == Material.air && (p_149734_1_.getBlock(var8, p_149734_3_ - 1, var9).getMaterial().blocksMovement() || p_149734_1_.getBlock(var8, p_149734_3_ - 1, var9).getMaterial().isLiquid()))
-                {
-                    float var10 = 0.0625F;
-                    double var11 = (double)((float)p_149734_2_ + p_149734_5_.nextFloat());
-                    double var13 = (double)((float)p_149734_3_ + p_149734_5_.nextFloat());
-                    double var15 = (double)((float)p_149734_4_ + p_149734_5_.nextFloat());
-
-                    if (var7 == 0)
-                    {
-                        var11 = (double)((float)p_149734_2_ - var10);
-                    }
-
-                    if (var7 == 1)
-                    {
-                        var11 = (double)((float)(p_149734_2_ + 1) + var10);
-                    }
-
-                    if (var7 == 2)
-                    {
-                        var15 = (double)((float)p_149734_4_ - var10);
-                    }
-
-                    if (var7 == 3)
-                    {
-                        var15 = (double)((float)(p_149734_4_ + 1) + var10);
-                    }
-
-                    double var17 = 0.0D;
-                    double var19 = 0.0D;
-
-                    if (var7 == 0)
-                    {
-                        var17 = (double)(-var10);
-                    }
-
-                    if (var7 == 1)
-                    {
-                        var17 = (double)var10;
-                    }
-
-                    if (var7 == 2)
-                    {
-                        var19 = (double)(-var10);
-                    }
-
-                    if (var7 == 3)
-                    {
-                        var19 = (double)var10;
-                    }
-
-                    p_149734_1_.spawnParticle("splash", var11, var13, var15, var17, 0.0D, var19);
-                }
+                worldIn.spawnParticle(EnumParticleTypes.SUSPENDED, d0 + (double)rand.nextFloat(), d1 + (double)rand.nextFloat(), d2 + (double)rand.nextFloat(), 0.0D, 0.0D, 0.0D, new int[0]);
             }
         }
 
-        if (this.blockMaterial == Material.water && p_149734_5_.nextInt(64) == 0)
+        if (this.blockMaterial == Material.lava && worldIn.getBlockState(pos.up()).getBlock().getMaterial() == Material.air && !worldIn.getBlockState(pos.up()).getBlock().isOpaqueCube())
         {
-            var6 = p_149734_1_.getBlockMetadata(p_149734_2_, p_149734_3_, p_149734_4_);
-
-            if (var6 > 0 && var6 < 8)
+            if (rand.nextInt(100) == 0)
             {
-                p_149734_1_.playSound((double)((float)p_149734_2_ + 0.5F), (double)((float)p_149734_3_ + 0.5F), (double)((float)p_149734_4_ + 0.5F), "liquid.water", p_149734_5_.nextFloat() * 0.25F + 0.75F, p_149734_5_.nextFloat() * 1.0F + 0.5F, false);
+                double d8 = d0 + (double)rand.nextFloat();
+                double d4 = d1 + this.maxY;
+                double d6 = d2 + (double)rand.nextFloat();
+                worldIn.spawnParticle(EnumParticleTypes.LAVA, d8, d4, d6, 0.0D, 0.0D, 0.0D, new int[0]);
+                worldIn.playSound(d8, d4, d6, "liquid.lavapop", 0.2F + rand.nextFloat() * 0.2F, 0.9F + rand.nextFloat() * 0.15F, false);
+            }
+
+            if (rand.nextInt(200) == 0)
+            {
+                worldIn.playSound(d0, d1, d2, "liquid.lava", 0.2F + rand.nextFloat() * 0.2F, 0.9F + rand.nextFloat() * 0.15F, false);
             }
         }
 
-        double var21;
-        double var22;
-        double var23;
-
-        if (this.blockMaterial == Material.lava && p_149734_1_.getBlock(p_149734_2_, p_149734_3_ + 1, p_149734_4_).getMaterial() == Material.air && !p_149734_1_.getBlock(p_149734_2_, p_149734_3_ + 1, p_149734_4_).isOpaqueCube())
+        if (rand.nextInt(10) == 0 && World.doesBlockHaveSolidTopSurface(worldIn, pos.down()))
         {
-            if (p_149734_5_.nextInt(100) == 0)
-            {
-                var21 = (double)((float)p_149734_2_ + p_149734_5_.nextFloat());
-                var22 = (double)p_149734_3_ + this.field_149756_F;
-                var23 = (double)((float)p_149734_4_ + p_149734_5_.nextFloat());
-                p_149734_1_.spawnParticle("lava", var21, var22, var23, 0.0D, 0.0D, 0.0D);
-                p_149734_1_.playSound(var21, var22, var23, "liquid.lavapop", 0.2F + p_149734_5_.nextFloat() * 0.2F, 0.9F + p_149734_5_.nextFloat() * 0.15F, false);
-            }
+            Material material = worldIn.getBlockState(pos.down(2)).getBlock().getMaterial();
 
-            if (p_149734_5_.nextInt(200) == 0)
+            if (!material.blocksMovement() && !material.isLiquid())
             {
-                p_149734_1_.playSound((double)p_149734_2_, (double)p_149734_3_, (double)p_149734_4_, "liquid.lava", 0.2F + p_149734_5_.nextFloat() * 0.2F, 0.9F + p_149734_5_.nextFloat() * 0.15F, false);
-            }
-        }
+                double d3 = d0 + (double)rand.nextFloat();
+                double d5 = d1 - 1.05D;
+                double d7 = d2 + (double)rand.nextFloat();
 
-        if (p_149734_5_.nextInt(10) == 0 && World.doesBlockHaveSolidTopSurface(p_149734_1_, p_149734_2_, p_149734_3_ - 1, p_149734_4_) && !p_149734_1_.getBlock(p_149734_2_, p_149734_3_ - 2, p_149734_4_).getMaterial().blocksMovement())
-        {
-            var21 = (double)((float)p_149734_2_ + p_149734_5_.nextFloat());
-            var22 = (double)p_149734_3_ - 1.05D;
-            var23 = (double)((float)p_149734_4_ + p_149734_5_.nextFloat());
-
-            if (this.blockMaterial == Material.water)
-            {
-                p_149734_1_.spawnParticle("dripWater", var21, var22, var23, 0.0D, 0.0D, 0.0D);
-            }
-            else
-            {
-                p_149734_1_.spawnParticle("dripLava", var21, var22, var23, 0.0D, 0.0D, 0.0D);
+                if (this.blockMaterial == Material.water)
+                {
+                    worldIn.spawnParticle(EnumParticleTypes.DRIP_WATER, d3, d5, d7, 0.0D, 0.0D, 0.0D, new int[0]);
+                }
+                else
+                {
+                    worldIn.spawnParticle(EnumParticleTypes.DRIP_LAVA, d3, d5, d7, 0.0D, 0.0D, 0.0D, new int[0]);
+                }
             }
         }
     }
 
-    public static double func_149802_a(IBlockAccess p_149802_0_, int p_149802_1_, int p_149802_2_, int p_149802_3_, Material p_149802_4_)
+    public static double getFlowDirection(IBlockAccess worldIn, BlockPos pos, Material materialIn)
     {
-        Vec3 var5 = null;
-
-        if (p_149802_4_ == Material.water)
-        {
-            var5 = Blocks.flowing_water.func_149800_f(p_149802_0_, p_149802_1_, p_149802_2_, p_149802_3_);
-        }
-
-        if (p_149802_4_ == Material.lava)
-        {
-            var5 = Blocks.flowing_lava.func_149800_f(p_149802_0_, p_149802_1_, p_149802_2_, p_149802_3_);
-        }
-
-        return var5.xCoord == 0.0D && var5.zCoord == 0.0D ? -1000.0D : Math.atan2(var5.zCoord, var5.xCoord) - (Math.PI / 2D);
+        Vec3 vec3 = getFlowingBlock(materialIn).getFlowVector(worldIn, pos);
+        return vec3.xCoord == 0.0D && vec3.zCoord == 0.0D ? -1000.0D : MathHelper.atan2(vec3.zCoord, vec3.xCoord) - (Math.PI / 2D);
     }
 
-    public void onBlockAdded(World p_149726_1_, int p_149726_2_, int p_149726_3_, int p_149726_4_)
+    public void onBlockAdded(World worldIn, BlockPos pos, IBlockState state)
     {
-        this.func_149805_n(p_149726_1_, p_149726_2_, p_149726_3_, p_149726_4_);
+        this.checkForMixing(worldIn, pos, state);
     }
 
-    public void onNeighborBlockChange(World p_149695_1_, int p_149695_2_, int p_149695_3_, int p_149695_4_, Block p_149695_5_)
+    /**
+     * Called when a neighboring block changes.
+     */
+    public void onNeighborBlockChange(World worldIn, BlockPos pos, IBlockState state, Block neighborBlock)
     {
-        this.func_149805_n(p_149695_1_, p_149695_2_, p_149695_3_, p_149695_4_);
+        this.checkForMixing(worldIn, pos, state);
     }
 
-    private void func_149805_n(World p_149805_1_, int p_149805_2_, int p_149805_3_, int p_149805_4_)
-    {
-        if (p_149805_1_.getBlock(p_149805_2_, p_149805_3_, p_149805_4_) == this)
-        {
-            if (this.blockMaterial == Material.lava)
-            {
-                boolean var5 = false;
-
-                if (var5 || p_149805_1_.getBlock(p_149805_2_, p_149805_3_, p_149805_4_ - 1).getMaterial() == Material.water)
-                {
-                    var5 = true;
-                }
-
-                if (var5 || p_149805_1_.getBlock(p_149805_2_, p_149805_3_, p_149805_4_ + 1).getMaterial() == Material.water)
-                {
-                    var5 = true;
-                }
-
-                if (var5 || p_149805_1_.getBlock(p_149805_2_ - 1, p_149805_3_, p_149805_4_).getMaterial() == Material.water)
-                {
-                    var5 = true;
-                }
-
-                if (var5 || p_149805_1_.getBlock(p_149805_2_ + 1, p_149805_3_, p_149805_4_).getMaterial() == Material.water)
-                {
-                    var5 = true;
-                }
-
-                if (var5 || p_149805_1_.getBlock(p_149805_2_, p_149805_3_ + 1, p_149805_4_).getMaterial() == Material.water)
-                {
-                    var5 = true;
-                }
-
-                if (var5)
-                {
-                    int var6 = p_149805_1_.getBlockMetadata(p_149805_2_, p_149805_3_, p_149805_4_);
-
-                    if (var6 == 0)
-                    {
-                        p_149805_1_.setBlock(p_149805_2_, p_149805_3_, p_149805_4_, Blocks.obsidian);
-                    }
-                    else if (var6 <= 4)
-                    {
-                        p_149805_1_.setBlock(p_149805_2_, p_149805_3_, p_149805_4_, Blocks.cobblestone);
-                    }
-
-                    this.func_149799_m(p_149805_1_, p_149805_2_, p_149805_3_, p_149805_4_);
-                }
-            }
-        }
-    }
-
-    protected void func_149799_m(World p_149799_1_, int p_149799_2_, int p_149799_3_, int p_149799_4_)
-    {
-        p_149799_1_.playSoundEffect((double)((float)p_149799_2_ + 0.5F), (double)((float)p_149799_3_ + 0.5F), (double)((float)p_149799_4_ + 0.5F), "random.fizz", 0.5F, 2.6F + (p_149799_1_.rand.nextFloat() - p_149799_1_.rand.nextFloat()) * 0.8F);
-
-        for (int var5 = 0; var5 < 8; ++var5)
-        {
-            p_149799_1_.spawnParticle("largesmoke", (double)p_149799_2_ + Math.random(), (double)p_149799_3_ + 1.2D, (double)p_149799_4_ + Math.random(), 0.0D, 0.0D, 0.0D);
-        }
-    }
-
-    public void registerBlockIcons(IIconRegister p_149651_1_)
+    public boolean checkForMixing(World worldIn, BlockPos pos, IBlockState state)
     {
         if (this.blockMaterial == Material.lava)
         {
-            this.field_149806_a = new IIcon[] {p_149651_1_.registerIcon("lava_still"), p_149651_1_.registerIcon("lava_flow")};
+            boolean flag = false;
+
+            for (EnumFacing enumfacing : EnumFacing.values())
+            {
+                if (enumfacing != EnumFacing.DOWN && worldIn.getBlockState(pos.offset(enumfacing)).getBlock().getMaterial() == Material.water)
+                {
+                    flag = true;
+                    break;
+                }
+            }
+
+            if (flag)
+            {
+                Integer integer = (Integer)state.getValue(LEVEL);
+
+                if (integer.intValue() == 0)
+                {
+                    worldIn.setBlockState(pos, Blocks.obsidian.getDefaultState());
+                    this.triggerMixEffects(worldIn, pos);
+                    return true;
+                }
+
+                if (integer.intValue() <= 4)
+                {
+                    worldIn.setBlockState(pos, Blocks.cobblestone.getDefaultState());
+                    this.triggerMixEffects(worldIn, pos);
+                    return true;
+                }
+            }
         }
-        else
+
+        return false;
+    }
+
+    protected void triggerMixEffects(World worldIn, BlockPos pos)
+    {
+        double d0 = (double)pos.getX();
+        double d1 = (double)pos.getY();
+        double d2 = (double)pos.getZ();
+        worldIn.playSoundEffect(d0 + 0.5D, d1 + 0.5D, d2 + 0.5D, "random.fizz", 0.5F, 2.6F + (worldIn.rand.nextFloat() - worldIn.rand.nextFloat()) * 0.8F);
+
+        for (int i = 0; i < 8; ++i)
         {
-            this.field_149806_a = new IIcon[] {p_149651_1_.registerIcon("water_still"), p_149651_1_.registerIcon("water_flow")};
+            worldIn.spawnParticle(EnumParticleTypes.SMOKE_LARGE, d0 + Math.random(), d1 + 1.2D, d2 + Math.random(), 0.0D, 0.0D, 0.0D, new int[0]);
         }
     }
 
-    public static IIcon func_149803_e(String p_149803_0_)
+    /**
+     * Convert the given metadata into a BlockState for this Block
+     */
+    public IBlockState getStateFromMeta(int meta)
     {
-        return p_149803_0_ == "water_still" ? Blocks.flowing_water.field_149806_a[0] : (p_149803_0_ == "water_flow" ? Blocks.flowing_water.field_149806_a[1] : (p_149803_0_ == "lava_still" ? Blocks.flowing_lava.field_149806_a[0] : (p_149803_0_ == "lava_flow" ? Blocks.flowing_lava.field_149806_a[1] : null)));
+        return this.getDefaultState().withProperty(LEVEL, Integer.valueOf(meta));
+    }
+
+    /**
+     * Convert the BlockState into the correct metadata value
+     */
+    public int getMetaFromState(IBlockState state)
+    {
+        return ((Integer)state.getValue(LEVEL)).intValue();
+    }
+
+    protected BlockState createBlockState()
+    {
+        return new BlockState(this, new IProperty[] {LEVEL});
+    }
+
+    public static BlockDynamicLiquid getFlowingBlock(Material materialIn)
+    {
+        if (materialIn == Material.water)
+        {
+            return Blocks.flowing_water;
+        }
+        else if (materialIn == Material.lava)
+        {
+            return Blocks.flowing_lava;
+        }
+        else
+        {
+            throw new IllegalArgumentException("Invalid material");
+        }
+    }
+
+    public static BlockStaticLiquid getStaticBlock(Material materialIn)
+    {
+        if (materialIn == Material.water)
+        {
+            return Blocks.water;
+        }
+        else if (materialIn == Material.lava)
+        {
+            return Blocks.lava;
+        }
+        else
+        {
+            throw new IllegalArgumentException("Invalid material");
+        }
     }
 }

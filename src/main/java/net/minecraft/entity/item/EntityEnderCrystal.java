@@ -3,6 +3,7 @@ package net.minecraft.entity.item;
 import net.minecraft.entity.Entity;
 import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
@@ -13,22 +14,20 @@ public class EntityEnderCrystal extends Entity
     /** Used to create the rotation animation when rendering the crystal. */
     public int innerRotation;
     public int health;
-    private static final String __OBFID = "CL_00001658";
 
-    public EntityEnderCrystal(World p_i1698_1_)
+    public EntityEnderCrystal(World worldIn)
     {
-        super(p_i1698_1_);
+        super(worldIn);
         this.preventEntitySpawning = true;
         this.setSize(2.0F, 2.0F);
-        this.yOffset = this.height / 2.0F;
         this.health = 5;
         this.innerRotation = this.rand.nextInt(100000);
     }
 
-    public EntityEnderCrystal(World p_i1699_1_, double p_i1699_2_, double p_i1699_4_, double p_i1699_6_)
+    public EntityEnderCrystal(World worldIn, double x, double y, double z)
     {
-        this(p_i1699_1_);
-        this.setPosition(p_i1699_2_, p_i1699_4_, p_i1699_6_);
+        this(worldIn);
+        this.setPosition(x, y, z);
     }
 
     /**
@@ -55,29 +54,28 @@ public class EntityEnderCrystal extends Entity
         this.prevPosZ = this.posZ;
         ++this.innerRotation;
         this.dataWatcher.updateObject(8, Integer.valueOf(this.health));
-        int var1 = MathHelper.floor_double(this.posX);
-        int var2 = MathHelper.floor_double(this.posY);
-        int var3 = MathHelper.floor_double(this.posZ);
+        int i = MathHelper.floor_double(this.posX);
+        int j = MathHelper.floor_double(this.posY);
+        int k = MathHelper.floor_double(this.posZ);
 
-        if (this.worldObj.provider instanceof WorldProviderEnd && this.worldObj.getBlock(var1, var2, var3) != Blocks.fire)
+        if (this.worldObj.provider instanceof WorldProviderEnd && this.worldObj.getBlockState(new BlockPos(i, j, k)).getBlock() != Blocks.fire)
         {
-            this.worldObj.setBlock(var1, var2, var3, Blocks.fire);
+            this.worldObj.setBlockState(new BlockPos(i, j, k), Blocks.fire.getDefaultState());
         }
     }
 
     /**
      * (abstract) Protected helper method to write subclass entity data to NBT.
      */
-    protected void writeEntityToNBT(NBTTagCompound p_70014_1_) {}
+    protected void writeEntityToNBT(NBTTagCompound tagCompound)
+    {
+    }
 
     /**
      * (abstract) Protected helper method to read subclass entity data from NBT.
      */
-    protected void readEntityFromNBT(NBTTagCompound p_70037_1_) {}
-
-    public float getShadowSize()
+    protected void readEntityFromNBT(NBTTagCompound tagCompund)
     {
-        return 0.0F;
     }
 
     /**
@@ -91,15 +89,15 @@ public class EntityEnderCrystal extends Entity
     /**
      * Called when the entity is attacked.
      */
-    public boolean attackEntityFrom(DamageSource p_70097_1_, float p_70097_2_)
+    public boolean attackEntityFrom(DamageSource source, float amount)
     {
-        if (this.isEntityInvulnerable())
+        if (this.isEntityInvulnerable(source))
         {
             return false;
         }
         else
         {
-            if (!this.isDead && !this.worldObj.isClient)
+            if (!this.isDead && !this.worldObj.isRemote)
             {
                 this.health = 0;
 
@@ -107,7 +105,7 @@ public class EntityEnderCrystal extends Entity
                 {
                     this.setDead();
 
-                    if (!this.worldObj.isClient)
+                    if (!this.worldObj.isRemote)
                     {
                         this.worldObj.createExplosion((Entity)null, this.posX, this.posY, this.posZ, 6.0F, true);
                     }

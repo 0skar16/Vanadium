@@ -8,40 +8,47 @@ import net.minecraft.world.WorldServer;
 
 public class CommandSaveOff extends CommandBase
 {
-    private static final String __OBFID = "CL_00000847";
-
+    /**
+     * Gets the name of the command
+     */
     public String getCommandName()
     {
         return "save-off";
     }
 
-    public String getCommandUsage(ICommandSender p_71518_1_)
+    /**
+     * Gets the usage string for the command.
+     */
+    public String getCommandUsage(ICommandSender sender)
     {
         return "commands.save-off.usage";
     }
 
-    public void processCommand(ICommandSender p_71515_1_, String[] p_71515_2_)
+    /**
+     * Callback when the command is invoked
+     */
+    public void processCommand(ICommandSender sender, String[] args) throws CommandException
     {
-        MinecraftServer var3 = MinecraftServer.getServer();
-        boolean var4 = false;
+        MinecraftServer minecraftserver = MinecraftServer.getServer();
+        boolean flag = false;
 
-        for (int var5 = 0; var5 < var3.worldServers.length; ++var5)
+        for (int i = 0; i < minecraftserver.worldServers.length; ++i)
         {
-            if (var3.worldServers[var5] != null)
+            if (minecraftserver.worldServers[i] != null)
             {
-                WorldServer var6 = var3.worldServers[var5];
+                WorldServer worldserver = minecraftserver.worldServers[i];
 
-                if (!var6.levelSaving)
+                if (!worldserver.disableLevelSaving)
                 {
-                    var6.levelSaving = true;
-                    var4 = true;
+                    worldserver.disableLevelSaving = true;
+                    flag = true;
                 }
             }
         }
 
-        if (var4)
+        if (flag)
         {
-            func_152373_a(p_71515_1_, this, "commands.save.disabled", new Object[0]);
+            notifyOperators(sender, this, "commands.save.disabled", new Object[0]);
         }
         else
         {

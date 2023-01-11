@@ -1,18 +1,18 @@
 package net.minecraft.client.resources.data;
 
 import java.util.Collection;
+import net.minecraft.client.resources.Language;
 
 public class LanguageMetadataSection implements IMetadataSection
 {
-    private final Collection languages;
-    private static final String __OBFID = "CL_00001110";
+    private final Collection<Language> languages;
 
-    public LanguageMetadataSection(Collection p_i1311_1_)
+    public LanguageMetadataSection(Collection<Language> p_i1311_1_)
     {
         this.languages = p_i1311_1_;
     }
 
-    public Collection getLanguages()
+    public Collection<Language> getLanguages()
     {
         return this.languages;
     }

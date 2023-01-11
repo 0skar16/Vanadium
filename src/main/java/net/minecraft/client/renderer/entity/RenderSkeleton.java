@@ -1,71 +1,53 @@
 package net.minecraft.client.renderer.entity;
 
 import net.minecraft.client.model.ModelSkeleton;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLiving;
-import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.renderer.entity.layers.LayerBipedArmor;
+import net.minecraft.client.renderer.entity.layers.LayerHeldItem;
 import net.minecraft.entity.monster.EntitySkeleton;
 import net.minecraft.util.ResourceLocation;
-import org.lwjgl.opengl.GL11;
 
-public class RenderSkeleton extends RenderBiped
+public class RenderSkeleton extends RenderBiped<EntitySkeleton>
 {
     private static final ResourceLocation skeletonTextures = new ResourceLocation("textures/entity/skeleton/skeleton.png");
     private static final ResourceLocation witherSkeletonTextures = new ResourceLocation("textures/entity/skeleton/wither_skeleton.png");
-    private static final String __OBFID = "CL_00001023";
 
-    public RenderSkeleton()
+    public RenderSkeleton(RenderManager renderManagerIn)
     {
-        super(new ModelSkeleton(), 0.5F);
+        super(renderManagerIn, new ModelSkeleton(), 0.5F);
+        this.addLayer(new LayerHeldItem(this));
+        this.addLayer(new LayerBipedArmor(this)
+        {
+            protected void initArmor()
+            {
+                this.modelLeggings = new ModelSkeleton(0.5F, true);
+                this.modelArmor = new ModelSkeleton(1.0F, true);
+            }
+        });
     }
 
     /**
      * Allows the render to do any OpenGL state modifications necessary before the model is rendered. Args:
      * entityLiving, partialTickTime
      */
-    protected void preRenderCallback(EntitySkeleton p_77041_1_, float p_77041_2_)
+    protected void preRenderCallback(EntitySkeleton entitylivingbaseIn, float partialTickTime)
     {
-        if (p_77041_1_.getSkeletonType() == 1)
+        if (entitylivingbaseIn.getSkeletonType() == 1)
         {
-            GL11.glScalef(1.2F, 1.2F, 1.2F);
+            GlStateManager.scale(1.2F, 1.2F, 1.2F);
         }
     }
 
-    protected void func_82422_c()
+    public void transformHeldFull3DItemLayer()
     {
-        GL11.glTranslatef(0.09375F, 0.1875F, 0.0F);
+        GlStateManager.translate(0.09375F, 0.1875F, 0.0F);
     }
 
     /**
      * Returns the location of an entity's texture. Doesn't seem to be called unless you call Render.bindEntityTexture.
      */
-    protected ResourceLocation getEntityTexture(EntitySkeleton p_110775_1_)
+    protected ResourceLocation getEntityTexture(EntitySkeleton entity)
     {
-        return p_110775_1_.getSkeletonType() == 1 ? witherSkeletonTextures : skeletonTextures;
-    }
-
-    /**
-     * Returns the location of an entity's texture. Doesn't seem to be called unless you call Render.bindEntityTexture.
-     */
-    protected ResourceLocation getEntityTexture(EntityLiving p_110775_1_)
-    {
-        return this.getEntityTexture((EntitySkeleton)p_110775_1_);
-    }
-
-    /**
-     * Allows the render to do any OpenGL state modifications necessary before the model is rendered. Args:
-     * entityLiving, partialTickTime
-     */
-    protected void preRenderCallback(EntityLivingBase p_77041_1_, float p_77041_2_)
-    {
-        this.preRenderCallback((EntitySkeleton)p_77041_1_, p_77041_2_);
-    }
-
-    /**
-     * Returns the location of an entity's texture. Doesn't seem to be called unless you call Render.bindEntityTexture.
-     */
-    protected ResourceLocation getEntityTexture(Entity p_110775_1_)
-    {
-        return this.getEntityTexture((EntitySkeleton)p_110775_1_);
+        return entity.getSkeletonType() == 1 ? witherSkeletonTextures : skeletonTextures;
     }
 }

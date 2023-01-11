@@ -6,7 +6,10 @@ import tv.twitch.chat.ChatUserInfo;
 
 public interface IStream
 {
-    void func_152923_i();
+    /**
+     * Shuts down a steam
+     */
+    void shutdownStream();
 
     void func_152935_j();
 
@@ -14,25 +17,33 @@ public interface IStream
 
     boolean func_152936_l();
 
-    boolean func_152924_m();
+    boolean isReadyToBroadcast();
 
-    boolean func_152934_n();
+    boolean isBroadcasting();
 
     void func_152911_a(Metadata p_152911_1_, long p_152911_2_);
 
-    boolean func_152919_o();
+    void func_176026_a(Metadata p_176026_1_, long p_176026_2_, long p_176026_4_);
 
-    void func_152931_p();
+    boolean isPaused();
 
-    void func_152916_q();
+    void requestCommercial();
 
-    void func_152933_r();
+    /**
+     * pauses a stream
+     */
+    void pause();
 
-    void func_152915_s();
+    /**
+     * unpauses a stream
+     */
+    void unpause();
+
+    void updateStreamVolume();
 
     void func_152930_t();
 
-    void func_152914_u();
+    void stopBroadcasting();
 
     IngestServer[] func_152925_v();
 
@@ -58,7 +69,10 @@ public interface IStream
 
     boolean func_152913_F();
 
-    void func_152910_a(boolean p_152910_1_);
+    /**
+     * mutes or unmutes the microphone based on the boolean parameter passed into the method
+     */
+    void muteMicrophone(boolean p_152910_1_);
 
     boolean func_152929_G();
 
@@ -66,12 +80,7 @@ public interface IStream
 
     public static enum AuthFailureReason
     {
-        ERROR("ERROR", 0),
-        INVALID_TOKEN("INVALID_TOKEN", 1);
-
-        private static final IStream.AuthFailureReason[] $VALUES = new IStream.AuthFailureReason[]{ERROR, INVALID_TOKEN};
-        private static final String __OBFID = "CL_00001813";
-
-        private AuthFailureReason(String p_i1014_1_, int p_i1014_2_) {}
+        ERROR,
+        INVALID_TOKEN;
     }
 }

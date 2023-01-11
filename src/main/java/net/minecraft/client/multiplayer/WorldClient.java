@@ -1,27 +1,29 @@
 package net.minecraft.client.multiplayer;
 
-import java.util.HashSet;
-import java.util.Iterator;
+import com.google.common.collect.Sets;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import net.minecraft.block.Block;
-import net.minecraft.block.material.Material;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.MovingSoundMinecart;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.network.NetHandlerPlayClient;
-import net.minecraft.client.particle.EntityFireworkStarterFX;
-import net.minecraft.client.renderer.entity.RenderManager;
+import net.minecraft.client.particle.EntityFirework;
 import net.minecraft.crash.CrashReport;
 import net.minecraft.crash.CrashReportCategory;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.item.EntityMinecart;
+import net.minecraft.init.Blocks;
+import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.profiler.Profiler;
 import net.minecraft.scoreboard.Scoreboard;
+import net.minecraft.src.Config;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.ChatComponentText;
-import net.minecraft.util.IntHashMap;
+import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.ChunkCoordIntPair;
 import net.minecraft.world.EnumDifficulty;
@@ -30,7 +32,13 @@ import net.minecraft.world.WorldProvider;
 import net.minecraft.world.WorldSettings;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.IChunkProvider;
+import net.minecraft.world.storage.SaveDataMemoryStorage;
 import net.minecraft.world.storage.SaveHandlerMP;
+import net.minecraft.world.storage.WorldInfo;
+import net.optifine.CustomGuis;
+import net.optifine.DynamicLights;
+import net.optifine.override.PlayerControllerOF;
+import net.optifine.reflect.Reflector;
 
 public class WorldClient extends World
 {
@@ -39,31 +47,30 @@ public class WorldClient extends World
 
     /** The ChunkProviderClient instance */
     private ChunkProviderClient clientChunkProvider;
-
-    /**
-     * The hash set of entities handled by this client. Uses the entity's ID as the hash set's key.
-     */
-    private IntHashMap entityHashSet = new IntHashMap();
-
-    /** Contains all entities for this client, both spawned and non-spawned. */
-    private Set entityList = new HashSet();
-
-    /**
-     * Contains all entities for this client that were not spawned due to a non-present chunk. The game will attempt to
-     * spawn up to 10 pending entities with each subsequent tick until the spawn queue is empty.
-     */
-    private Set entitySpawnQueue = new HashSet();
+    private final Set<Entity> entityList = Sets.<Entity>newHashSet();
+    private final Set<Entity> entitySpawnQueue = Sets.<Entity>newHashSet();
     private final Minecraft mc = Minecraft.getMinecraft();
-    private final Set previousActiveChunkSet = new HashSet();
-    private static final String __OBFID = "CL_00000882";
+    private final Set<ChunkCoordIntPair> previousActiveChunkSet = Sets.<ChunkCoordIntPair>newHashSet();
+    private boolean playerUpdate = false;
 
-    public WorldClient(NetHandlerPlayClient p_i45063_1_, WorldSettings p_i45063_2_, int p_i45063_3_, EnumDifficulty p_i45063_4_, Profiler p_i45063_5_)
+    public WorldClient(NetHandlerPlayClient netHandler, WorldSettings settings, int dimension, EnumDifficulty difficulty, Profiler profilerIn)
     {
-        super(new SaveHandlerMP(), "MpServer", WorldProvider.getProviderForDimension(p_i45063_3_), p_i45063_2_, p_i45063_5_);
-        this.sendQueue = p_i45063_1_;
-        this.difficultySetting = p_i45063_4_;
-        this.setSpawnLocation(8, 64, 8);
-        this.mapStorage = p_i45063_1_.mapStorageOrigin;
+        super(new SaveHandlerMP(), new WorldInfo(settings, "MpServer"), WorldProvider.getProviderForDimension(dimension), profilerIn, true);
+        this.sendQueue = netHandler;
+        this.getWorldInfo().setDifficulty(difficulty);
+        this.provider.registerWorld(this);
+        this.setSpawnPoint(new BlockPos(8, 64, 8));
+        this.chunkProvider = this.createChunkProvider();
+        this.mapStorage = new SaveDataMemoryStorage();
+        this.calculateInitialSkylight();
+        this.calculateInitialWeather();
+        Reflector.postForgeBusEvent(Reflector.WorldEvent_Load_Constructor, new Object[] {this});
+
+        if (this.mc.playerController != null && this.mc.playerController.getClass() == PlayerControllerMP.class)
+        {
+            this.mc.playerController = new PlayerControllerOF(this.mc, netHandler);
+            CustomGuis.setPlayerControllerOF((PlayerControllerOF)this.mc.playerController);
+        }
     }
 
     /**
@@ -72,40 +79,47 @@ public class WorldClient extends World
     public void tick()
     {
         super.tick();
-        this.func_82738_a(this.getTotalWorldTime() + 1L);
+        this.setTotalWorldTime(this.getTotalWorldTime() + 1L);
 
-        if (this.getGameRules().getGameRuleBooleanValue("doDaylightCycle"))
+        if (this.getGameRules().getBoolean("doDaylightCycle"))
         {
             this.setWorldTime(this.getWorldTime() + 1L);
         }
 
         this.theProfiler.startSection("reEntryProcessing");
 
-        for (int var1 = 0; var1 < 10 && !this.entitySpawnQueue.isEmpty(); ++var1)
+        for (int i = 0; i < 10 && !this.entitySpawnQueue.isEmpty(); ++i)
         {
-            Entity var2 = (Entity)this.entitySpawnQueue.iterator().next();
-            this.entitySpawnQueue.remove(var2);
+            Entity entity = (Entity)this.entitySpawnQueue.iterator().next();
+            this.entitySpawnQueue.remove(entity);
 
-            if (!this.loadedEntityList.contains(var2))
+            if (!this.loadedEntityList.contains(entity))
             {
-                this.spawnEntityInWorld(var2);
+                this.spawnEntityInWorld(entity);
             }
         }
 
-        this.theProfiler.endStartSection("connection");
-        this.sendQueue.onNetworkTick();
         this.theProfiler.endStartSection("chunkCache");
         this.clientChunkProvider.unloadQueuedChunks();
         this.theProfiler.endStartSection("blocks");
-        this.func_147456_g();
+        this.updateBlocks();
         this.theProfiler.endSection();
     }
 
     /**
      * Invalidates an AABB region of blocks from the receive queue, in the event that the block has been modified
      * client-side in the intervening 80 receive ticks.
+     *  
+     * @param x1 X position of the block where the region begin
+     * @param y1 Y position of the block where the region begin
+     * @param z1 Z position of the block where the region begin
+     * @param x2 X position of the block where the region end
+     * @param y2 Y position of the block where the region end
+     * @param z2 Z position of the block where the region end
      */
-    public void invalidateBlockReceiveRegion(int p_73031_1_, int p_73031_2_, int p_73031_3_, int p_73031_4_, int p_73031_5_, int p_73031_6_) {}
+    public void invalidateBlockReceiveRegion(int x1, int y1, int z1, int x2, int y2, int z2)
+    {
+    }
 
     /**
      * Creates the chunk provider for this world. Called in the constructor. Retrieves provider from worldProvider?
@@ -116,9 +130,9 @@ public class WorldClient extends World
         return this.clientChunkProvider;
     }
 
-    protected void func_147456_g()
+    protected void updateBlocks()
     {
-        super.func_147456_g();
+        super.updateBlocks();
         this.previousActiveChunkSet.retainAll(this.activeChunkSet);
 
         if (this.previousActiveChunkSet.size() == this.activeChunkSet.size())
@@ -126,25 +140,22 @@ public class WorldClient extends World
             this.previousActiveChunkSet.clear();
         }
 
-        int var1 = 0;
-        Iterator var2 = this.activeChunkSet.iterator();
+        int i = 0;
 
-        while (var2.hasNext())
+        for (ChunkCoordIntPair chunkcoordintpair : this.activeChunkSet)
         {
-            ChunkCoordIntPair var3 = (ChunkCoordIntPair)var2.next();
-
-            if (!this.previousActiveChunkSet.contains(var3))
+            if (!this.previousActiveChunkSet.contains(chunkcoordintpair))
             {
-                int var4 = var3.chunkXPos * 16;
-                int var5 = var3.chunkZPos * 16;
+                int j = chunkcoordintpair.chunkXPos * 16;
+                int k = chunkcoordintpair.chunkZPos * 16;
                 this.theProfiler.startSection("getChunk");
-                Chunk var6 = this.getChunkFromChunkCoords(var3.chunkXPos, var3.chunkZPos);
-                this.func_147467_a(var4, var5, var6);
+                Chunk chunk = this.getChunkFromChunkCoords(chunkcoordintpair.chunkXPos, chunkcoordintpair.chunkZPos);
+                this.playMoodSoundAndCheckLight(j, k, chunk);
                 this.theProfiler.endSection();
-                this.previousActiveChunkSet.add(var3);
-                ++var1;
+                this.previousActiveChunkSet.add(chunkcoordintpair);
+                ++i;
 
-                if (var1 >= 10)
+                if (i >= 10)
                 {
                     return;
                 }
@@ -152,139 +163,135 @@ public class WorldClient extends World
         }
     }
 
-    public void doPreChunk(int p_73025_1_, int p_73025_2_, boolean p_73025_3_)
+    public void doPreChunk(int chuncX, int chuncZ, boolean loadChunk)
     {
-        if (p_73025_3_)
+        if (loadChunk)
         {
-            this.clientChunkProvider.loadChunk(p_73025_1_, p_73025_2_);
+            this.clientChunkProvider.loadChunk(chuncX, chuncZ);
         }
         else
         {
-            this.clientChunkProvider.unloadChunk(p_73025_1_, p_73025_2_);
+            this.clientChunkProvider.unloadChunk(chuncX, chuncZ);
         }
 
-        if (!p_73025_3_)
+        if (!loadChunk)
         {
-            this.markBlockRangeForRenderUpdate(p_73025_1_ * 16, 0, p_73025_2_ * 16, p_73025_1_ * 16 + 15, 256, p_73025_2_ * 16 + 15);
+            this.markBlockRangeForRenderUpdate(chuncX * 16, 0, chuncZ * 16, chuncX * 16 + 15, 256, chuncZ * 16 + 15);
         }
     }
 
     /**
-     * Called to place all entities as part of a world
+     * Called when an entity is spawned in the world. This includes players.
      */
-    public boolean spawnEntityInWorld(Entity p_72838_1_)
+    public boolean spawnEntityInWorld(Entity entityIn)
     {
-        boolean var2 = super.spawnEntityInWorld(p_72838_1_);
-        this.entityList.add(p_72838_1_);
+        boolean flag = super.spawnEntityInWorld(entityIn);
+        this.entityList.add(entityIn);
 
-        if (!var2)
+        if (!flag)
         {
-            this.entitySpawnQueue.add(p_72838_1_);
+            this.entitySpawnQueue.add(entityIn);
         }
-        else if (p_72838_1_ instanceof EntityMinecart)
+        else if (entityIn instanceof EntityMinecart)
         {
-            this.mc.getSoundHandler().playSound(new MovingSoundMinecart((EntityMinecart)p_72838_1_));
+            this.mc.getSoundHandler().playSound(new MovingSoundMinecart((EntityMinecart)entityIn));
         }
 
-        return var2;
+        return flag;
     }
 
     /**
      * Schedule the entity for removal during the next tick. Marks the entity dead in anticipation.
      */
-    public void removeEntity(Entity p_72900_1_)
+    public void removeEntity(Entity entityIn)
     {
-        super.removeEntity(p_72900_1_);
-        this.entityList.remove(p_72900_1_);
+        super.removeEntity(entityIn);
+        this.entityList.remove(entityIn);
     }
 
-    protected void onEntityAdded(Entity p_72923_1_)
+    protected void onEntityAdded(Entity entityIn)
     {
-        super.onEntityAdded(p_72923_1_);
+        super.onEntityAdded(entityIn);
 
-        if (this.entitySpawnQueue.contains(p_72923_1_))
+        if (this.entitySpawnQueue.contains(entityIn))
         {
-            this.entitySpawnQueue.remove(p_72923_1_);
+            this.entitySpawnQueue.remove(entityIn);
         }
     }
 
-    protected void onEntityRemoved(Entity p_72847_1_)
+    protected void onEntityRemoved(Entity entityIn)
     {
-        super.onEntityRemoved(p_72847_1_);
-        boolean var2 = false;
+        super.onEntityRemoved(entityIn);
+        boolean flag = false;
 
-        if (this.entityList.contains(p_72847_1_))
+        if (this.entityList.contains(entityIn))
         {
-            if (p_72847_1_.isEntityAlive())
+            if (entityIn.isEntityAlive())
             {
-                this.entitySpawnQueue.add(p_72847_1_);
-                var2 = true;
+                this.entitySpawnQueue.add(entityIn);
+                flag = true;
             }
             else
             {
-                this.entityList.remove(p_72847_1_);
+                this.entityList.remove(entityIn);
             }
-        }
-
-        if (RenderManager.instance.getEntityRenderObject(p_72847_1_).func_147905_a() && !var2)
-        {
-            this.mc.renderGlobal.onStaticEntitiesChanged();
         }
     }
 
     /**
      * Add an ID to Entity mapping to entityHashSet
+     *  
+     * @param entityID The ID to give to the entity to spawn
+     * @param entityToSpawn The Entity to spawn in the World
      */
-    public void addEntityToWorld(int p_73027_1_, Entity p_73027_2_)
+    public void addEntityToWorld(int entityID, Entity entityToSpawn)
     {
-        Entity var3 = this.getEntityByID(p_73027_1_);
+        Entity entity = this.getEntityByID(entityID);
 
-        if (var3 != null)
+        if (entity != null)
         {
-            this.removeEntity(var3);
+            this.removeEntity(entity);
         }
 
-        this.entityList.add(p_73027_2_);
-        p_73027_2_.setEntityId(p_73027_1_);
+        this.entityList.add(entityToSpawn);
+        entityToSpawn.setEntityId(entityID);
 
-        if (!this.spawnEntityInWorld(p_73027_2_))
+        if (!this.spawnEntityInWorld(entityToSpawn))
         {
-            this.entitySpawnQueue.add(p_73027_2_);
+            this.entitySpawnQueue.add(entityToSpawn);
         }
 
-        this.entityHashSet.addKey(p_73027_1_, p_73027_2_);
-
-        if (RenderManager.instance.getEntityRenderObject(p_73027_2_).func_147905_a())
-        {
-            this.mc.renderGlobal.onStaticEntitiesChanged();
-        }
+        this.entitiesById.addKey(entityID, entityToSpawn);
     }
 
     /**
      * Returns the Entity with the given ID, or null if it doesn't exist in this World.
      */
-    public Entity getEntityByID(int p_73045_1_)
+    public Entity getEntityByID(int id)
     {
-        return (Entity)(p_73045_1_ == this.mc.thePlayer.getEntityId() ? this.mc.thePlayer : (Entity)this.entityHashSet.lookup(p_73045_1_));
+        return (Entity)(id == this.mc.thePlayer.getEntityId() ? this.mc.thePlayer : super.getEntityByID(id));
     }
 
-    public Entity removeEntityFromWorld(int p_73028_1_)
+    public Entity removeEntityFromWorld(int entityID)
     {
-        Entity var2 = (Entity)this.entityHashSet.removeObject(p_73028_1_);
+        Entity entity = (Entity)this.entitiesById.removeObject(entityID);
 
-        if (var2 != null)
+        if (entity != null)
         {
-            this.entityList.remove(var2);
-            this.removeEntity(var2);
+            this.entityList.remove(entity);
+            this.removeEntity(entity);
         }
 
-        return var2;
+        return entity;
     }
 
-    public boolean func_147492_c(int p_147492_1_, int p_147492_2_, int p_147492_3_, Block p_147492_4_, int p_147492_5_)
+    public boolean invalidateRegionAndSetBlock(BlockPos pos, IBlockState state)
     {
-        this.invalidateBlockReceiveRegion(p_147492_1_, p_147492_2_, p_147492_3_, p_147492_1_, p_147492_2_, p_147492_3_);
-        return super.setBlock(p_147492_1_, p_147492_2_, p_147492_3_, p_147492_4_, p_147492_5_, 3);
+        int i = pos.getX();
+        int j = pos.getY();
+        int k = pos.getZ();
+        this.invalidateBlockReceiveRegion(i, j, k, i, j, k);
+        return super.setBlockState(pos, state, 3);
     }
 
     /**
@@ -300,39 +307,33 @@ public class WorldClient extends World
      */
     protected void updateWeather()
     {
-        if (!this.provider.hasNoSky)
-        {
-            ;
-        }
     }
 
-    protected int func_152379_p()
+    protected int getRenderDistanceChunks()
     {
         return this.mc.gameSettings.renderDistanceChunks;
     }
 
-    public void doVoidFogParticles(int p_73029_1_, int p_73029_2_, int p_73029_3_)
+    public void doVoidFogParticles(int posX, int posY, int posZ)
     {
-        byte var4 = 16;
-        Random var5 = new Random();
+        int i = 16;
+        Random random = new Random();
+        ItemStack itemstack = this.mc.thePlayer.getHeldItem();
+        boolean flag = this.mc.playerController.getCurrentGameType() == WorldSettings.GameType.CREATIVE && itemstack != null && Block.getBlockFromItem(itemstack.getItem()) == Blocks.barrier;
+        BlockPos.MutableBlockPos blockpos$mutableblockpos = new BlockPos.MutableBlockPos();
 
-        for (int var6 = 0; var6 < 1000; ++var6)
+        for (int j = 0; j < 1000; ++j)
         {
-            int var7 = p_73029_1_ + this.rand.nextInt(var4) - this.rand.nextInt(var4);
-            int var8 = p_73029_2_ + this.rand.nextInt(var4) - this.rand.nextInt(var4);
-            int var9 = p_73029_3_ + this.rand.nextInt(var4) - this.rand.nextInt(var4);
-            Block var10 = this.getBlock(var7, var8, var9);
+            int k = posX + this.rand.nextInt(i) - this.rand.nextInt(i);
+            int l = posY + this.rand.nextInt(i) - this.rand.nextInt(i);
+            int i1 = posZ + this.rand.nextInt(i) - this.rand.nextInt(i);
+            blockpos$mutableblockpos.set(k, l, i1);
+            IBlockState iblockstate = this.getBlockState(blockpos$mutableblockpos);
+            iblockstate.getBlock().randomDisplayTick(this, blockpos$mutableblockpos, iblockstate, random);
 
-            if (var10.getMaterial() == Material.air)
+            if (flag && iblockstate.getBlock() == Blocks.barrier)
             {
-                if (this.rand.nextInt(8) > var8 && this.provider.getWorldHasVoidParticles())
-                {
-                    this.spawnParticle("depthsuspend", (double)((float)var7 + this.rand.nextFloat()), (double)((float)var8 + this.rand.nextFloat()), (double)((float)var9 + this.rand.nextFloat()), 0.0D, 0.0D, 0.0D);
-                }
-            }
-            else
-            {
-                var10.randomDisplayTick(this, var7, var8, var9, var5);
+                this.spawnParticle(EnumParticleTypes.BARRIER, (double)((float)k + 0.5F), (double)((float)l + 0.5F), (double)((float)i1 + 0.5F), 0.0D, 0.0D, 0.0D, new int[0]);
             }
         }
     }
@@ -343,57 +344,53 @@ public class WorldClient extends World
     public void removeAllEntities()
     {
         this.loadedEntityList.removeAll(this.unloadedEntityList);
-        int var1;
-        Entity var2;
-        int var3;
-        int var4;
 
-        for (var1 = 0; var1 < this.unloadedEntityList.size(); ++var1)
+        for (int i = 0; i < this.unloadedEntityList.size(); ++i)
         {
-            var2 = (Entity)this.unloadedEntityList.get(var1);
-            var3 = var2.chunkCoordX;
-            var4 = var2.chunkCoordZ;
+            Entity entity = (Entity)this.unloadedEntityList.get(i);
+            int j = entity.chunkCoordX;
+            int k = entity.chunkCoordZ;
 
-            if (var2.addedToChunk && this.chunkExists(var3, var4))
+            if (entity.addedToChunk && this.isChunkLoaded(j, k, true))
             {
-                this.getChunkFromChunkCoords(var3, var4).removeEntity(var2);
+                this.getChunkFromChunkCoords(j, k).removeEntity(entity);
             }
         }
 
-        for (var1 = 0; var1 < this.unloadedEntityList.size(); ++var1)
+        for (int l = 0; l < this.unloadedEntityList.size(); ++l)
         {
-            this.onEntityRemoved((Entity)this.unloadedEntityList.get(var1));
+            this.onEntityRemoved((Entity)this.unloadedEntityList.get(l));
         }
 
         this.unloadedEntityList.clear();
 
-        for (var1 = 0; var1 < this.loadedEntityList.size(); ++var1)
+        for (int i1 = 0; i1 < this.loadedEntityList.size(); ++i1)
         {
-            var2 = (Entity)this.loadedEntityList.get(var1);
+            Entity entity1 = (Entity)this.loadedEntityList.get(i1);
 
-            if (var2.ridingEntity != null)
+            if (entity1.ridingEntity != null)
             {
-                if (!var2.ridingEntity.isDead && var2.ridingEntity.riddenByEntity == var2)
+                if (!entity1.ridingEntity.isDead && entity1.ridingEntity.riddenByEntity == entity1)
                 {
                     continue;
                 }
 
-                var2.ridingEntity.riddenByEntity = null;
-                var2.ridingEntity = null;
+                entity1.ridingEntity.riddenByEntity = null;
+                entity1.ridingEntity = null;
             }
 
-            if (var2.isDead)
+            if (entity1.isDead)
             {
-                var3 = var2.chunkCoordX;
-                var4 = var2.chunkCoordZ;
+                int j1 = entity1.chunkCoordX;
+                int k1 = entity1.chunkCoordZ;
 
-                if (var2.addedToChunk && this.chunkExists(var3, var4))
+                if (entity1.addedToChunk && this.isChunkLoaded(j1, k1, true))
                 {
-                    this.getChunkFromChunkCoords(var3, var4).removeEntity(var2);
+                    this.getChunkFromChunkCoords(j1, k1).removeEntity(entity1);
                 }
 
-                this.loadedEntityList.remove(var1--);
-                this.onEntityRemoved(var2);
+                this.loadedEntityList.remove(i1--);
+                this.onEntityRemoved(entity1);
             }
         }
     }
@@ -401,81 +398,91 @@ public class WorldClient extends World
     /**
      * Adds some basic stats of the world to the given crash report.
      */
-    public CrashReportCategory addWorldInfoToCrashReport(CrashReport p_72914_1_)
+    public CrashReportCategory addWorldInfoToCrashReport(CrashReport report)
     {
-        CrashReportCategory var2 = super.addWorldInfoToCrashReport(p_72914_1_);
-        var2.addCrashSectionCallable("Forced entities", new Callable()
+        CrashReportCategory crashreportcategory = super.addWorldInfoToCrashReport(report);
+        crashreportcategory.addCrashSectionCallable("Forced entities", new Callable<String>()
         {
-            private static final String __OBFID = "CL_00000883";
             public String call()
             {
                 return WorldClient.this.entityList.size() + " total; " + WorldClient.this.entityList.toString();
             }
         });
-        var2.addCrashSectionCallable("Retry entities", new Callable()
+        crashreportcategory.addCrashSectionCallable("Retry entities", new Callable<String>()
         {
-            private static final String __OBFID = "CL_00000884";
             public String call()
             {
                 return WorldClient.this.entitySpawnQueue.size() + " total; " + WorldClient.this.entitySpawnQueue.toString();
             }
         });
-        var2.addCrashSectionCallable("Server brand", new Callable()
+        crashreportcategory.addCrashSectionCallable("Server brand", new Callable<String>()
         {
-            private static final String __OBFID = "CL_00000885";
-            public String call()
+            public String call() throws Exception
             {
-                return WorldClient.this.mc.thePlayer.func_142021_k();
+                return WorldClient.this.mc.thePlayer.getClientBrand();
             }
         });
-        var2.addCrashSectionCallable("Server type", new Callable()
+        crashreportcategory.addCrashSectionCallable("Server type", new Callable<String>()
         {
-            private static final String __OBFID = "CL_00000886";
-            public String call()
+            public String call() throws Exception
             {
                 return WorldClient.this.mc.getIntegratedServer() == null ? "Non-integrated multiplayer server" : "Integrated singleplayer server";
             }
         });
-        return var2;
+        return crashreportcategory;
+    }
+
+    /**
+     * Plays a sound at the specified position.
+     *  
+     * @param pos The position where to play the sound
+     * @param soundName The name of the sound to play
+     * @param volume The volume of the sound
+     * @param pitch The pitch of the sound
+     * @param distanceDelay True if the sound is delayed over distance
+     */
+    public void playSoundAtPos(BlockPos pos, String soundName, float volume, float pitch, boolean distanceDelay)
+    {
+        this.playSound((double)pos.getX() + 0.5D, (double)pos.getY() + 0.5D, (double)pos.getZ() + 0.5D, soundName, volume, pitch, distanceDelay);
     }
 
     /**
      * par8 is loudness, all pars passed to minecraftInstance.sndManager.playSound
      */
-    public void playSound(double p_72980_1_, double p_72980_3_, double p_72980_5_, String p_72980_7_, float p_72980_8_, float p_72980_9_, boolean p_72980_10_)
+    public void playSound(double x, double y, double z, String soundName, float volume, float pitch, boolean distanceDelay)
     {
-        double var11 = this.mc.renderViewEntity.getDistanceSq(p_72980_1_, p_72980_3_, p_72980_5_);
-        PositionedSoundRecord var13 = new PositionedSoundRecord(new ResourceLocation(p_72980_7_), p_72980_8_, p_72980_9_, (float)p_72980_1_, (float)p_72980_3_, (float)p_72980_5_);
+        double d0 = this.mc.getRenderViewEntity().getDistanceSq(x, y, z);
+        PositionedSoundRecord positionedsoundrecord = new PositionedSoundRecord(new ResourceLocation(soundName), volume, pitch, (float)x, (float)y, (float)z);
 
-        if (p_72980_10_ && var11 > 100.0D)
+        if (distanceDelay && d0 > 100.0D)
         {
-            double var14 = Math.sqrt(var11) / 40.0D;
-            this.mc.getSoundHandler().playDelayedSound(var13, (int)(var14 * 20.0D));
+            double d1 = Math.sqrt(d0) / 40.0D;
+            this.mc.getSoundHandler().playDelayedSound(positionedsoundrecord, (int)(d1 * 20.0D));
         }
         else
         {
-            this.mc.getSoundHandler().playSound(var13);
+            this.mc.getSoundHandler().playSound(positionedsoundrecord);
         }
     }
 
-    public void makeFireworks(double p_92088_1_, double p_92088_3_, double p_92088_5_, double p_92088_7_, double p_92088_9_, double p_92088_11_, NBTTagCompound p_92088_13_)
+    public void makeFireworks(double x, double y, double z, double motionX, double motionY, double motionZ, NBTTagCompound compund)
     {
-        this.mc.effectRenderer.addEffect(new EntityFireworkStarterFX(this, p_92088_1_, p_92088_3_, p_92088_5_, p_92088_7_, p_92088_9_, p_92088_11_, this.mc.effectRenderer, p_92088_13_));
+        this.mc.effectRenderer.addEffect(new EntityFirework.StarterFX(this, x, y, z, motionX, motionY, motionZ, this.mc.effectRenderer, compund));
     }
 
-    public void setWorldScoreboard(Scoreboard p_96443_1_)
+    public void setWorldScoreboard(Scoreboard scoreboardIn)
     {
-        this.worldScoreboard = p_96443_1_;
+        this.worldScoreboard = scoreboardIn;
     }
 
     /**
      * Sets the world time.
      */
-    public void setWorldTime(long p_72877_1_)
+    public void setWorldTime(long time)
     {
-        if (p_72877_1_ < 0L)
+        if (time < 0L)
         {
-            p_72877_1_ = -p_72877_1_;
+            time = -time;
             this.getGameRules().setOrCreateGameRule("doDaylightCycle", "false");
         }
         else
@@ -483,6 +490,49 @@ public class WorldClient extends World
             this.getGameRules().setOrCreateGameRule("doDaylightCycle", "true");
         }
 
-        super.setWorldTime(p_72877_1_);
+        super.setWorldTime(time);
+    }
+
+    public int getCombinedLight(BlockPos pos, int lightValue)
+    {
+        int i = super.getCombinedLight(pos, lightValue);
+
+        if (Config.isDynamicLights())
+        {
+            i = DynamicLights.getCombinedLight(pos, i);
+        }
+
+        return i;
+    }
+
+    /**
+     * Sets the block state at a given location. Flag 1 will cause a block update. Flag 2 will send the change to
+     * clients (you almost always want this). Flag 4 prevents the block from being re-rendered, if this is a client
+     * world. Flags can be added together.
+     */
+    public boolean setBlockState(BlockPos pos, IBlockState newState, int flags)
+    {
+        this.playerUpdate = this.isPlayerActing();
+        boolean flag = super.setBlockState(pos, newState, flags);
+        this.playerUpdate = false;
+        return flag;
+    }
+
+    private boolean isPlayerActing()
+    {
+        if (this.mc.playerController instanceof PlayerControllerOF)
+        {
+            PlayerControllerOF playercontrollerof = (PlayerControllerOF)this.mc.playerController;
+            return playercontrollerof.isActing();
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    public boolean isPlayerUpdate()
+    {
+        return this.playerUpdate;
     }
 }

@@ -1,91 +1,102 @@
 package net.minecraft.tileentity;
 
-import java.util.ArrayList;
-import java.util.Iterator;
+import com.google.common.collect.Lists;
 import java.util.List;
 import net.minecraft.block.Block;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.AxisAlignedBB;
-import net.minecraft.util.Facing;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.ITickable;
 
-public class TileEntityPiston extends TileEntity
+public class TileEntityPiston extends TileEntity implements ITickable
 {
-    private Block field_145869_a;
-    private int field_145876_i;
-    private int field_145874_j;
-    private boolean field_145875_k;
-    private boolean field_145872_l;
-    private float field_145873_m;
-    private float field_145870_n;
-    private List field_145871_o = new ArrayList();
-    private static final String __OBFID = "CL_00000369";
+    private IBlockState pistonState;
+    private EnumFacing pistonFacing;
 
-    public TileEntityPiston() {}
+    /** if this piston is extending or not */
+    private boolean extending;
+    private boolean shouldHeadBeRendered;
+    private float progress;
 
-    public TileEntityPiston(Block p_i45444_1_, int p_i45444_2_, int p_i45444_3_, boolean p_i45444_4_, boolean p_i45444_5_)
+    /** the progress in (de)extending */
+    private float lastProgress;
+    private List<Entity> field_174933_k = Lists.<Entity>newArrayList();
+
+    public TileEntityPiston()
     {
-        this.field_145869_a = p_i45444_1_;
-        this.field_145876_i = p_i45444_2_;
-        this.field_145874_j = p_i45444_3_;
-        this.field_145875_k = p_i45444_4_;
-        this.field_145872_l = p_i45444_5_;
     }
 
-    public Block func_145861_a()
+    public TileEntityPiston(IBlockState pistonStateIn, EnumFacing pistonFacingIn, boolean extendingIn, boolean shouldHeadBeRenderedIn)
     {
-        return this.field_145869_a;
+        this.pistonState = pistonStateIn;
+        this.pistonFacing = pistonFacingIn;
+        this.extending = extendingIn;
+        this.shouldHeadBeRendered = shouldHeadBeRenderedIn;
+    }
+
+    public IBlockState getPistonState()
+    {
+        return this.pistonState;
     }
 
     public int getBlockMetadata()
     {
-        return this.field_145876_i;
+        return 0;
     }
 
-    public boolean func_145868_b()
+    /**
+     * Returns true if a piston is extending
+     */
+    public boolean isExtending()
     {
-        return this.field_145875_k;
+        return this.extending;
     }
 
-    public int func_145864_c()
+    public EnumFacing getFacing()
     {
-        return this.field_145874_j;
+        return this.pistonFacing;
     }
 
-    public boolean func_145867_d()
+    public boolean shouldPistonHeadBeRendered()
     {
-        return this.field_145872_l;
+        return this.shouldHeadBeRendered;
     }
 
-    public float func_145860_a(float p_145860_1_)
+    /**
+     * Get interpolated progress value (between lastProgress and progress) given the fractional time between ticks as an
+     * argument
+     */
+    public float getProgress(float ticks)
     {
-        if (p_145860_1_ > 1.0F)
+        if (ticks > 1.0F)
         {
-            p_145860_1_ = 1.0F;
+            ticks = 1.0F;
         }
 
-        return this.field_145870_n + (this.field_145873_m - this.field_145870_n) * p_145860_1_;
+        return this.lastProgress + (this.progress - this.lastProgress) * ticks;
     }
 
-    public float func_145865_b(float p_145865_1_)
+    public float getOffsetX(float ticks)
     {
-        return this.field_145875_k ? (this.func_145860_a(p_145865_1_) - 1.0F) * (float)Facing.offsetsXForSide[this.field_145874_j] : (1.0F - this.func_145860_a(p_145865_1_)) * (float)Facing.offsetsXForSide[this.field_145874_j];
+        return this.extending ? (this.getProgress(ticks) - 1.0F) * (float)this.pistonFacing.getFrontOffsetX() : (1.0F - this.getProgress(ticks)) * (float)this.pistonFacing.getFrontOffsetX();
     }
 
-    public float func_145862_c(float p_145862_1_)
+    public float getOffsetY(float ticks)
     {
-        return this.field_145875_k ? (this.func_145860_a(p_145862_1_) - 1.0F) * (float)Facing.offsetsYForSide[this.field_145874_j] : (1.0F - this.func_145860_a(p_145862_1_)) * (float)Facing.offsetsYForSide[this.field_145874_j];
+        return this.extending ? (this.getProgress(ticks) - 1.0F) * (float)this.pistonFacing.getFrontOffsetY() : (1.0F - this.getProgress(ticks)) * (float)this.pistonFacing.getFrontOffsetY();
     }
 
-    public float func_145859_d(float p_145859_1_)
+    public float getOffsetZ(float ticks)
     {
-        return this.field_145875_k ? (this.func_145860_a(p_145859_1_) - 1.0F) * (float)Facing.offsetsZForSide[this.field_145874_j] : (1.0F - this.func_145860_a(p_145859_1_)) * (float)Facing.offsetsZForSide[this.field_145874_j];
+        return this.extending ? (this.getProgress(ticks) - 1.0F) * (float)this.pistonFacing.getFrontOffsetZ() : (1.0F - this.getProgress(ticks)) * (float)this.pistonFacing.getFrontOffsetZ();
     }
 
-    private void func_145863_a(float p_145863_1_, float p_145863_2_)
+    private void launchWithSlimeBlock(float p_145863_1_, float p_145863_2_)
     {
-        if (this.field_145875_k)
+        if (this.extending)
         {
             p_145863_1_ = 1.0F - p_145863_1_;
         }
@@ -94,93 +105,115 @@ public class TileEntityPiston extends TileEntity
             --p_145863_1_;
         }
 
-        AxisAlignedBB var3 = Blocks.piston_extension.func_149964_a(this.worldObj, this.field_145851_c, this.field_145848_d, this.field_145849_e, this.field_145869_a, p_145863_1_, this.field_145874_j);
+        AxisAlignedBB axisalignedbb = Blocks.piston_extension.getBoundingBox(this.worldObj, this.pos, this.pistonState, p_145863_1_, this.pistonFacing);
 
-        if (var3 != null)
+        if (axisalignedbb != null)
         {
-            List var4 = this.worldObj.getEntitiesWithinAABBExcludingEntity((Entity)null, var3);
+            List<Entity> list = this.worldObj.getEntitiesWithinAABBExcludingEntity((Entity)null, axisalignedbb);
 
-            if (!var4.isEmpty())
+            if (!list.isEmpty())
             {
-                this.field_145871_o.addAll(var4);
-                Iterator var5 = this.field_145871_o.iterator();
+                this.field_174933_k.addAll(list);
 
-                while (var5.hasNext())
+                for (Entity entity : this.field_174933_k)
                 {
-                    Entity var6 = (Entity)var5.next();
-                    var6.moveEntity((double)(p_145863_2_ * (float)Facing.offsetsXForSide[this.field_145874_j]), (double)(p_145863_2_ * (float)Facing.offsetsYForSide[this.field_145874_j]), (double)(p_145863_2_ * (float)Facing.offsetsZForSide[this.field_145874_j]));
+                    if (this.pistonState.getBlock() == Blocks.slime_block && this.extending)
+                    {
+                        switch (this.pistonFacing.getAxis())
+                        {
+                            case X:
+                                entity.motionX = (double)this.pistonFacing.getFrontOffsetX();
+                                break;
+
+                            case Y:
+                                entity.motionY = (double)this.pistonFacing.getFrontOffsetY();
+                                break;
+
+                            case Z:
+                                entity.motionZ = (double)this.pistonFacing.getFrontOffsetZ();
+                        }
+                    }
+                    else
+                    {
+                        entity.moveEntity((double)(p_145863_2_ * (float)this.pistonFacing.getFrontOffsetX()), (double)(p_145863_2_ * (float)this.pistonFacing.getFrontOffsetY()), (double)(p_145863_2_ * (float)this.pistonFacing.getFrontOffsetZ()));
+                    }
                 }
 
-                this.field_145871_o.clear();
+                this.field_174933_k.clear();
             }
         }
     }
 
-    public void func_145866_f()
+    /**
+     * removes a piston's tile entity (and if the piston is moving, stops it)
+     */
+    public void clearPistonTileEntity()
     {
-        if (this.field_145870_n < 1.0F && this.worldObj != null)
+        if (this.lastProgress < 1.0F && this.worldObj != null)
         {
-            this.field_145870_n = this.field_145873_m = 1.0F;
-            this.worldObj.removeTileEntity(this.field_145851_c, this.field_145848_d, this.field_145849_e);
+            this.lastProgress = this.progress = 1.0F;
+            this.worldObj.removeTileEntity(this.pos);
             this.invalidate();
 
-            if (this.worldObj.getBlock(this.field_145851_c, this.field_145848_d, this.field_145849_e) == Blocks.piston_extension)
+            if (this.worldObj.getBlockState(this.pos).getBlock() == Blocks.piston_extension)
             {
-                this.worldObj.setBlock(this.field_145851_c, this.field_145848_d, this.field_145849_e, this.field_145869_a, this.field_145876_i, 3);
-                this.worldObj.func_147460_e(this.field_145851_c, this.field_145848_d, this.field_145849_e, this.field_145869_a);
+                this.worldObj.setBlockState(this.pos, this.pistonState, 3);
+                this.worldObj.notifyBlockOfStateChange(this.pos, this.pistonState.getBlock());
             }
         }
     }
 
-    public void updateEntity()
+    /**
+     * Like the old updateEntity(), except more generic.
+     */
+    public void update()
     {
-        this.field_145870_n = this.field_145873_m;
+        this.lastProgress = this.progress;
 
-        if (this.field_145870_n >= 1.0F)
+        if (this.lastProgress >= 1.0F)
         {
-            this.func_145863_a(1.0F, 0.25F);
-            this.worldObj.removeTileEntity(this.field_145851_c, this.field_145848_d, this.field_145849_e);
+            this.launchWithSlimeBlock(1.0F, 0.25F);
+            this.worldObj.removeTileEntity(this.pos);
             this.invalidate();
 
-            if (this.worldObj.getBlock(this.field_145851_c, this.field_145848_d, this.field_145849_e) == Blocks.piston_extension)
+            if (this.worldObj.getBlockState(this.pos).getBlock() == Blocks.piston_extension)
             {
-                this.worldObj.setBlock(this.field_145851_c, this.field_145848_d, this.field_145849_e, this.field_145869_a, this.field_145876_i, 3);
-                this.worldObj.func_147460_e(this.field_145851_c, this.field_145848_d, this.field_145849_e, this.field_145869_a);
+                this.worldObj.setBlockState(this.pos, this.pistonState, 3);
+                this.worldObj.notifyBlockOfStateChange(this.pos, this.pistonState.getBlock());
             }
         }
         else
         {
-            this.field_145873_m += 0.5F;
+            this.progress += 0.5F;
 
-            if (this.field_145873_m >= 1.0F)
+            if (this.progress >= 1.0F)
             {
-                this.field_145873_m = 1.0F;
+                this.progress = 1.0F;
             }
 
-            if (this.field_145875_k)
+            if (this.extending)
             {
-                this.func_145863_a(this.field_145873_m, this.field_145873_m - this.field_145870_n + 0.0625F);
+                this.launchWithSlimeBlock(this.progress, this.progress - this.lastProgress + 0.0625F);
             }
         }
     }
 
-    public void readFromNBT(NBTTagCompound p_145839_1_)
+    public void readFromNBT(NBTTagCompound compound)
     {
-        super.readFromNBT(p_145839_1_);
-        this.field_145869_a = Block.getBlockById(p_145839_1_.getInteger("blockId"));
-        this.field_145876_i = p_145839_1_.getInteger("blockData");
-        this.field_145874_j = p_145839_1_.getInteger("facing");
-        this.field_145870_n = this.field_145873_m = p_145839_1_.getFloat("progress");
-        this.field_145875_k = p_145839_1_.getBoolean("extending");
+        super.readFromNBT(compound);
+        this.pistonState = Block.getBlockById(compound.getInteger("blockId")).getStateFromMeta(compound.getInteger("blockData"));
+        this.pistonFacing = EnumFacing.getFront(compound.getInteger("facing"));
+        this.lastProgress = this.progress = compound.getFloat("progress");
+        this.extending = compound.getBoolean("extending");
     }
 
-    public void writeToNBT(NBTTagCompound p_145841_1_)
+    public void writeToNBT(NBTTagCompound compound)
     {
-        super.writeToNBT(p_145841_1_);
-        p_145841_1_.setInteger("blockId", Block.getIdFromBlock(this.field_145869_a));
-        p_145841_1_.setInteger("blockData", this.field_145876_i);
-        p_145841_1_.setInteger("facing", this.field_145874_j);
-        p_145841_1_.setFloat("progress", this.field_145870_n);
-        p_145841_1_.setBoolean("extending", this.field_145875_k);
+        super.writeToNBT(compound);
+        compound.setInteger("blockId", Block.getIdFromBlock(this.pistonState.getBlock()));
+        compound.setInteger("blockData", this.pistonState.getBlock().getMetaFromState(this.pistonState));
+        compound.setInteger("facing", this.pistonFacing.getIndex());
+        compound.setFloat("progress", this.lastProgress);
+        compound.setBoolean("extending", this.extending);
     }
 }

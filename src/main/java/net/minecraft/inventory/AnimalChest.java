@@ -1,16 +1,16 @@
 package net.minecraft.inventory;
 
+import net.minecraft.util.IChatComponent;
+
 public class AnimalChest extends InventoryBasic
 {
-    private static final String __OBFID = "CL_00001731";
-
-    public AnimalChest(String p_i1796_1_, int p_i1796_2_)
+    public AnimalChest(String inventoryName, int slotCount)
     {
-        super(p_i1796_1_, false, p_i1796_2_);
+        super(inventoryName, false, slotCount);
     }
 
-    public AnimalChest(String p_i1797_1_, boolean p_i1797_2_, int p_i1797_3_)
+    public AnimalChest(IChatComponent invTitle, int slotCount)
     {
-        super(p_i1797_1_, p_i1797_2_, p_i1797_3_);
+        super(invTitle, slotCount);
     }
 }

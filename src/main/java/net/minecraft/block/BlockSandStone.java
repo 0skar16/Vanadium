@@ -1,80 +1,130 @@
 package net.minecraft.block;
 
 import java.util.List;
+import net.minecraft.block.material.MapColor;
 import net.minecraft.block.material.Material;
-import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.block.properties.IProperty;
+import net.minecraft.block.properties.PropertyEnum;
+import net.minecraft.block.state.BlockState;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.IIcon;
+import net.minecraft.util.IStringSerializable;
 
 public class BlockSandStone extends Block
 {
-    public static final String[] field_150157_a = new String[] {"default", "chiseled", "smooth"};
-    private static final String[] field_150156_b = new String[] {"normal", "carved", "smooth"};
-    private IIcon[] field_150158_M;
-    private IIcon field_150159_N;
-    private IIcon field_150160_O;
-    private static final String __OBFID = "CL_00000304";
+    public static final PropertyEnum<BlockSandStone.EnumType> TYPE = PropertyEnum.<BlockSandStone.EnumType>create("type", BlockSandStone.EnumType.class);
 
     public BlockSandStone()
     {
         super(Material.rock);
+        this.setDefaultState(this.blockState.getBaseState().withProperty(TYPE, BlockSandStone.EnumType.DEFAULT));
         this.setCreativeTab(CreativeTabs.tabBlock);
     }
 
     /**
-     * Gets the block's texture. Args: side, meta
+     * Gets the metadata of the item this Block can drop. This method is called when the block gets destroyed. It
+     * returns the metadata of the dropped item based on the old metadata of the block.
      */
-    public IIcon getIcon(int p_149691_1_, int p_149691_2_)
+    public int damageDropped(IBlockState state)
     {
-        if (p_149691_1_ != 1 && (p_149691_1_ != 0 || p_149691_2_ != 1 && p_149691_2_ != 2))
-        {
-            if (p_149691_1_ == 0)
-            {
-                return this.field_150160_O;
-            }
-            else
-            {
-                if (p_149691_2_ < 0 || p_149691_2_ >= this.field_150158_M.length)
-                {
-                    p_149691_2_ = 0;
-                }
+        return ((BlockSandStone.EnumType)state.getValue(TYPE)).getMetadata();
+    }
 
-                return this.field_150158_M[p_149691_2_];
-            }
-        }
-        else
+    /**
+     * returns a list of blocks with the same ID, but different meta (eg: wood returns 4 blocks)
+     */
+    public void getSubBlocks(Item itemIn, CreativeTabs tab, List<ItemStack> list)
+    {
+        for (BlockSandStone.EnumType blocksandstone$enumtype : BlockSandStone.EnumType.values())
         {
-            return this.field_150159_N;
+            list.add(new ItemStack(itemIn, 1, blocksandstone$enumtype.getMetadata()));
         }
     }
 
     /**
-     * Determines the damage on the item the block drops. Used in cloth and wood.
+     * Get the MapColor for this Block and the given BlockState
      */
-    public int damageDropped(int p_149692_1_)
+    public MapColor getMapColor(IBlockState state)
     {
-        return p_149692_1_;
+        return MapColor.sandColor;
     }
 
-    public void getSubBlocks(Item p_149666_1_, CreativeTabs p_149666_2_, List p_149666_3_)
+    /**
+     * Convert the given metadata into a BlockState for this Block
+     */
+    public IBlockState getStateFromMeta(int meta)
     {
-        p_149666_3_.add(new ItemStack(p_149666_1_, 1, 0));
-        p_149666_3_.add(new ItemStack(p_149666_1_, 1, 1));
-        p_149666_3_.add(new ItemStack(p_149666_1_, 1, 2));
+        return this.getDefaultState().withProperty(TYPE, BlockSandStone.EnumType.byMetadata(meta));
     }
 
-    public void registerBlockIcons(IIconRegister p_149651_1_)
+    /**
+     * Convert the BlockState into the correct metadata value
+     */
+    public int getMetaFromState(IBlockState state)
     {
-        this.field_150158_M = new IIcon[field_150156_b.length];
+        return ((BlockSandStone.EnumType)state.getValue(TYPE)).getMetadata();
+    }
 
-        for (int var2 = 0; var2 < this.field_150158_M.length; ++var2)
+    protected BlockState createBlockState()
+    {
+        return new BlockState(this, new IProperty[] {TYPE});
+    }
+
+    public static enum EnumType implements IStringSerializable
+    {
+        DEFAULT(0, "sandstone", "default"),
+        CHISELED(1, "chiseled_sandstone", "chiseled"),
+        SMOOTH(2, "smooth_sandstone", "smooth");
+
+        private static final BlockSandStone.EnumType[] META_LOOKUP = new BlockSandStone.EnumType[values().length];
+        private final int metadata;
+        private final String name;
+        private final String unlocalizedName;
+
+        private EnumType(int meta, String name, String unlocalizedName)
         {
-            this.field_150158_M[var2] = p_149651_1_.registerIcon(this.getTextureName() + "_" + field_150156_b[var2]);
+            this.metadata = meta;
+            this.name = name;
+            this.unlocalizedName = unlocalizedName;
         }
 
-        this.field_150159_N = p_149651_1_.registerIcon(this.getTextureName() + "_top");
-        this.field_150160_O = p_149651_1_.registerIcon(this.getTextureName() + "_bottom");
+        public int getMetadata()
+        {
+            return this.metadata;
+        }
+
+        public String toString()
+        {
+            return this.name;
+        }
+
+        public static BlockSandStone.EnumType byMetadata(int meta)
+        {
+            if (meta < 0 || meta >= META_LOOKUP.length)
+            {
+                meta = 0;
+            }
+
+            return META_LOOKUP[meta];
+        }
+
+        public String getName()
+        {
+            return this.name;
+        }
+
+        public String getUnlocalizedName()
+        {
+            return this.unlocalizedName;
+        }
+
+        static {
+            for (BlockSandStone.EnumType blocksandstone$enumtype : values())
+            {
+                META_LOOKUP[blocksandstone$enumtype.getMetadata()] = blocksandstone$enumtype;
+            }
+        }
     }
 }

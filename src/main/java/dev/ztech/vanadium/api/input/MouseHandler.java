@@ -25,7 +25,7 @@ public class MouseHandler {
         x = Mouse.getX();
         y = Mouse.getY();
         Minecraft mc = Minecraft.getMinecraft();
-        ScaledResolution sr = new ScaledResolution(mc, mc.displayWidth, mc.displayHeight);
+        ScaledResolution sr = new ScaledResolution(mc);
         y = mc.displayHeight-y;
         x = (int)(((double)x/(double)mc.displayWidth)*(double)sr.getScaledWidth());
         y = (int)(((double)y/(double)mc.displayHeight)*(double)sr.getScaledHeight());

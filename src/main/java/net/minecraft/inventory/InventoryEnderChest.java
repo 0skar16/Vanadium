@@ -9,85 +9,82 @@ import net.minecraft.tileentity.TileEntityEnderChest;
 public class InventoryEnderChest extends InventoryBasic
 {
     private TileEntityEnderChest associatedChest;
-    private static final String __OBFID = "CL_00001759";
 
     public InventoryEnderChest()
     {
         super("container.enderchest", false, 27);
     }
 
-    public void func_146031_a(TileEntityEnderChest p_146031_1_)
+    public void setChestTileEntity(TileEntityEnderChest chestTileEntity)
     {
-        this.associatedChest = p_146031_1_;
+        this.associatedChest = chestTileEntity;
     }
 
     public void loadInventoryFromNBT(NBTTagList p_70486_1_)
     {
-        int var2;
-
-        for (var2 = 0; var2 < this.getSizeInventory(); ++var2)
+        for (int i = 0; i < this.getSizeInventory(); ++i)
         {
-            this.setInventorySlotContents(var2, (ItemStack)null);
+            this.setInventorySlotContents(i, (ItemStack)null);
         }
 
-        for (var2 = 0; var2 < p_70486_1_.tagCount(); ++var2)
+        for (int k = 0; k < p_70486_1_.tagCount(); ++k)
         {
-            NBTTagCompound var3 = p_70486_1_.getCompoundTagAt(var2);
-            int var4 = var3.getByte("Slot") & 255;
+            NBTTagCompound nbttagcompound = p_70486_1_.getCompoundTagAt(k);
+            int j = nbttagcompound.getByte("Slot") & 255;
 
-            if (var4 >= 0 && var4 < this.getSizeInventory())
+            if (j >= 0 && j < this.getSizeInventory())
             {
-                this.setInventorySlotContents(var4, ItemStack.loadItemStackFromNBT(var3));
+                this.setInventorySlotContents(j, ItemStack.loadItemStackFromNBT(nbttagcompound));
             }
         }
     }
 
     public NBTTagList saveInventoryToNBT()
     {
-        NBTTagList var1 = new NBTTagList();
+        NBTTagList nbttaglist = new NBTTagList();
 
-        for (int var2 = 0; var2 < this.getSizeInventory(); ++var2)
+        for (int i = 0; i < this.getSizeInventory(); ++i)
         {
-            ItemStack var3 = this.getStackInSlot(var2);
+            ItemStack itemstack = this.getStackInSlot(i);
 
-            if (var3 != null)
+            if (itemstack != null)
             {
-                NBTTagCompound var4 = new NBTTagCompound();
-                var4.setByte("Slot", (byte)var2);
-                var3.writeToNBT(var4);
-                var1.appendTag(var4);
+                NBTTagCompound nbttagcompound = new NBTTagCompound();
+                nbttagcompound.setByte("Slot", (byte)i);
+                itemstack.writeToNBT(nbttagcompound);
+                nbttaglist.appendTag(nbttagcompound);
             }
         }
 
-        return var1;
+        return nbttaglist;
     }
 
     /**
      * Do not make give this method the name canInteractWith because it clashes with Container
      */
-    public boolean isUseableByPlayer(EntityPlayer p_70300_1_)
+    public boolean isUseableByPlayer(EntityPlayer player)
     {
-        return this.associatedChest != null && !this.associatedChest.func_145971_a(p_70300_1_) ? false : super.isUseableByPlayer(p_70300_1_);
+        return this.associatedChest != null && !this.associatedChest.canBeUsed(player) ? false : super.isUseableByPlayer(player);
     }
 
-    public void openInventory()
+    public void openInventory(EntityPlayer player)
     {
         if (this.associatedChest != null)
         {
-            this.associatedChest.func_145969_a();
+            this.associatedChest.openChest();
         }
 
-        super.openInventory();
+        super.openInventory(player);
     }
 
-    public void closeInventory()
+    public void closeInventory(EntityPlayer player)
     {
         if (this.associatedChest != null)
         {
-            this.associatedChest.func_145970_b();
+            this.associatedChest.closeChest();
         }
 
-        super.closeInventory();
+        super.closeInventory(player);
         this.associatedChest = null;
     }
 }

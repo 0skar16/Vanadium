@@ -2,69 +2,59 @@ package net.minecraft.network.play.server;
 
 import java.io.IOException;
 import net.minecraft.entity.Entity;
-import net.minecraft.network.INetHandler;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 import net.minecraft.world.World;
 
-public class S19PacketEntityHeadLook extends Packet
+public class S19PacketEntityHeadLook implements Packet<INetHandlerPlayClient>
 {
-    private int field_149384_a;
-    private byte field_149383_b;
-    private static final String __OBFID = "CL_00001323";
+    private int entityId;
+    private byte yaw;
 
-    public S19PacketEntityHeadLook() {}
-
-    public S19PacketEntityHeadLook(Entity p_i45214_1_, byte p_i45214_2_)
+    public S19PacketEntityHeadLook()
     {
-        this.field_149384_a = p_i45214_1_.getEntityId();
-        this.field_149383_b = p_i45214_2_;
+    }
+
+    public S19PacketEntityHeadLook(Entity entityIn, byte p_i45214_2_)
+    {
+        this.entityId = entityIn.getEntityId();
+        this.yaw = p_i45214_2_;
     }
 
     /**
      * Reads the raw packet data from the data stream.
      */
-    public void readPacketData(PacketBuffer p_148837_1_) throws IOException
+    public void readPacketData(PacketBuffer buf) throws IOException
     {
-        this.field_149384_a = p_148837_1_.readInt();
-        this.field_149383_b = p_148837_1_.readByte();
+        this.entityId = buf.readVarIntFromBuffer();
+        this.yaw = buf.readByte();
     }
 
     /**
      * Writes the raw packet data to the data stream.
      */
-    public void writePacketData(PacketBuffer p_148840_1_) throws IOException
+    public void writePacketData(PacketBuffer buf) throws IOException
     {
-        p_148840_1_.writeInt(this.field_149384_a);
-        p_148840_1_.writeByte(this.field_149383_b);
-    }
-
-    public void processPacket(INetHandlerPlayClient p_148833_1_)
-    {
-        p_148833_1_.handleEntityHeadLook(this);
+        buf.writeVarIntToBuffer(this.entityId);
+        buf.writeByte(this.yaw);
     }
 
     /**
-     * Returns a string formatted as comma separated [field]=[value] values. Used by Minecraft for logging purposes.
+     * Passes this Packet on to the NetHandler for processing.
      */
-    public String serialize()
+    public void processPacket(INetHandlerPlayClient handler)
     {
-        return String.format("id=%d, rot=%d", new Object[] {Integer.valueOf(this.field_149384_a), Byte.valueOf(this.field_149383_b)});
+        handler.handleEntityHeadLook(this);
     }
 
-    public Entity func_149381_a(World p_149381_1_)
+    public Entity getEntity(World worldIn)
     {
-        return p_149381_1_.getEntityByID(this.field_149384_a);
+        return worldIn.getEntityByID(this.entityId);
     }
 
-    public byte func_149380_c()
+    public byte getYaw()
     {
-        return this.field_149383_b;
-    }
-
-    public void processPacket(INetHandler p_148833_1_)
-    {
-        this.processPacket((INetHandlerPlayClient)p_148833_1_);
+        return this.yaw;
     }
 }

@@ -1,114 +1,147 @@
 package net.minecraft.client.renderer.tileentity;
 
-import net.minecraft.client.renderer.OpenGlHelper;
+import java.util.List;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.tileentity.TileEntity;
+import net.minecraft.client.renderer.WorldRenderer;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.src.Config;
 import net.minecraft.tileentity.TileEntityBeacon;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.ResourceLocation;
+import net.optifine.shaders.Shaders;
 import org.lwjgl.opengl.GL11;
 
-public class TileEntityBeaconRenderer extends TileEntitySpecialRenderer
+public class TileEntityBeaconRenderer extends TileEntitySpecialRenderer<TileEntityBeacon>
 {
-    private static final ResourceLocation field_147523_b = new ResourceLocation("textures/entity/beacon_beam.png");
-    private static final String __OBFID = "CL_00000962";
+    private static final ResourceLocation beaconBeam = new ResourceLocation("textures/entity/beacon_beam.png");
 
-    public void renderTileEntityAt(TileEntityBeacon p_147500_1_, double p_147500_2_, double p_147500_4_, double p_147500_6_, float p_147500_8_)
+    public void renderTileEntityAt(TileEntityBeacon te, double x, double y, double z, float partialTicks, int destroyStage)
     {
-        float var9 = p_147500_1_.func_146002_i();
-        GL11.glAlphaFunc(GL11.GL_GREATER, 0.1F);
+        float f = te.shouldBeamRender();
 
-        if (var9 > 0.0F)
+        if ((double)f > 0.0D)
         {
-            Tessellator var10 = Tessellator.instance;
-            this.bindTexture(field_147523_b);
-            GL11.glTexParameterf(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, 10497.0F);
-            GL11.glTexParameterf(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, 10497.0F);
-            GL11.glDisable(GL11.GL_LIGHTING);
-            GL11.glDisable(GL11.GL_CULL_FACE);
-            GL11.glDisable(GL11.GL_BLEND);
-            GL11.glDepthMask(true);
-            OpenGlHelper.glBlendFunc(770, 1, 1, 0);
-            float var11 = (float)p_147500_1_.getWorldObj().getTotalWorldTime() + p_147500_8_;
-            float var12 = -var11 * 0.2F - (float)MathHelper.floor_float(-var11 * 0.1F);
-            byte var13 = 1;
-            double var14 = (double)var11 * 0.025D * (1.0D - (double)(var13 & 1) * 2.5D);
-            var10.startDrawingQuads();
-            var10.setColorRGBA(255, 255, 255, 32);
-            double var16 = (double)var13 * 0.2D;
-            double var18 = 0.5D + Math.cos(var14 + 2.356194490192345D) * var16;
-            double var20 = 0.5D + Math.sin(var14 + 2.356194490192345D) * var16;
-            double var22 = 0.5D + Math.cos(var14 + (Math.PI / 4D)) * var16;
-            double var24 = 0.5D + Math.sin(var14 + (Math.PI / 4D)) * var16;
-            double var26 = 0.5D + Math.cos(var14 + 3.9269908169872414D) * var16;
-            double var28 = 0.5D + Math.sin(var14 + 3.9269908169872414D) * var16;
-            double var30 = 0.5D + Math.cos(var14 + 5.497787143782138D) * var16;
-            double var32 = 0.5D + Math.sin(var14 + 5.497787143782138D) * var16;
-            double var34 = (double)(256.0F * var9);
-            double var36 = 0.0D;
-            double var38 = 1.0D;
-            double var40 = (double)(-1.0F + var12);
-            double var42 = (double)(256.0F * var9) * (0.5D / var16) + var40;
-            var10.addVertexWithUV(p_147500_2_ + var18, p_147500_4_ + var34, p_147500_6_ + var20, var38, var42);
-            var10.addVertexWithUV(p_147500_2_ + var18, p_147500_4_, p_147500_6_ + var20, var38, var40);
-            var10.addVertexWithUV(p_147500_2_ + var22, p_147500_4_, p_147500_6_ + var24, var36, var40);
-            var10.addVertexWithUV(p_147500_2_ + var22, p_147500_4_ + var34, p_147500_6_ + var24, var36, var42);
-            var10.addVertexWithUV(p_147500_2_ + var30, p_147500_4_ + var34, p_147500_6_ + var32, var38, var42);
-            var10.addVertexWithUV(p_147500_2_ + var30, p_147500_4_, p_147500_6_ + var32, var38, var40);
-            var10.addVertexWithUV(p_147500_2_ + var26, p_147500_4_, p_147500_6_ + var28, var36, var40);
-            var10.addVertexWithUV(p_147500_2_ + var26, p_147500_4_ + var34, p_147500_6_ + var28, var36, var42);
-            var10.addVertexWithUV(p_147500_2_ + var22, p_147500_4_ + var34, p_147500_6_ + var24, var38, var42);
-            var10.addVertexWithUV(p_147500_2_ + var22, p_147500_4_, p_147500_6_ + var24, var38, var40);
-            var10.addVertexWithUV(p_147500_2_ + var30, p_147500_4_, p_147500_6_ + var32, var36, var40);
-            var10.addVertexWithUV(p_147500_2_ + var30, p_147500_4_ + var34, p_147500_6_ + var32, var36, var42);
-            var10.addVertexWithUV(p_147500_2_ + var26, p_147500_4_ + var34, p_147500_6_ + var28, var38, var42);
-            var10.addVertexWithUV(p_147500_2_ + var26, p_147500_4_, p_147500_6_ + var28, var38, var40);
-            var10.addVertexWithUV(p_147500_2_ + var18, p_147500_4_, p_147500_6_ + var20, var36, var40);
-            var10.addVertexWithUV(p_147500_2_ + var18, p_147500_4_ + var34, p_147500_6_ + var20, var36, var42);
-            var10.draw();
-            GL11.glEnable(GL11.GL_BLEND);
-            OpenGlHelper.glBlendFunc(770, 771, 1, 0);
-            GL11.glDepthMask(false);
-            var10.startDrawingQuads();
-            var10.setColorRGBA(255, 255, 255, 32);
-            double var44 = 0.2D;
-            double var15 = 0.2D;
-            double var17 = 0.8D;
-            double var19 = 0.2D;
-            double var21 = 0.2D;
-            double var23 = 0.8D;
-            double var25 = 0.8D;
-            double var27 = 0.8D;
-            double var29 = (double)(256.0F * var9);
-            double var31 = 0.0D;
-            double var33 = 1.0D;
-            double var35 = (double)(-1.0F + var12);
-            double var37 = (double)(256.0F * var9) + var35;
-            var10.addVertexWithUV(p_147500_2_ + var44, p_147500_4_ + var29, p_147500_6_ + var15, var33, var37);
-            var10.addVertexWithUV(p_147500_2_ + var44, p_147500_4_, p_147500_6_ + var15, var33, var35);
-            var10.addVertexWithUV(p_147500_2_ + var17, p_147500_4_, p_147500_6_ + var19, var31, var35);
-            var10.addVertexWithUV(p_147500_2_ + var17, p_147500_4_ + var29, p_147500_6_ + var19, var31, var37);
-            var10.addVertexWithUV(p_147500_2_ + var25, p_147500_4_ + var29, p_147500_6_ + var27, var33, var37);
-            var10.addVertexWithUV(p_147500_2_ + var25, p_147500_4_, p_147500_6_ + var27, var33, var35);
-            var10.addVertexWithUV(p_147500_2_ + var21, p_147500_4_, p_147500_6_ + var23, var31, var35);
-            var10.addVertexWithUV(p_147500_2_ + var21, p_147500_4_ + var29, p_147500_6_ + var23, var31, var37);
-            var10.addVertexWithUV(p_147500_2_ + var17, p_147500_4_ + var29, p_147500_6_ + var19, var33, var37);
-            var10.addVertexWithUV(p_147500_2_ + var17, p_147500_4_, p_147500_6_ + var19, var33, var35);
-            var10.addVertexWithUV(p_147500_2_ + var25, p_147500_4_, p_147500_6_ + var27, var31, var35);
-            var10.addVertexWithUV(p_147500_2_ + var25, p_147500_4_ + var29, p_147500_6_ + var27, var31, var37);
-            var10.addVertexWithUV(p_147500_2_ + var21, p_147500_4_ + var29, p_147500_6_ + var23, var33, var37);
-            var10.addVertexWithUV(p_147500_2_ + var21, p_147500_4_, p_147500_6_ + var23, var33, var35);
-            var10.addVertexWithUV(p_147500_2_ + var44, p_147500_4_, p_147500_6_ + var15, var31, var35);
-            var10.addVertexWithUV(p_147500_2_ + var44, p_147500_4_ + var29, p_147500_6_ + var15, var31, var37);
-            var10.draw();
-            GL11.glEnable(GL11.GL_LIGHTING);
-            GL11.glEnable(GL11.GL_TEXTURE_2D);
-            GL11.glDepthMask(true);
+            if (Config.isShaders())
+            {
+                Shaders.beginBeacon();
+            }
+
+            GlStateManager.alphaFunc(516, 0.1F);
+
+            if (f > 0.0F)
+            {
+                Tessellator tessellator = Tessellator.getInstance();
+                WorldRenderer worldrenderer = tessellator.getWorldRenderer();
+                GlStateManager.disableFog();
+                List<TileEntityBeacon.BeamSegment> list = te.getBeamSegments();
+                int i = 0;
+
+                for (int j = 0; j < list.size(); ++j)
+                {
+                    TileEntityBeacon.BeamSegment tileentitybeacon$beamsegment = (TileEntityBeacon.BeamSegment)list.get(j);
+                    int k = i + tileentitybeacon$beamsegment.getHeight();
+                    this.bindTexture(beaconBeam);
+                    GL11.glTexParameterf(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, 10497.0F);
+                    GL11.glTexParameterf(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, 10497.0F);
+                    GlStateManager.disableLighting();
+                    GlStateManager.disableCull();
+                    GlStateManager.disableBlend();
+                    GlStateManager.depthMask(true);
+                    GlStateManager.tryBlendFuncSeparate(770, 1, 1, 0);
+                    double d0 = (double)te.getWorld().getTotalWorldTime() + (double)partialTicks;
+                    double d1 = MathHelper.func_181162_h(-d0 * 0.2D - (double)MathHelper.floor_double(-d0 * 0.1D));
+                    float f1 = tileentitybeacon$beamsegment.getColors()[0];
+                    float f2 = tileentitybeacon$beamsegment.getColors()[1];
+                    float f3 = tileentitybeacon$beamsegment.getColors()[2];
+                    double d2 = d0 * 0.025D * -1.5D;
+                    double d3 = 0.2D;
+                    double d4 = 0.5D + Math.cos(d2 + 2.356194490192345D) * 0.2D;
+                    double d5 = 0.5D + Math.sin(d2 + 2.356194490192345D) * 0.2D;
+                    double d6 = 0.5D + Math.cos(d2 + (Math.PI / 4D)) * 0.2D;
+                    double d7 = 0.5D + Math.sin(d2 + (Math.PI / 4D)) * 0.2D;
+                    double d8 = 0.5D + Math.cos(d2 + 3.9269908169872414D) * 0.2D;
+                    double d9 = 0.5D + Math.sin(d2 + 3.9269908169872414D) * 0.2D;
+                    double d10 = 0.5D + Math.cos(d2 + 5.497787143782138D) * 0.2D;
+                    double d11 = 0.5D + Math.sin(d2 + 5.497787143782138D) * 0.2D;
+                    double d12 = 0.0D;
+                    double d13 = 1.0D;
+                    double d14 = -1.0D + d1;
+                    double d15 = (double)((float)tileentitybeacon$beamsegment.getHeight() * f) * 2.5D + d14;
+                    worldrenderer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
+                    worldrenderer.pos(x + d4, y + (double)k, z + d5).tex(1.0D, d15).color(f1, f2, f3, 1.0F).endVertex();
+                    worldrenderer.pos(x + d4, y + (double)i, z + d5).tex(1.0D, d14).color(f1, f2, f3, 1.0F).endVertex();
+                    worldrenderer.pos(x + d6, y + (double)i, z + d7).tex(0.0D, d14).color(f1, f2, f3, 1.0F).endVertex();
+                    worldrenderer.pos(x + d6, y + (double)k, z + d7).tex(0.0D, d15).color(f1, f2, f3, 1.0F).endVertex();
+                    worldrenderer.pos(x + d10, y + (double)k, z + d11).tex(1.0D, d15).color(f1, f2, f3, 1.0F).endVertex();
+                    worldrenderer.pos(x + d10, y + (double)i, z + d11).tex(1.0D, d14).color(f1, f2, f3, 1.0F).endVertex();
+                    worldrenderer.pos(x + d8, y + (double)i, z + d9).tex(0.0D, d14).color(f1, f2, f3, 1.0F).endVertex();
+                    worldrenderer.pos(x + d8, y + (double)k, z + d9).tex(0.0D, d15).color(f1, f2, f3, 1.0F).endVertex();
+                    worldrenderer.pos(x + d6, y + (double)k, z + d7).tex(1.0D, d15).color(f1, f2, f3, 1.0F).endVertex();
+                    worldrenderer.pos(x + d6, y + (double)i, z + d7).tex(1.0D, d14).color(f1, f2, f3, 1.0F).endVertex();
+                    worldrenderer.pos(x + d10, y + (double)i, z + d11).tex(0.0D, d14).color(f1, f2, f3, 1.0F).endVertex();
+                    worldrenderer.pos(x + d10, y + (double)k, z + d11).tex(0.0D, d15).color(f1, f2, f3, 1.0F).endVertex();
+                    worldrenderer.pos(x + d8, y + (double)k, z + d9).tex(1.0D, d15).color(f1, f2, f3, 1.0F).endVertex();
+                    worldrenderer.pos(x + d8, y + (double)i, z + d9).tex(1.0D, d14).color(f1, f2, f3, 1.0F).endVertex();
+                    worldrenderer.pos(x + d4, y + (double)i, z + d5).tex(0.0D, d14).color(f1, f2, f3, 1.0F).endVertex();
+                    worldrenderer.pos(x + d4, y + (double)k, z + d5).tex(0.0D, d15).color(f1, f2, f3, 1.0F).endVertex();
+                    tessellator.draw();
+                    GlStateManager.enableBlend();
+                    GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
+                    GlStateManager.depthMask(false);
+                    d2 = 0.2D;
+                    d3 = 0.2D;
+                    d4 = 0.8D;
+                    d5 = 0.2D;
+                    d6 = 0.2D;
+                    d7 = 0.8D;
+                    d8 = 0.8D;
+                    d9 = 0.8D;
+                    d10 = 0.0D;
+                    d11 = 1.0D;
+                    d12 = -1.0D + d1;
+                    d13 = (double)((float)tileentitybeacon$beamsegment.getHeight() * f) + d12;
+                    worldrenderer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
+                    worldrenderer.pos(x + 0.2D, y + (double)k, z + 0.2D).tex(1.0D, d13).color(f1, f2, f3, 0.125F).endVertex();
+                    worldrenderer.pos(x + 0.2D, y + (double)i, z + 0.2D).tex(1.0D, d12).color(f1, f2, f3, 0.125F).endVertex();
+                    worldrenderer.pos(x + 0.8D, y + (double)i, z + 0.2D).tex(0.0D, d12).color(f1, f2, f3, 0.125F).endVertex();
+                    worldrenderer.pos(x + 0.8D, y + (double)k, z + 0.2D).tex(0.0D, d13).color(f1, f2, f3, 0.125F).endVertex();
+                    worldrenderer.pos(x + 0.8D, y + (double)k, z + 0.8D).tex(1.0D, d13).color(f1, f2, f3, 0.125F).endVertex();
+                    worldrenderer.pos(x + 0.8D, y + (double)i, z + 0.8D).tex(1.0D, d12).color(f1, f2, f3, 0.125F).endVertex();
+                    worldrenderer.pos(x + 0.2D, y + (double)i, z + 0.8D).tex(0.0D, d12).color(f1, f2, f3, 0.125F).endVertex();
+                    worldrenderer.pos(x + 0.2D, y + (double)k, z + 0.8D).tex(0.0D, d13).color(f1, f2, f3, 0.125F).endVertex();
+                    worldrenderer.pos(x + 0.8D, y + (double)k, z + 0.2D).tex(1.0D, d13).color(f1, f2, f3, 0.125F).endVertex();
+                    worldrenderer.pos(x + 0.8D, y + (double)i, z + 0.2D).tex(1.0D, d12).color(f1, f2, f3, 0.125F).endVertex();
+                    worldrenderer.pos(x + 0.8D, y + (double)i, z + 0.8D).tex(0.0D, d12).color(f1, f2, f3, 0.125F).endVertex();
+                    worldrenderer.pos(x + 0.8D, y + (double)k, z + 0.8D).tex(0.0D, d13).color(f1, f2, f3, 0.125F).endVertex();
+                    worldrenderer.pos(x + 0.2D, y + (double)k, z + 0.8D).tex(1.0D, d13).color(f1, f2, f3, 0.125F).endVertex();
+                    worldrenderer.pos(x + 0.2D, y + (double)i, z + 0.8D).tex(1.0D, d12).color(f1, f2, f3, 0.125F).endVertex();
+                    worldrenderer.pos(x + 0.2D, y + (double)i, z + 0.2D).tex(0.0D, d12).color(f1, f2, f3, 0.125F).endVertex();
+                    worldrenderer.pos(x + 0.2D, y + (double)k, z + 0.2D).tex(0.0D, d13).color(f1, f2, f3, 0.125F).endVertex();
+                    tessellator.draw();
+                    GlStateManager.enableLighting();
+                    GlStateManager.enableTexture2D();
+                    GlStateManager.depthMask(true);
+                    i = k;
+                }
+
+                GlStateManager.enableFog();
+            }
+
+            if (Config.isShaders())
+            {
+                Shaders.endBeacon();
+            }
         }
     }
 
-    public void renderTileEntityAt(TileEntity p_147500_1_, double p_147500_2_, double p_147500_4_, double p_147500_6_, float p_147500_8_)
+    /**
+     * If true the {@link TileEntitySpecialRenderer} will always be rendered while the player is in the render bounding
+     * box {@link TileEntity#getRenderBoundingBox()} and his squared distance with the {@link TileEntity} is smaller
+     * than {@link TileEntity#getMaxRenderDistanceSquared()}.
+     */
+    public boolean forceTileEntityRender()
     {
-        this.renderTileEntityAt((TileEntityBeacon)p_147500_1_, p_147500_2_, p_147500_4_, p_147500_6_, p_147500_8_);
+        return true;
     }
 }

@@ -5,42 +5,45 @@ import net.minecraft.world.WorldSavedData;
 
 public class MapGenStructureData extends WorldSavedData
 {
-    private NBTTagCompound field_143044_a = new NBTTagCompound();
-    private static final String __OBFID = "CL_00000510";
+    private NBTTagCompound tagCompound = new NBTTagCompound();
 
-    public MapGenStructureData(String p_i43001_1_)
+    public MapGenStructureData(String name)
     {
-        super(p_i43001_1_);
+        super(name);
     }
 
     /**
      * reads in data from the NBTTagCompound into this MapDataBase
      */
-    public void readFromNBT(NBTTagCompound p_76184_1_)
+    public void readFromNBT(NBTTagCompound nbt)
     {
-        this.field_143044_a = p_76184_1_.getCompoundTag("Features");
+        this.tagCompound = nbt.getCompoundTag("Features");
     }
 
     /**
      * write data to NBTTagCompound from this MapDataBase, similar to Entities and TileEntities
      */
-    public void writeToNBT(NBTTagCompound p_76187_1_)
+    public void writeToNBT(NBTTagCompound nbt)
     {
-        p_76187_1_.setTag("Features", this.field_143044_a);
+        nbt.setTag("Features", this.tagCompound);
     }
 
-    public void func_143043_a(NBTTagCompound p_143043_1_, int p_143043_2_, int p_143043_3_)
+    /**
+     * Writes the NBT tag of an instance of this structure type to the internal NBT tag, using the chunkcoordinates as
+     * the key
+     */
+    public void writeInstance(NBTTagCompound tagCompoundIn, int chunkX, int chunkZ)
     {
-        this.field_143044_a.setTag(func_143042_b(p_143043_2_, p_143043_3_), p_143043_1_);
+        this.tagCompound.setTag(formatChunkCoords(chunkX, chunkZ), tagCompoundIn);
     }
 
-    public static String func_143042_b(int p_143042_0_, int p_143042_1_)
+    public static String formatChunkCoords(int chunkX, int chunkZ)
     {
-        return "[" + p_143042_0_ + "," + p_143042_1_ + "]";
+        return "[" + chunkX + "," + chunkZ + "]";
     }
 
-    public NBTTagCompound func_143041_a()
+    public NBTTagCompound getTagCompound()
     {
-        return this.field_143044_a;
+        return this.tagCompound;
     }
 }

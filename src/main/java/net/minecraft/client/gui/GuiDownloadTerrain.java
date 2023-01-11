@@ -1,27 +1,34 @@
 package net.minecraft.client.gui;
 
+import java.io.IOException;
 import net.minecraft.client.network.NetHandlerPlayClient;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.network.play.client.C00PacketKeepAlive;
+import net.optifine.CustomLoadingScreen;
+import net.optifine.CustomLoadingScreens;
 
 public class GuiDownloadTerrain extends GuiScreen
 {
-    private NetHandlerPlayClient field_146594_a;
-    private int field_146593_f;
-    private static final String __OBFID = "CL_00000708";
+    private NetHandlerPlayClient netHandlerPlayClient;
+    private int progress;
+    private CustomLoadingScreen customLoadingScreen = CustomLoadingScreens.getCustomLoadingScreen();
 
-    public GuiDownloadTerrain(NetHandlerPlayClient p_i45023_1_)
+    public GuiDownloadTerrain(NetHandlerPlayClient netHandler)
     {
-        this.field_146594_a = p_i45023_1_;
+        this.netHandlerPlayClient = netHandler;
     }
 
     /**
-     * Fired when a key is typed. This is the equivalent of KeyListener.keyTyped(KeyEvent e).
+     * Fired when a key is typed (except F11 which toggles full screen). This is the equivalent of
+     * KeyListener.keyTyped(KeyEvent e). Args : character (character on the key), keyCode (lwjgl Keyboard key code)
      */
-    protected void keyTyped(char p_73869_1_, int p_73869_2_) {}
+    protected void keyTyped(char typedChar, int keyCode) throws IOException
+    {
+    }
 
     /**
-     * Adds the buttons (and other controls) to the screen in question.
+     * Adds the buttons (and other controls) to the screen in question. Called when the GUI is displayed and when the
+     * window resizes, the buttonList is cleared beforehand.
      */
     public void initGui()
     {
@@ -33,27 +40,30 @@ public class GuiDownloadTerrain extends GuiScreen
      */
     public void updateScreen()
     {
-        ++this.field_146593_f;
+        ++this.progress;
 
-        if (this.field_146593_f % 20 == 0)
+        if (this.progress % 20 == 0)
         {
-            this.field_146594_a.addToSendQueue(new C00PacketKeepAlive());
-        }
-
-        if (this.field_146594_a != null)
-        {
-            this.field_146594_a.onNetworkTick();
+            this.netHandlerPlayClient.addToSendQueue(new C00PacketKeepAlive());
         }
     }
 
     /**
-     * Draws the screen and all the components in it.
+     * Draws the screen and all the components in it. Args : mouseX, mouseY, renderPartialTicks
      */
-    public void drawScreen(int p_73863_1_, int p_73863_2_, float p_73863_3_)
+    public void drawScreen(int mouseX, int mouseY, float partialTicks)
     {
-        this.func_146278_c(0);
+        if (this.customLoadingScreen != null)
+        {
+            this.customLoadingScreen.drawBackground(this.width, this.height);
+        }
+        else
+        {
+            this.drawBackground(0);
+        }
+
         this.drawCenteredString(this.fontRendererObj, I18n.format("multiplayer.downloadingTerrain", new Object[0]), this.width / 2, this.height / 2 - 50, 16777215);
-        super.drawScreen(p_73863_1_, p_73863_2_, p_73863_3_);
+        super.drawScreen(mouseX, mouseY, partialTicks);
     }
 
     /**

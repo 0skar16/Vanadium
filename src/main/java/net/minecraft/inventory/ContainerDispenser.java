@@ -2,88 +2,84 @@ package net.minecraft.inventory;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntityDispenser;
 
 public class ContainerDispenser extends Container
 {
-    private TileEntityDispenser tileEntityDispenser;
-    private static final String __OBFID = "CL_00001763";
+    private IInventory dispenserInventory;
 
-    public ContainerDispenser(IInventory p_i1825_1_, TileEntityDispenser p_i1825_2_)
+    public ContainerDispenser(IInventory playerInventory, IInventory dispenserInventoryIn)
     {
-        this.tileEntityDispenser = p_i1825_2_;
-        int var3;
-        int var4;
+        this.dispenserInventory = dispenserInventoryIn;
 
-        for (var3 = 0; var3 < 3; ++var3)
+        for (int i = 0; i < 3; ++i)
         {
-            for (var4 = 0; var4 < 3; ++var4)
+            for (int j = 0; j < 3; ++j)
             {
-                this.addSlotToContainer(new Slot(p_i1825_2_, var4 + var3 * 3, 62 + var4 * 18, 17 + var3 * 18));
+                this.addSlotToContainer(new Slot(dispenserInventoryIn, j + i * 3, 62 + j * 18, 17 + i * 18));
             }
         }
 
-        for (var3 = 0; var3 < 3; ++var3)
+        for (int k = 0; k < 3; ++k)
         {
-            for (var4 = 0; var4 < 9; ++var4)
+            for (int i1 = 0; i1 < 9; ++i1)
             {
-                this.addSlotToContainer(new Slot(p_i1825_1_, var4 + var3 * 9 + 9, 8 + var4 * 18, 84 + var3 * 18));
+                this.addSlotToContainer(new Slot(playerInventory, i1 + k * 9 + 9, 8 + i1 * 18, 84 + k * 18));
             }
         }
 
-        for (var3 = 0; var3 < 9; ++var3)
+        for (int l = 0; l < 9; ++l)
         {
-            this.addSlotToContainer(new Slot(p_i1825_1_, var3, 8 + var3 * 18, 142));
+            this.addSlotToContainer(new Slot(playerInventory, l, 8 + l * 18, 142));
         }
     }
 
-    public boolean canInteractWith(EntityPlayer p_75145_1_)
+    public boolean canInteractWith(EntityPlayer playerIn)
     {
-        return this.tileEntityDispenser.isUseableByPlayer(p_75145_1_);
+        return this.dispenserInventory.isUseableByPlayer(playerIn);
     }
 
     /**
-     * Called when a player shift-clicks on a slot. You must override this or you will crash when someone does that.
+     * Take a stack from the specified inventory slot.
      */
-    public ItemStack transferStackInSlot(EntityPlayer p_82846_1_, int p_82846_2_)
+    public ItemStack transferStackInSlot(EntityPlayer playerIn, int index)
     {
-        ItemStack var3 = null;
-        Slot var4 = (Slot)this.inventorySlots.get(p_82846_2_);
+        ItemStack itemstack = null;
+        Slot slot = (Slot)this.inventorySlots.get(index);
 
-        if (var4 != null && var4.getHasStack())
+        if (slot != null && slot.getHasStack())
         {
-            ItemStack var5 = var4.getStack();
-            var3 = var5.copy();
+            ItemStack itemstack1 = slot.getStack();
+            itemstack = itemstack1.copy();
 
-            if (p_82846_2_ < 9)
+            if (index < 9)
             {
-                if (!this.mergeItemStack(var5, 9, 45, true))
+                if (!this.mergeItemStack(itemstack1, 9, 45, true))
                 {
                     return null;
                 }
             }
-            else if (!this.mergeItemStack(var5, 0, 9, false))
+            else if (!this.mergeItemStack(itemstack1, 0, 9, false))
             {
                 return null;
             }
 
-            if (var5.stackSize == 0)
+            if (itemstack1.stackSize == 0)
             {
-                var4.putStack((ItemStack)null);
+                slot.putStack((ItemStack)null);
             }
             else
             {
-                var4.onSlotChanged();
+                slot.onSlotChanged();
             }
 
-            if (var5.stackSize == var3.stackSize)
+            if (itemstack1.stackSize == itemstack.stackSize)
             {
                 return null;
             }
 
-            var4.onPickupFromSlot(p_82846_1_, var5);
+            slot.onPickupFromSlot(playerIn, itemstack1);
         }
 
-        return var3;
+        return itemstack;
     }
 }

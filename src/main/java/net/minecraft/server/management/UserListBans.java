@@ -3,67 +3,55 @@ package net.minecraft.server.management;
 import com.google.gson.JsonObject;
 import com.mojang.authlib.GameProfile;
 import java.io.File;
-import java.util.Iterator;
 
-public class UserListBans extends UserList
+public class UserListBans extends UserList<GameProfile, UserListBansEntry>
 {
-    private static final String __OBFID = "CL_00001873";
-
-    public UserListBans(File p_i1138_1_)
+    public UserListBans(File bansFile)
     {
-        super(p_i1138_1_);
+        super(bansFile);
     }
 
-    protected UserListEntry func_152682_a(JsonObject p_152682_1_)
+    protected UserListEntry<GameProfile> createEntry(JsonObject entryData)
     {
-        return new UserListBansEntry(p_152682_1_);
+        return new UserListBansEntry(entryData);
     }
 
-    public boolean func_152702_a(GameProfile p_152702_1_)
+    public boolean isBanned(GameProfile profile)
     {
-        return this.func_152692_d(p_152702_1_);
+        return this.hasEntry(profile);
     }
 
-    public String[] func_152685_a()
+    public String[] getKeys()
     {
-        String[] var1 = new String[this.func_152688_e().size()];
-        int var2 = 0;
-        UserListBansEntry var4;
+        String[] astring = new String[this.getValues().size()];
+        int i = 0;
 
-        for (Iterator var3 = this.func_152688_e().values().iterator(); var3.hasNext(); var1[var2++] = ((GameProfile)var4.func_152640_f()).getName())
+        for (UserListBansEntry userlistbansentry : this.getValues().values())
         {
-            var4 = (UserListBansEntry)var3.next();
+            astring[i++] = ((GameProfile)userlistbansentry.getValue()).getName();
         }
 
-        return var1;
+        return astring;
     }
 
-    protected String func_152701_b(GameProfile p_152701_1_)
+    /**
+     * Gets the key value for the given object
+     */
+    protected String getObjectKey(GameProfile obj)
     {
-        return p_152701_1_.getId().toString();
+        return obj.getId().toString();
     }
 
-    public GameProfile func_152703_a(String p_152703_1_)
+    public GameProfile isUsernameBanned(String username)
     {
-        Iterator var2 = this.func_152688_e().values().iterator();
-        UserListBansEntry var3;
-
-        do
+        for (UserListBansEntry userlistbansentry : this.getValues().values())
         {
-            if (!var2.hasNext())
+            if (username.equalsIgnoreCase(((GameProfile)userlistbansentry.getValue()).getName()))
             {
-                return null;
+                return (GameProfile)userlistbansentry.getValue();
             }
-
-            var3 = (UserListBansEntry)var2.next();
         }
-        while (!p_152703_1_.equalsIgnoreCase(((GameProfile)var3.func_152640_f()).getName()));
 
-        return (GameProfile)var3.func_152640_f();
-    }
-
-    protected String func_152681_a(Object p_152681_1_)
-    {
-        return this.func_152701_b((GameProfile)p_152681_1_);
+        return null;
     }
 }

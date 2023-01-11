@@ -1,37 +1,36 @@
 package net.minecraft.network.play.server;
 
+import com.google.common.collect.Lists;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import net.minecraft.network.INetHandler;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.Vec3;
-import net.minecraft.world.ChunkPosition;
 
-public class S27PacketExplosion extends Packet
+public class S27PacketExplosion implements Packet<INetHandlerPlayClient>
 {
-    private double field_149158_a;
-    private double field_149156_b;
-    private double field_149157_c;
-    private float field_149154_d;
-    private List field_149155_e;
+    private double posX;
+    private double posY;
+    private double posZ;
+    private float strength;
+    private List<BlockPos> affectedBlockPositions;
     private float field_149152_f;
     private float field_149153_g;
     private float field_149159_h;
-    private static final String __OBFID = "CL_00001300";
 
-    public S27PacketExplosion() {}
-
-    public S27PacketExplosion(double p_i45193_1_, double p_i45193_3_, double p_i45193_5_, float p_i45193_7_, List p_i45193_8_, Vec3 p_i45193_9_)
+    public S27PacketExplosion()
     {
-        this.field_149158_a = p_i45193_1_;
-        this.field_149156_b = p_i45193_3_;
-        this.field_149157_c = p_i45193_5_;
-        this.field_149154_d = p_i45193_7_;
-        this.field_149155_e = new ArrayList(p_i45193_8_);
+    }
+
+    public S27PacketExplosion(double p_i45193_1_, double y, double z, float strengthIn, List<BlockPos> affectedBlocksIn, Vec3 p_i45193_9_)
+    {
+        this.posX = p_i45193_1_;
+        this.posY = y;
+        this.posZ = z;
+        this.strength = strengthIn;
+        this.affectedBlockPositions = Lists.newArrayList(affectedBlocksIn);
 
         if (p_i45193_9_ != null)
         {
@@ -44,65 +43,66 @@ public class S27PacketExplosion extends Packet
     /**
      * Reads the raw packet data from the data stream.
      */
-    public void readPacketData(PacketBuffer p_148837_1_) throws IOException
+    public void readPacketData(PacketBuffer buf) throws IOException
     {
-        this.field_149158_a = (double)p_148837_1_.readFloat();
-        this.field_149156_b = (double)p_148837_1_.readFloat();
-        this.field_149157_c = (double)p_148837_1_.readFloat();
-        this.field_149154_d = p_148837_1_.readFloat();
-        int var2 = p_148837_1_.readInt();
-        this.field_149155_e = new ArrayList(var2);
-        int var3 = (int)this.field_149158_a;
-        int var4 = (int)this.field_149156_b;
-        int var5 = (int)this.field_149157_c;
+        this.posX = (double)buf.readFloat();
+        this.posY = (double)buf.readFloat();
+        this.posZ = (double)buf.readFloat();
+        this.strength = buf.readFloat();
+        int i = buf.readInt();
+        this.affectedBlockPositions = Lists.<BlockPos>newArrayListWithCapacity(i);
+        int j = (int)this.posX;
+        int k = (int)this.posY;
+        int l = (int)this.posZ;
 
-        for (int var6 = 0; var6 < var2; ++var6)
+        for (int i1 = 0; i1 < i; ++i1)
         {
-            int var7 = p_148837_1_.readByte() + var3;
-            int var8 = p_148837_1_.readByte() + var4;
-            int var9 = p_148837_1_.readByte() + var5;
-            this.field_149155_e.add(new ChunkPosition(var7, var8, var9));
+            int j1 = buf.readByte() + j;
+            int k1 = buf.readByte() + k;
+            int l1 = buf.readByte() + l;
+            this.affectedBlockPositions.add(new BlockPos(j1, k1, l1));
         }
 
-        this.field_149152_f = p_148837_1_.readFloat();
-        this.field_149153_g = p_148837_1_.readFloat();
-        this.field_149159_h = p_148837_1_.readFloat();
+        this.field_149152_f = buf.readFloat();
+        this.field_149153_g = buf.readFloat();
+        this.field_149159_h = buf.readFloat();
     }
 
     /**
      * Writes the raw packet data to the data stream.
      */
-    public void writePacketData(PacketBuffer p_148840_1_) throws IOException
+    public void writePacketData(PacketBuffer buf) throws IOException
     {
-        p_148840_1_.writeFloat((float)this.field_149158_a);
-        p_148840_1_.writeFloat((float)this.field_149156_b);
-        p_148840_1_.writeFloat((float)this.field_149157_c);
-        p_148840_1_.writeFloat(this.field_149154_d);
-        p_148840_1_.writeInt(this.field_149155_e.size());
-        int var2 = (int)this.field_149158_a;
-        int var3 = (int)this.field_149156_b;
-        int var4 = (int)this.field_149157_c;
-        Iterator var5 = this.field_149155_e.iterator();
+        buf.writeFloat((float)this.posX);
+        buf.writeFloat((float)this.posY);
+        buf.writeFloat((float)this.posZ);
+        buf.writeFloat(this.strength);
+        buf.writeInt(this.affectedBlockPositions.size());
+        int i = (int)this.posX;
+        int j = (int)this.posY;
+        int k = (int)this.posZ;
 
-        while (var5.hasNext())
+        for (BlockPos blockpos : this.affectedBlockPositions)
         {
-            ChunkPosition var6 = (ChunkPosition)var5.next();
-            int var7 = var6.field_151329_a - var2;
-            int var8 = var6.field_151327_b - var3;
-            int var9 = var6.field_151328_c - var4;
-            p_148840_1_.writeByte(var7);
-            p_148840_1_.writeByte(var8);
-            p_148840_1_.writeByte(var9);
+            int l = blockpos.getX() - i;
+            int i1 = blockpos.getY() - j;
+            int j1 = blockpos.getZ() - k;
+            buf.writeByte(l);
+            buf.writeByte(i1);
+            buf.writeByte(j1);
         }
 
-        p_148840_1_.writeFloat(this.field_149152_f);
-        p_148840_1_.writeFloat(this.field_149153_g);
-        p_148840_1_.writeFloat(this.field_149159_h);
+        buf.writeFloat(this.field_149152_f);
+        buf.writeFloat(this.field_149153_g);
+        buf.writeFloat(this.field_149159_h);
     }
 
-    public void processPacket(INetHandlerPlayClient p_148833_1_)
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayClient handler)
     {
-        p_148833_1_.handleExplosion(this);
+        handler.handleExplosion(this);
     }
 
     public float func_149149_c()
@@ -120,33 +120,28 @@ public class S27PacketExplosion extends Packet
         return this.field_149159_h;
     }
 
-    public double func_149148_f()
+    public double getX()
     {
-        return this.field_149158_a;
+        return this.posX;
     }
 
-    public double func_149143_g()
+    public double getY()
     {
-        return this.field_149156_b;
+        return this.posY;
     }
 
-    public double func_149145_h()
+    public double getZ()
     {
-        return this.field_149157_c;
+        return this.posZ;
     }
 
-    public float func_149146_i()
+    public float getStrength()
     {
-        return this.field_149154_d;
+        return this.strength;
     }
 
-    public List func_149150_j()
+    public List<BlockPos> getAffectedBlockPositions()
     {
-        return this.field_149155_e;
-    }
-
-    public void processPacket(INetHandler p_148833_1_)
-    {
-        this.processPacket((INetHandlerPlayClient)p_148833_1_);
+        return this.affectedBlockPositions;
     }
 }

@@ -2,15 +2,16 @@ package net.minecraft.block;
 
 import java.util.Random;
 import net.minecraft.block.material.Material;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.item.EntityFallingBlock;
 import net.minecraft.init.Blocks;
+import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
 
 public class BlockFalling extends Block
 {
-    public static boolean field_149832_M;
-    private static final String __OBFID = "CL_00000240";
+    public static boolean fallInstantly;
 
     public BlockFalling()
     {
@@ -18,89 +19,85 @@ public class BlockFalling extends Block
         this.setCreativeTab(CreativeTabs.tabBlock);
     }
 
-    public BlockFalling(Material p_i45405_1_)
+    public BlockFalling(Material materialIn)
     {
-        super(p_i45405_1_);
+        super(materialIn);
     }
 
-    public void onBlockAdded(World p_149726_1_, int p_149726_2_, int p_149726_3_, int p_149726_4_)
+    public void onBlockAdded(World worldIn, BlockPos pos, IBlockState state)
     {
-        p_149726_1_.scheduleBlockUpdate(p_149726_2_, p_149726_3_, p_149726_4_, this, this.func_149738_a(p_149726_1_));
-    }
-
-    public void onNeighborBlockChange(World p_149695_1_, int p_149695_2_, int p_149695_3_, int p_149695_4_, Block p_149695_5_)
-    {
-        p_149695_1_.scheduleBlockUpdate(p_149695_2_, p_149695_3_, p_149695_4_, this, this.func_149738_a(p_149695_1_));
+        worldIn.scheduleUpdate(pos, this, this.tickRate(worldIn));
     }
 
     /**
-     * Ticks the block if it's been scheduled
+     * Called when a neighboring block changes.
      */
-    public void updateTick(World p_149674_1_, int p_149674_2_, int p_149674_3_, int p_149674_4_, Random p_149674_5_)
+    public void onNeighborBlockChange(World worldIn, BlockPos pos, IBlockState state, Block neighborBlock)
     {
-        if (!p_149674_1_.isClient)
+        worldIn.scheduleUpdate(pos, this, this.tickRate(worldIn));
+    }
+
+    public void updateTick(World worldIn, BlockPos pos, IBlockState state, Random rand)
+    {
+        if (!worldIn.isRemote)
         {
-            this.func_149830_m(p_149674_1_, p_149674_2_, p_149674_3_, p_149674_4_);
+            this.checkFallable(worldIn, pos);
         }
     }
 
-    private void func_149830_m(World p_149830_1_, int p_149830_2_, int p_149830_3_, int p_149830_4_)
+    private void checkFallable(World worldIn, BlockPos pos)
     {
-        if (func_149831_e(p_149830_1_, p_149830_2_, p_149830_3_ - 1, p_149830_4_) && p_149830_3_ >= 0)
+        if (canFallInto(worldIn, pos.down()) && pos.getY() >= 0)
         {
-            byte var8 = 32;
+            int i = 32;
 
-            if (!field_149832_M && p_149830_1_.checkChunksExist(p_149830_2_ - var8, p_149830_3_ - var8, p_149830_4_ - var8, p_149830_2_ + var8, p_149830_3_ + var8, p_149830_4_ + var8))
+            if (!fallInstantly && worldIn.isAreaLoaded(pos.add(-i, -i, -i), pos.add(i, i, i)))
             {
-                if (!p_149830_1_.isClient)
+                if (!worldIn.isRemote)
                 {
-                    EntityFallingBlock var9 = new EntityFallingBlock(p_149830_1_, (double)((float)p_149830_2_ + 0.5F), (double)((float)p_149830_3_ + 0.5F), (double)((float)p_149830_4_ + 0.5F), this, p_149830_1_.getBlockMetadata(p_149830_2_, p_149830_3_, p_149830_4_));
-                    this.func_149829_a(var9);
-                    p_149830_1_.spawnEntityInWorld(var9);
+                    EntityFallingBlock entityfallingblock = new EntityFallingBlock(worldIn, (double)pos.getX() + 0.5D, (double)pos.getY(), (double)pos.getZ() + 0.5D, worldIn.getBlockState(pos));
+                    this.onStartFalling(entityfallingblock);
+                    worldIn.spawnEntityInWorld(entityfallingblock);
                 }
             }
             else
             {
-                p_149830_1_.setBlockToAir(p_149830_2_, p_149830_3_, p_149830_4_);
+                worldIn.setBlockToAir(pos);
+                BlockPos blockpos;
 
-                while (func_149831_e(p_149830_1_, p_149830_2_, p_149830_3_ - 1, p_149830_4_) && p_149830_3_ > 0)
+                for (blockpos = pos.down(); canFallInto(worldIn, blockpos) && blockpos.getY() > 0; blockpos = blockpos.down())
                 {
-                    --p_149830_3_;
+                    ;
                 }
 
-                if (p_149830_3_ > 0)
+                if (blockpos.getY() > 0)
                 {
-                    p_149830_1_.setBlock(p_149830_2_, p_149830_3_, p_149830_4_, this);
+                    worldIn.setBlockState(blockpos.up(), this.getDefaultState());
                 }
             }
         }
     }
 
-    protected void func_149829_a(EntityFallingBlock p_149829_1_) {}
+    protected void onStartFalling(EntityFallingBlock fallingEntity)
+    {
+    }
 
-    public int func_149738_a(World p_149738_1_)
+    /**
+     * How many world ticks before ticking
+     */
+    public int tickRate(World worldIn)
     {
         return 2;
     }
 
-    public static boolean func_149831_e(World p_149831_0_, int p_149831_1_, int p_149831_2_, int p_149831_3_)
+    public static boolean canFallInto(World worldIn, BlockPos pos)
     {
-        Block var4 = p_149831_0_.getBlock(p_149831_1_, p_149831_2_, p_149831_3_);
-
-        if (var4.blockMaterial == Material.air)
-        {
-            return true;
-        }
-        else if (var4 == Blocks.fire)
-        {
-            return true;
-        }
-        else
-        {
-            Material var5 = var4.blockMaterial;
-            return var5 == Material.water ? true : var5 == Material.lava;
-        }
+        Block block = worldIn.getBlockState(pos).getBlock();
+        Material material = block.blockMaterial;
+        return block == Blocks.fire || material == Material.air || material == Material.water || material == Material.lava;
     }
 
-    public void func_149828_a(World p_149828_1_, int p_149828_2_, int p_149828_3_, int p_149828_4_, int p_149828_5_) {}
+    public void onEndFalling(World worldIn, BlockPos pos)
+    {
+    }
 }

@@ -1,16 +1,18 @@
 package net.minecraft.command;
 
 import java.util.List;
-import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.ChatComponentTranslation;
 
 public class CommandEffect extends CommandBase
 {
-    private static final String __OBFID = "CL_00000323";
-
+    /**
+     * Gets the name of the command
+     */
     public String getCommandName()
     {
         return "effect";
@@ -24,92 +26,124 @@ public class CommandEffect extends CommandBase
         return 2;
     }
 
-    public String getCommandUsage(ICommandSender p_71518_1_)
+    /**
+     * Gets the usage string for the command.
+     */
+    public String getCommandUsage(ICommandSender sender)
     {
         return "commands.effect.usage";
     }
 
-    public void processCommand(ICommandSender p_71515_1_, String[] p_71515_2_)
+    /**
+     * Callback when the command is invoked
+     */
+    public void processCommand(ICommandSender sender, String[] args) throws CommandException
     {
-        if (p_71515_2_.length < 2)
+        if (args.length < 2)
         {
             throw new WrongUsageException("commands.effect.usage", new Object[0]);
         }
         else
         {
-            EntityPlayerMP var3 = getPlayer(p_71515_1_, p_71515_2_[0]);
+            EntityLivingBase entitylivingbase = (EntityLivingBase)getEntity(sender, args[0], EntityLivingBase.class);
 
-            if (p_71515_2_[1].equals("clear"))
+            if (args[1].equals("clear"))
             {
-                if (var3.getActivePotionEffects().isEmpty())
+                if (entitylivingbase.getActivePotionEffects().isEmpty())
                 {
-                    throw new CommandException("commands.effect.failure.notActive.all", new Object[] {var3.getCommandSenderName()});
-                }
-
-                var3.clearActivePotions();
-                func_152373_a(p_71515_1_, this, "commands.effect.success.removed.all", new Object[] {var3.getCommandSenderName()});
-            }
-            else
-            {
-                int var4 = parseIntWithMin(p_71515_1_, p_71515_2_[1], 1);
-                int var5 = 600;
-                int var6 = 30;
-                int var7 = 0;
-
-                if (var4 < 0 || var4 >= Potion.potionTypes.length || Potion.potionTypes[var4] == null)
-                {
-                    throw new NumberInvalidException("commands.effect.notFound", new Object[] {Integer.valueOf(var4)});
-                }
-
-                if (p_71515_2_.length >= 3)
-                {
-                    var6 = parseIntBounded(p_71515_1_, p_71515_2_[2], 0, 1000000);
-
-                    if (Potion.potionTypes[var4].isInstant())
-                    {
-                        var5 = var6;
-                    }
-                    else
-                    {
-                        var5 = var6 * 20;
-                    }
-                }
-                else if (Potion.potionTypes[var4].isInstant())
-                {
-                    var5 = 1;
-                }
-
-                if (p_71515_2_.length >= 4)
-                {
-                    var7 = parseIntBounded(p_71515_1_, p_71515_2_[3], 0, 255);
-                }
-
-                if (var6 == 0)
-                {
-                    if (!var3.isPotionActive(var4))
-                    {
-                        throw new CommandException("commands.effect.failure.notActive", new Object[] {new ChatComponentTranslation(Potion.potionTypes[var4].getName(), new Object[0]), var3.getCommandSenderName()});
-                    }
-
-                    var3.removePotionEffect(var4);
-                    func_152373_a(p_71515_1_, this, "commands.effect.success.removed", new Object[] {new ChatComponentTranslation(Potion.potionTypes[var4].getName(), new Object[0]), var3.getCommandSenderName()});
+                    throw new CommandException("commands.effect.failure.notActive.all", new Object[] {entitylivingbase.getName()});
                 }
                 else
                 {
-                    PotionEffect var8 = new PotionEffect(var4, var5, var7);
-                    var3.addPotionEffect(var8);
-                    func_152373_a(p_71515_1_, this, "commands.effect.success", new Object[] {new ChatComponentTranslation(var8.getEffectName(), new Object[0]), Integer.valueOf(var4), Integer.valueOf(var7), var3.getCommandSenderName(), Integer.valueOf(var6)});
+                    entitylivingbase.clearActivePotions();
+                    notifyOperators(sender, this, "commands.effect.success.removed.all", new Object[] {entitylivingbase.getName()});
+                }
+            }
+            else
+            {
+                int i;
+
+                try
+                {
+                    i = parseInt(args[1], 1);
+                }
+                catch (NumberInvalidException numberinvalidexception)
+                {
+                    Potion potion = Potion.getPotionFromResourceLocation(args[1]);
+
+                    if (potion == null)
+                    {
+                        throw numberinvalidexception;
+                    }
+
+                    i = potion.id;
+                }
+
+                int j = 600;
+                int l = 30;
+                int k = 0;
+
+                if (i >= 0 && i < Potion.potionTypes.length && Potion.potionTypes[i] != null)
+                {
+                    Potion potion1 = Potion.potionTypes[i];
+
+                    if (args.length >= 3)
+                    {
+                        l = parseInt(args[2], 0, 1000000);
+
+                        if (potion1.isInstant())
+                        {
+                            j = l;
+                        }
+                        else
+                        {
+                            j = l * 20;
+                        }
+                    }
+                    else if (potion1.isInstant())
+                    {
+                        j = 1;
+                    }
+
+                    if (args.length >= 4)
+                    {
+                        k = parseInt(args[3], 0, 255);
+                    }
+
+                    boolean flag = true;
+
+                    if (args.length >= 5 && "true".equalsIgnoreCase(args[4]))
+                    {
+                        flag = false;
+                    }
+
+                    if (l > 0)
+                    {
+                        PotionEffect potioneffect = new PotionEffect(i, j, k, false, flag);
+                        entitylivingbase.addPotionEffect(potioneffect);
+                        notifyOperators(sender, this, "commands.effect.success", new Object[] {new ChatComponentTranslation(potioneffect.getEffectName(), new Object[0]), Integer.valueOf(i), Integer.valueOf(k), entitylivingbase.getName(), Integer.valueOf(l)});
+                    }
+                    else if (entitylivingbase.isPotionActive(i))
+                    {
+                        entitylivingbase.removePotionEffect(i);
+                        notifyOperators(sender, this, "commands.effect.success.removed", new Object[] {new ChatComponentTranslation(potion1.getName(), new Object[0]), entitylivingbase.getName()});
+                    }
+                    else
+                    {
+                        throw new CommandException("commands.effect.failure.notActive", new Object[] {new ChatComponentTranslation(potion1.getName(), new Object[0]), entitylivingbase.getName()});
+                    }
+                }
+                else
+                {
+                    throw new NumberInvalidException("commands.effect.notFound", new Object[] {Integer.valueOf(i)});
                 }
             }
         }
     }
 
-    /**
-     * Adds the strings available in this command to the given list of tab completion options.
-     */
-    public List addTabCompletionOptions(ICommandSender p_71516_1_, String[] p_71516_2_)
+    public List<String> addTabCompletionOptions(ICommandSender sender, String[] args, BlockPos pos)
     {
-        return p_71516_2_.length == 1 ? getListOfStringsMatchingLastWord(p_71516_2_, this.getAllUsernames()) : null;
+        return args.length == 1 ? getListOfStringsMatchingLastWord(args, this.getAllUsernames()) : (args.length == 2 ? getListOfStringsMatchingLastWord(args, Potion.getPotionLocations()) : (args.length == 5 ? getListOfStringsMatchingLastWord(args, new String[] {"true", "false"}): null));
     }
 
     protected String[] getAllUsernames()
@@ -120,8 +154,8 @@ public class CommandEffect extends CommandBase
     /**
      * Return whether the specified command parameter index is a username parameter.
      */
-    public boolean isUsernameIndex(String[] p_82358_1_, int p_82358_2_)
+    public boolean isUsernameIndex(String[] args, int index)
     {
-        return p_82358_2_ == 0;
+        return index == 0;
     }
 }

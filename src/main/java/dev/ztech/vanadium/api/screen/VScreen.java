@@ -13,4 +13,8 @@ public class VScreen implements ApiGui {
     public void draw(Session session) {
 
     }
+
+    public boolean doesGuiPauseGame(){
+        return true;
+    }
 }

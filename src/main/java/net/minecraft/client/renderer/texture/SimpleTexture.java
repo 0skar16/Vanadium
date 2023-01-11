@@ -3,11 +3,13 @@ package net.minecraft.client.renderer.texture;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
-import javax.imageio.ImageIO;
 import net.minecraft.client.resources.IResource;
 import net.minecraft.client.resources.IResourceManager;
 import net.minecraft.client.resources.data.TextureMetadataSection;
+import net.minecraft.src.Config;
 import net.minecraft.util.ResourceLocation;
+import net.optifine.EmissiveTextures;
+import net.optifine.shaders.ShadersTex;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -15,51 +17,64 @@ public class SimpleTexture extends AbstractTexture
 {
     private static final Logger logger = LogManager.getLogger();
     protected final ResourceLocation textureLocation;
-    private static final String __OBFID = "CL_00001052";
+    public ResourceLocation locationEmissive;
+    public boolean isEmissive;
 
-    public SimpleTexture(ResourceLocation p_i1275_1_)
+    public SimpleTexture(ResourceLocation textureResourceLocation)
     {
-        this.textureLocation = p_i1275_1_;
+        this.textureLocation = textureResourceLocation;
     }
 
-    public void loadTexture(IResourceManager p_110551_1_) throws IOException
+    public void loadTexture(IResourceManager resourceManager) throws IOException
     {
-        this.func_147631_c();
-        InputStream var2 = null;
+        this.deleteGlTexture();
+        InputStream inputstream = null;
 
         try
         {
-            IResource var3 = p_110551_1_.getResource(this.textureLocation);
-            var2 = var3.getInputStream();
-            BufferedImage var4 = ImageIO.read(var2);
-            boolean var5 = false;
-            boolean var6 = false;
+            IResource iresource = resourceManager.getResource(this.textureLocation);
+            inputstream = iresource.getInputStream();
+            BufferedImage bufferedimage = TextureUtil.readBufferedImage(inputstream);
+            boolean flag = false;
+            boolean flag1 = false;
 
-            if (var3.hasMetadata())
+            if (iresource.hasMetadata())
             {
                 try
                 {
-                    TextureMetadataSection var7 = (TextureMetadataSection)var3.getMetadata("texture");
+                    TextureMetadataSection texturemetadatasection = (TextureMetadataSection)iresource.getMetadata("texture");
 
-                    if (var7 != null)
+                    if (texturemetadatasection != null)
                     {
-                        var5 = var7.getTextureBlur();
-                        var6 = var7.getTextureClamp();
+                        flag = texturemetadatasection.getTextureBlur();
+                        flag1 = texturemetadatasection.getTextureClamp();
                     }
                 }
-                catch (RuntimeException var11)
+                catch (RuntimeException runtimeexception)
                 {
-                    logger.warn("Failed reading metadata of: " + this.textureLocation, var11);
+                    logger.warn((String)("Failed reading metadata of: " + this.textureLocation), (Throwable)runtimeexception);
                 }
             }
 
-            TextureUtil.uploadTextureImageAllocate(this.getGlTextureId(), var4, var5, var6);
+            if (Config.isShaders())
+            {
+                ShadersTex.loadSimpleTexture(this.getGlTextureId(), bufferedimage, flag, flag1, resourceManager, this.textureLocation, this.getMultiTexID());
+            }
+            else
+            {
+                TextureUtil.uploadTextureImageAllocate(this.getGlTextureId(), bufferedimage, flag, flag1);
+            }
+
+            if (EmissiveTextures.isActive())
+            {
+                EmissiveTextures.loadTexture(this.textureLocation, this);
+            }
         }
         finally
         {
-            if (var2 != null)
+            if (inputstream != null)
             {
-                var2.close();
+                inputstream.close();
             }
         }
     }

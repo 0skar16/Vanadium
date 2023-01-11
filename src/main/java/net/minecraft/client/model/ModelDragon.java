@@ -1,9 +1,9 @@
 package net.minecraft.client.model;
 
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.boss.EntityDragon;
-import org.lwjgl.opengl.GL11;
 
 public class ModelDragon extends ModelBase
 {
@@ -43,7 +43,6 @@ public class ModelDragon extends ModelBase
     /** The wing tip Model renderer of the dragon */
     private ModelRenderer wingTip;
     private float partialTicks;
-    private static final String __OBFID = "CL_00000870";
 
     public ModelDragon(float p_i46360_1_)
     {
@@ -68,18 +67,18 @@ public class ModelDragon extends ModelBase
         this.setTextureOffset("head.scale", 0, 0);
         this.setTextureOffset("neck.scale", 48, 0);
         this.setTextureOffset("head.nostril", 112, 0);
-        float var2 = -16.0F;
+        float f = -16.0F;
         this.head = new ModelRenderer(this, "head");
-        this.head.addBox("upperlip", -6.0F, -1.0F, -8.0F + var2, 12, 5, 16);
-        this.head.addBox("upperhead", -8.0F, -8.0F, 6.0F + var2, 16, 16, 16);
+        this.head.addBox("upperlip", -6.0F, -1.0F, -8.0F + f, 12, 5, 16);
+        this.head.addBox("upperhead", -8.0F, -8.0F, 6.0F + f, 16, 16, 16);
         this.head.mirror = true;
-        this.head.addBox("scale", -5.0F, -12.0F, 12.0F + var2, 2, 4, 6);
-        this.head.addBox("nostril", -5.0F, -3.0F, -6.0F + var2, 2, 2, 4);
+        this.head.addBox("scale", -5.0F, -12.0F, 12.0F + f, 2, 4, 6);
+        this.head.addBox("nostril", -5.0F, -3.0F, -6.0F + f, 2, 2, 4);
         this.head.mirror = false;
-        this.head.addBox("scale", 3.0F, -12.0F, 12.0F + var2, 2, 4, 6);
-        this.head.addBox("nostril", 3.0F, -3.0F, -6.0F + var2, 2, 2, 4);
+        this.head.addBox("scale", 3.0F, -12.0F, 12.0F + f, 2, 4, 6);
+        this.head.addBox("nostril", 3.0F, -3.0F, -6.0F + f, 2, 2, 4);
         this.jaw = new ModelRenderer(this, "jaw");
-        this.jaw.setRotationPoint(0.0F, 4.0F, 8.0F + var2);
+        this.jaw.setRotationPoint(0.0F, 4.0F, 8.0F + f);
         this.jaw.addBox("jaw", -6.0F, 0.0F, -16.0F, 12, 4, 16);
         this.head.addChild(this.jaw);
         this.spine = new ModelRenderer(this, "neck");
@@ -128,118 +127,117 @@ public class ModelDragon extends ModelBase
      * Used for easily adding entity-dependent animations. The second and third float params here are the same second
      * and third as in the setRotationAngles method.
      */
-    public void setLivingAnimations(EntityLivingBase p_78086_1_, float p_78086_2_, float p_78086_3_, float p_78086_4_)
+    public void setLivingAnimations(EntityLivingBase entitylivingbaseIn, float p_78086_2_, float p_78086_3_, float partialTickTime)
     {
-        this.partialTicks = p_78086_4_;
+        this.partialTicks = partialTickTime;
     }
 
     /**
      * Sets the models various rotation angles then renders the model.
      */
-    public void render(Entity p_78088_1_, float p_78088_2_, float p_78088_3_, float p_78088_4_, float p_78088_5_, float p_78088_6_, float p_78088_7_)
+    public void render(Entity entityIn, float p_78088_2_, float p_78088_3_, float p_78088_4_, float p_78088_5_, float p_78088_6_, float scale)
     {
-        GL11.glPushMatrix();
-        EntityDragon var8 = (EntityDragon)p_78088_1_;
-        float var9 = var8.prevAnimTime + (var8.animTime - var8.prevAnimTime) * this.partialTicks;
-        this.jaw.rotateAngleX = (float)(Math.sin((double)(var9 * (float)Math.PI * 2.0F)) + 1.0D) * 0.2F;
-        float var10 = (float)(Math.sin((double)(var9 * (float)Math.PI * 2.0F - 1.0F)) + 1.0D);
-        var10 = (var10 * var10 * 1.0F + var10 * 2.0F) * 0.05F;
-        GL11.glTranslatef(0.0F, var10 - 2.0F, -3.0F);
-        GL11.glRotatef(var10 * 2.0F, 1.0F, 0.0F, 0.0F);
-        float var11 = -30.0F;
-        float var13 = 0.0F;
-        float var14 = 1.5F;
-        double[] var15 = var8.getMovementOffsets(6, this.partialTicks);
-        float var16 = this.updateRotations(var8.getMovementOffsets(5, this.partialTicks)[0] - var8.getMovementOffsets(10, this.partialTicks)[0]);
-        float var17 = this.updateRotations(var8.getMovementOffsets(5, this.partialTicks)[0] + (double)(var16 / 2.0F));
-        var11 += 2.0F;
-        float var18 = var9 * (float)Math.PI * 2.0F;
-        var11 = 20.0F;
-        float var12 = -12.0F;
-        float var21;
+        GlStateManager.pushMatrix();
+        EntityDragon entitydragon = (EntityDragon)entityIn;
+        float f = entitydragon.prevAnimTime + (entitydragon.animTime - entitydragon.prevAnimTime) * this.partialTicks;
+        this.jaw.rotateAngleX = (float)(Math.sin((double)(f * (float)Math.PI * 2.0F)) + 1.0D) * 0.2F;
+        float f1 = (float)(Math.sin((double)(f * (float)Math.PI * 2.0F - 1.0F)) + 1.0D);
+        f1 = (f1 * f1 * 1.0F + f1 * 2.0F) * 0.05F;
+        GlStateManager.translate(0.0F, f1 - 2.0F, -3.0F);
+        GlStateManager.rotate(f1 * 2.0F, 1.0F, 0.0F, 0.0F);
+        float f2 = -30.0F;
+        float f4 = 0.0F;
+        float f5 = 1.5F;
+        double[] adouble = entitydragon.getMovementOffsets(6, this.partialTicks);
+        float f6 = this.updateRotations(entitydragon.getMovementOffsets(5, this.partialTicks)[0] - entitydragon.getMovementOffsets(10, this.partialTicks)[0]);
+        float f7 = this.updateRotations(entitydragon.getMovementOffsets(5, this.partialTicks)[0] + (double)(f6 / 2.0F));
+        f2 = f2 + 2.0F;
+        float f8 = f * (float)Math.PI * 2.0F;
+        f2 = 20.0F;
+        float f3 = -12.0F;
 
-        for (int var19 = 0; var19 < 5; ++var19)
+        for (int i = 0; i < 5; ++i)
         {
-            double[] var20 = var8.getMovementOffsets(5 - var19, this.partialTicks);
-            var21 = (float)Math.cos((double)((float)var19 * 0.45F + var18)) * 0.15F;
-            this.spine.rotateAngleY = this.updateRotations(var20[0] - var15[0]) * (float)Math.PI / 180.0F * var14;
-            this.spine.rotateAngleX = var21 + (float)(var20[1] - var15[1]) * (float)Math.PI / 180.0F * var14 * 5.0F;
-            this.spine.rotateAngleZ = -this.updateRotations(var20[0] - (double)var17) * (float)Math.PI / 180.0F * var14;
-            this.spine.rotationPointY = var11;
-            this.spine.rotationPointZ = var12;
-            this.spine.rotationPointX = var13;
-            var11 = (float)((double)var11 + Math.sin((double)this.spine.rotateAngleX) * 10.0D);
-            var12 = (float)((double)var12 - Math.cos((double)this.spine.rotateAngleY) * Math.cos((double)this.spine.rotateAngleX) * 10.0D);
-            var13 = (float)((double)var13 - Math.sin((double)this.spine.rotateAngleY) * Math.cos((double)this.spine.rotateAngleX) * 10.0D);
-            this.spine.render(p_78088_7_);
+            double[] adouble1 = entitydragon.getMovementOffsets(5 - i, this.partialTicks);
+            float f9 = (float)Math.cos((double)((float)i * 0.45F + f8)) * 0.15F;
+            this.spine.rotateAngleY = this.updateRotations(adouble1[0] - adouble[0]) * (float)Math.PI / 180.0F * f5;
+            this.spine.rotateAngleX = f9 + (float)(adouble1[1] - adouble[1]) * (float)Math.PI / 180.0F * f5 * 5.0F;
+            this.spine.rotateAngleZ = -this.updateRotations(adouble1[0] - (double)f7) * (float)Math.PI / 180.0F * f5;
+            this.spine.rotationPointY = f2;
+            this.spine.rotationPointZ = f3;
+            this.spine.rotationPointX = f4;
+            f2 = (float)((double)f2 + Math.sin((double)this.spine.rotateAngleX) * 10.0D);
+            f3 = (float)((double)f3 - Math.cos((double)this.spine.rotateAngleY) * Math.cos((double)this.spine.rotateAngleX) * 10.0D);
+            f4 = (float)((double)f4 - Math.sin((double)this.spine.rotateAngleY) * Math.cos((double)this.spine.rotateAngleX) * 10.0D);
+            this.spine.render(scale);
         }
 
-        this.head.rotationPointY = var11;
-        this.head.rotationPointZ = var12;
-        this.head.rotationPointX = var13;
-        double[] var22 = var8.getMovementOffsets(0, this.partialTicks);
-        this.head.rotateAngleY = this.updateRotations(var22[0] - var15[0]) * (float)Math.PI / 180.0F * 1.0F;
-        this.head.rotateAngleZ = -this.updateRotations(var22[0] - (double)var17) * (float)Math.PI / 180.0F * 1.0F;
-        this.head.render(p_78088_7_);
-        GL11.glPushMatrix();
-        GL11.glTranslatef(0.0F, 1.0F, 0.0F);
-        GL11.glRotatef(-var16 * var14 * 1.0F, 0.0F, 0.0F, 1.0F);
-        GL11.glTranslatef(0.0F, -1.0F, 0.0F);
+        this.head.rotationPointY = f2;
+        this.head.rotationPointZ = f3;
+        this.head.rotationPointX = f4;
+        double[] adouble2 = entitydragon.getMovementOffsets(0, this.partialTicks);
+        this.head.rotateAngleY = this.updateRotations(adouble2[0] - adouble[0]) * (float)Math.PI / 180.0F * 1.0F;
+        this.head.rotateAngleZ = -this.updateRotations(adouble2[0] - (double)f7) * (float)Math.PI / 180.0F * 1.0F;
+        this.head.render(scale);
+        GlStateManager.pushMatrix();
+        GlStateManager.translate(0.0F, 1.0F, 0.0F);
+        GlStateManager.rotate(-f6 * f5 * 1.0F, 0.0F, 0.0F, 1.0F);
+        GlStateManager.translate(0.0F, -1.0F, 0.0F);
         this.body.rotateAngleZ = 0.0F;
-        this.body.render(p_78088_7_);
+        this.body.render(scale);
 
-        for (int var23 = 0; var23 < 2; ++var23)
+        for (int j = 0; j < 2; ++j)
         {
-            GL11.glEnable(GL11.GL_CULL_FACE);
-            var21 = var9 * (float)Math.PI * 2.0F;
-            this.wing.rotateAngleX = 0.125F - (float)Math.cos((double)var21) * 0.2F;
+            GlStateManager.enableCull();
+            float f11 = f * (float)Math.PI * 2.0F;
+            this.wing.rotateAngleX = 0.125F - (float)Math.cos((double)f11) * 0.2F;
             this.wing.rotateAngleY = 0.25F;
-            this.wing.rotateAngleZ = (float)(Math.sin((double)var21) + 0.125D) * 0.8F;
-            this.wingTip.rotateAngleZ = -((float)(Math.sin((double)(var21 + 2.0F)) + 0.5D)) * 0.75F;
-            this.rearLeg.rotateAngleX = 1.0F + var10 * 0.1F;
-            this.rearLegTip.rotateAngleX = 0.5F + var10 * 0.1F;
-            this.rearFoot.rotateAngleX = 0.75F + var10 * 0.1F;
-            this.frontLeg.rotateAngleX = 1.3F + var10 * 0.1F;
-            this.frontLegTip.rotateAngleX = -0.5F - var10 * 0.1F;
-            this.frontFoot.rotateAngleX = 0.75F + var10 * 0.1F;
-            this.wing.render(p_78088_7_);
-            this.frontLeg.render(p_78088_7_);
-            this.rearLeg.render(p_78088_7_);
-            GL11.glScalef(-1.0F, 1.0F, 1.0F);
+            this.wing.rotateAngleZ = (float)(Math.sin((double)f11) + 0.125D) * 0.8F;
+            this.wingTip.rotateAngleZ = -((float)(Math.sin((double)(f11 + 2.0F)) + 0.5D)) * 0.75F;
+            this.rearLeg.rotateAngleX = 1.0F + f1 * 0.1F;
+            this.rearLegTip.rotateAngleX = 0.5F + f1 * 0.1F;
+            this.rearFoot.rotateAngleX = 0.75F + f1 * 0.1F;
+            this.frontLeg.rotateAngleX = 1.3F + f1 * 0.1F;
+            this.frontLegTip.rotateAngleX = -0.5F - f1 * 0.1F;
+            this.frontFoot.rotateAngleX = 0.75F + f1 * 0.1F;
+            this.wing.render(scale);
+            this.frontLeg.render(scale);
+            this.rearLeg.render(scale);
+            GlStateManager.scale(-1.0F, 1.0F, 1.0F);
 
-            if (var23 == 0)
+            if (j == 0)
             {
-                GL11.glCullFace(GL11.GL_FRONT);
+                GlStateManager.cullFace(1028);
             }
         }
 
-        GL11.glPopMatrix();
-        GL11.glCullFace(GL11.GL_BACK);
-        GL11.glDisable(GL11.GL_CULL_FACE);
-        float var24 = -((float)Math.sin((double)(var9 * (float)Math.PI * 2.0F))) * 0.0F;
-        var18 = var9 * (float)Math.PI * 2.0F;
-        var11 = 10.0F;
-        var12 = 60.0F;
-        var13 = 0.0F;
-        var15 = var8.getMovementOffsets(11, this.partialTicks);
+        GlStateManager.popMatrix();
+        GlStateManager.cullFace(1029);
+        GlStateManager.disableCull();
+        float f10 = -((float)Math.sin((double)(f * (float)Math.PI * 2.0F))) * 0.0F;
+        f8 = f * (float)Math.PI * 2.0F;
+        f2 = 10.0F;
+        f3 = 60.0F;
+        f4 = 0.0F;
+        adouble = entitydragon.getMovementOffsets(11, this.partialTicks);
 
-        for (int var25 = 0; var25 < 12; ++var25)
+        for (int k = 0; k < 12; ++k)
         {
-            var22 = var8.getMovementOffsets(12 + var25, this.partialTicks);
-            var24 = (float)((double)var24 + Math.sin((double)((float)var25 * 0.45F + var18)) * 0.05000000074505806D);
-            this.spine.rotateAngleY = (this.updateRotations(var22[0] - var15[0]) * var14 + 180.0F) * (float)Math.PI / 180.0F;
-            this.spine.rotateAngleX = var24 + (float)(var22[1] - var15[1]) * (float)Math.PI / 180.0F * var14 * 5.0F;
-            this.spine.rotateAngleZ = this.updateRotations(var22[0] - (double)var17) * (float)Math.PI / 180.0F * var14;
-            this.spine.rotationPointY = var11;
-            this.spine.rotationPointZ = var12;
-            this.spine.rotationPointX = var13;
-            var11 = (float)((double)var11 + Math.sin((double)this.spine.rotateAngleX) * 10.0D);
-            var12 = (float)((double)var12 - Math.cos((double)this.spine.rotateAngleY) * Math.cos((double)this.spine.rotateAngleX) * 10.0D);
-            var13 = (float)((double)var13 - Math.sin((double)this.spine.rotateAngleY) * Math.cos((double)this.spine.rotateAngleX) * 10.0D);
-            this.spine.render(p_78088_7_);
+            adouble2 = entitydragon.getMovementOffsets(12 + k, this.partialTicks);
+            f10 = (float)((double)f10 + Math.sin((double)((float)k * 0.45F + f8)) * 0.05000000074505806D);
+            this.spine.rotateAngleY = (this.updateRotations(adouble2[0] - adouble[0]) * f5 + 180.0F) * (float)Math.PI / 180.0F;
+            this.spine.rotateAngleX = f10 + (float)(adouble2[1] - adouble[1]) * (float)Math.PI / 180.0F * f5 * 5.0F;
+            this.spine.rotateAngleZ = this.updateRotations(adouble2[0] - (double)f7) * (float)Math.PI / 180.0F * f5;
+            this.spine.rotationPointY = f2;
+            this.spine.rotationPointZ = f3;
+            this.spine.rotationPointX = f4;
+            f2 = (float)((double)f2 + Math.sin((double)this.spine.rotateAngleX) * 10.0D);
+            f3 = (float)((double)f3 - Math.cos((double)this.spine.rotateAngleY) * Math.cos((double)this.spine.rotateAngleX) * 10.0D);
+            f4 = (float)((double)f4 - Math.sin((double)this.spine.rotateAngleY) * Math.cos((double)this.spine.rotateAngleX) * 10.0D);
+            this.spine.render(scale);
         }
 
-        GL11.glPopMatrix();
+        GlStateManager.popMatrix();
     }
 
     /**

@@ -7,89 +7,86 @@ public class ContainerChest extends Container
 {
     private IInventory lowerChestInventory;
     private int numRows;
-    private static final String __OBFID = "CL_00001742";
 
-    public ContainerChest(IInventory p_i1806_1_, IInventory p_i1806_2_)
+    public ContainerChest(IInventory playerInventory, IInventory chestInventory, EntityPlayer player)
     {
-        this.lowerChestInventory = p_i1806_2_;
-        this.numRows = p_i1806_2_.getSizeInventory() / 9;
-        p_i1806_2_.openInventory();
-        int var3 = (this.numRows - 4) * 18;
-        int var4;
-        int var5;
+        this.lowerChestInventory = chestInventory;
+        this.numRows = chestInventory.getSizeInventory() / 9;
+        chestInventory.openInventory(player);
+        int i = (this.numRows - 4) * 18;
 
-        for (var4 = 0; var4 < this.numRows; ++var4)
+        for (int j = 0; j < this.numRows; ++j)
         {
-            for (var5 = 0; var5 < 9; ++var5)
+            for (int k = 0; k < 9; ++k)
             {
-                this.addSlotToContainer(new Slot(p_i1806_2_, var5 + var4 * 9, 8 + var5 * 18, 18 + var4 * 18));
+                this.addSlotToContainer(new Slot(chestInventory, k + j * 9, 8 + k * 18, 18 + j * 18));
             }
         }
 
-        for (var4 = 0; var4 < 3; ++var4)
+        for (int l = 0; l < 3; ++l)
         {
-            for (var5 = 0; var5 < 9; ++var5)
+            for (int j1 = 0; j1 < 9; ++j1)
             {
-                this.addSlotToContainer(new Slot(p_i1806_1_, var5 + var4 * 9 + 9, 8 + var5 * 18, 103 + var4 * 18 + var3));
+                this.addSlotToContainer(new Slot(playerInventory, j1 + l * 9 + 9, 8 + j1 * 18, 103 + l * 18 + i));
             }
         }
 
-        for (var4 = 0; var4 < 9; ++var4)
+        for (int i1 = 0; i1 < 9; ++i1)
         {
-            this.addSlotToContainer(new Slot(p_i1806_1_, var4, 8 + var4 * 18, 161 + var3));
+            this.addSlotToContainer(new Slot(playerInventory, i1, 8 + i1 * 18, 161 + i));
         }
     }
 
-    public boolean canInteractWith(EntityPlayer p_75145_1_)
+    public boolean canInteractWith(EntityPlayer playerIn)
     {
-        return this.lowerChestInventory.isUseableByPlayer(p_75145_1_);
+        return this.lowerChestInventory.isUseableByPlayer(playerIn);
     }
 
     /**
-     * Called when a player shift-clicks on a slot. You must override this or you will crash when someone does that.
+     * Take a stack from the specified inventory slot.
      */
-    public ItemStack transferStackInSlot(EntityPlayer p_82846_1_, int p_82846_2_)
+    public ItemStack transferStackInSlot(EntityPlayer playerIn, int index)
     {
-        ItemStack var3 = null;
-        Slot var4 = (Slot)this.inventorySlots.get(p_82846_2_);
+        ItemStack itemstack = null;
+        Slot slot = (Slot)this.inventorySlots.get(index);
 
-        if (var4 != null && var4.getHasStack())
+        if (slot != null && slot.getHasStack())
         {
-            ItemStack var5 = var4.getStack();
-            var3 = var5.copy();
+            ItemStack itemstack1 = slot.getStack();
+            itemstack = itemstack1.copy();
 
-            if (p_82846_2_ < this.numRows * 9)
+            if (index < this.numRows * 9)
             {
-                if (!this.mergeItemStack(var5, this.numRows * 9, this.inventorySlots.size(), true))
+                if (!this.mergeItemStack(itemstack1, this.numRows * 9, this.inventorySlots.size(), true))
                 {
                     return null;
                 }
             }
-            else if (!this.mergeItemStack(var5, 0, this.numRows * 9, false))
+            else if (!this.mergeItemStack(itemstack1, 0, this.numRows * 9, false))
             {
                 return null;
             }
 
-            if (var5.stackSize == 0)
+            if (itemstack1.stackSize == 0)
             {
-                var4.putStack((ItemStack)null);
+                slot.putStack((ItemStack)null);
             }
             else
             {
-                var4.onSlotChanged();
+                slot.onSlotChanged();
             }
         }
 
-        return var3;
+        return itemstack;
     }
 
     /**
      * Called when the container is closed.
      */
-    public void onContainerClosed(EntityPlayer p_75134_1_)
+    public void onContainerClosed(EntityPlayer playerIn)
     {
-        super.onContainerClosed(p_75134_1_);
-        this.lowerChestInventory.closeInventory();
+        super.onContainerClosed(playerIn);
+        this.lowerChestInventory.closeInventory(playerIn);
     }
 
     /**

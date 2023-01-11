@@ -1,6 +1,6 @@
 package net.minecraft.stats;
 
-import java.util.ArrayList;
+import com.google.common.collect.Lists;
 import java.util.List;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
@@ -20,9 +20,7 @@ public class AchievementList
 
     /** Is the biggest row used to display a achievement on the GUI. */
     public static int maxDisplayRow;
-
-    /** Holds a list of all registered achievements. */
-    public static List achievementList = new ArrayList();
+    public static List<Achievement> achievementList = Lists.<Achievement>newArrayList();
 
     /** Is the 'open inventory' achievement. */
     public static Achievement openInventory = (new Achievement("achievement.openInventory", "openInventory", 0, 0, Items.book, (Achievement)null)).initIndependentStat().registerStat();
@@ -55,7 +53,7 @@ public class AchievementList
     public static Achievement buildBetterPickaxe = (new Achievement("achievement.buildBetterPickaxe", "buildBetterPickaxe", 6, 2, Items.stone_pickaxe, buildPickaxe)).registerStat();
 
     /** Is the 'delicious fish' achievement. */
-    public static Achievement cookFish = (new Achievement("achievement.cookFish", "cookFish", 2, 6, Items.cooked_fished, buildFurnace)).registerStat();
+    public static Achievement cookFish = (new Achievement("achievement.cookFish", "cookFish", 2, 6, Items.cooked_fish, buildFurnace)).registerStat();
 
     /** Is the 'on a rail' achievement */
     public static Achievement onARail = (new Achievement("achievement.onARail", "onARail", 2, 3, Blocks.rail, acquireIron)).setSpecial().registerStat();
@@ -77,7 +75,7 @@ public class AchievementList
 
     /** Is the 'DIAMONDS!' achievement */
     public static Achievement diamonds = (new Achievement("achievement.diamonds", "diamonds", -1, 5, Blocks.diamond_ore, acquireIron)).registerStat();
-    public static Achievement field_150966_x = (new Achievement("achievement.diamondsToYou", "diamondsToYou", -1, 2, Items.diamond, diamonds)).registerStat();
+    public static Achievement diamondsToYou = (new Achievement("achievement.diamondsToYou", "diamondsToYou", -1, 2, Items.diamond, diamonds)).registerStat();
 
     /** Is the 'We Need to Go Deeper' achievement */
     public static Achievement portal = (new Achievement("achievement.portal", "portal", -1, 7, Blocks.obsidian, diamonds)).registerStat();
@@ -103,15 +101,27 @@ public class AchievementList
 
     /** Is the 'Librarian' achievement */
     public static Achievement bookcase = (new Achievement("achievement.bookcase", "bookcase", -3, 6, Blocks.bookshelf, enchantments)).registerStat();
-    public static Achievement field_150962_H = (new Achievement("achievement.breedCow", "breedCow", 7, -5, Items.wheat, killCow)).registerStat();
-    public static Achievement field_150963_I = (new Achievement("achievement.spawnWither", "spawnWither", 7, 12, new ItemStack(Items.skull, 1, 1), theEnd2)).registerStat();
-    public static Achievement field_150964_J = (new Achievement("achievement.killWither", "killWither", 7, 10, Items.nether_star, field_150963_I)).registerStat();
-    public static Achievement field_150965_K = (new Achievement("achievement.fullBeacon", "fullBeacon", 7, 8, Blocks.beacon, field_150964_J)).setSpecial().registerStat();
-    public static Achievement field_150961_L = (new Achievement("achievement.exploreAllBiomes", "exploreAllBiomes", 4, 8, Items.diamond_boots, theEnd)).func_150953_b(JsonSerializableSet.class).setSpecial().registerStat();
-    private static final String __OBFID = "CL_00001467";
+
+    /** Is the 'Repopulation' achievement */
+    public static Achievement breedCow = (new Achievement("achievement.breedCow", "breedCow", 7, -5, Items.wheat, killCow)).registerStat();
+
+    /** Is the 'The Beginning?' achievement */
+    public static Achievement spawnWither = (new Achievement("achievement.spawnWither", "spawnWither", 7, 12, new ItemStack(Items.skull, 1, 1), theEnd2)).registerStat();
+
+    /** Is the 'The Beginning.' achievement */
+    public static Achievement killWither = (new Achievement("achievement.killWither", "killWither", 7, 10, Items.nether_star, spawnWither)).registerStat();
+
+    /** Is the 'Beaconator' achievement */
+    public static Achievement fullBeacon = (new Achievement("achievement.fullBeacon", "fullBeacon", 7, 8, Blocks.beacon, killWither)).setSpecial().registerStat();
+
+    /** Is the 'Adventuring Time' achievement */
+    public static Achievement exploreAllBiomes = (new Achievement("achievement.exploreAllBiomes", "exploreAllBiomes", 4, 8, Items.diamond_boots, theEnd)).func_150953_b(JsonSerializableSet.class).setSpecial().registerStat();
+    public static Achievement overpowered = (new Achievement("achievement.overpowered", "overpowered", 6, 4, new ItemStack(Items.golden_apple, 1, 1), buildBetterPickaxe)).setSpecial().registerStat();
 
     /**
      * A stub functions called to make the static initializer for this class run.
      */
-    public static void init() {}
+    public static void init()
+    {
+    }
 }

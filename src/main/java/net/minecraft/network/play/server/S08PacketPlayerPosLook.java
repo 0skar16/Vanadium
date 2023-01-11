@@ -1,96 +1,149 @@
 package net.minecraft.network.play.server;
 
 import java.io.IOException;
-import net.minecraft.network.INetHandler;
+import java.util.EnumSet;
+import java.util.Set;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 
-public class S08PacketPlayerPosLook extends Packet
+public class S08PacketPlayerPosLook implements Packet<INetHandlerPlayClient>
 {
-    private double field_148940_a;
-    private double field_148938_b;
-    private double field_148939_c;
-    private float field_148936_d;
-    private float field_148937_e;
-    private boolean field_148935_f;
-    private static final String __OBFID = "CL_00001273";
+    private double x;
+    private double y;
+    private double z;
+    private float yaw;
+    private float pitch;
+    private Set<S08PacketPlayerPosLook.EnumFlags> field_179835_f;
 
-    public S08PacketPlayerPosLook() {}
-
-    public S08PacketPlayerPosLook(double p_i45164_1_, double p_i45164_3_, double p_i45164_5_, float p_i45164_7_, float p_i45164_8_, boolean p_i45164_9_)
+    public S08PacketPlayerPosLook()
     {
-        this.field_148940_a = p_i45164_1_;
-        this.field_148938_b = p_i45164_3_;
-        this.field_148939_c = p_i45164_5_;
-        this.field_148936_d = p_i45164_7_;
-        this.field_148937_e = p_i45164_8_;
-        this.field_148935_f = p_i45164_9_;
+    }
+
+    public S08PacketPlayerPosLook(double xIn, double yIn, double zIn, float yawIn, float pitchIn, Set<S08PacketPlayerPosLook.EnumFlags> p_i45993_9_)
+    {
+        this.x = xIn;
+        this.y = yIn;
+        this.z = zIn;
+        this.yaw = yawIn;
+        this.pitch = pitchIn;
+        this.field_179835_f = p_i45993_9_;
     }
 
     /**
      * Reads the raw packet data from the data stream.
      */
-    public void readPacketData(PacketBuffer p_148837_1_) throws IOException
+    public void readPacketData(PacketBuffer buf) throws IOException
     {
-        this.field_148940_a = p_148837_1_.readDouble();
-        this.field_148938_b = p_148837_1_.readDouble();
-        this.field_148939_c = p_148837_1_.readDouble();
-        this.field_148936_d = p_148837_1_.readFloat();
-        this.field_148937_e = p_148837_1_.readFloat();
-        this.field_148935_f = p_148837_1_.readBoolean();
+        this.x = buf.readDouble();
+        this.y = buf.readDouble();
+        this.z = buf.readDouble();
+        this.yaw = buf.readFloat();
+        this.pitch = buf.readFloat();
+        this.field_179835_f = S08PacketPlayerPosLook.EnumFlags.func_180053_a(buf.readUnsignedByte());
     }
 
     /**
      * Writes the raw packet data to the data stream.
      */
-    public void writePacketData(PacketBuffer p_148840_1_) throws IOException
+    public void writePacketData(PacketBuffer buf) throws IOException
     {
-        p_148840_1_.writeDouble(this.field_148940_a);
-        p_148840_1_.writeDouble(this.field_148938_b);
-        p_148840_1_.writeDouble(this.field_148939_c);
-        p_148840_1_.writeFloat(this.field_148936_d);
-        p_148840_1_.writeFloat(this.field_148937_e);
-        p_148840_1_.writeBoolean(this.field_148935_f);
+        buf.writeDouble(this.x);
+        buf.writeDouble(this.y);
+        buf.writeDouble(this.z);
+        buf.writeFloat(this.yaw);
+        buf.writeFloat(this.pitch);
+        buf.writeByte(S08PacketPlayerPosLook.EnumFlags.func_180056_a(this.field_179835_f));
     }
 
-    public void processPacket(INetHandlerPlayClient p_148833_1_)
+    /**
+     * Passes this Packet on to the NetHandler for processing.
+     */
+    public void processPacket(INetHandlerPlayClient handler)
     {
-        p_148833_1_.handlePlayerPosLook(this);
+        handler.handlePlayerPosLook(this);
     }
 
-    public double func_148932_c()
+    public double getX()
     {
-        return this.field_148940_a;
+        return this.x;
     }
 
-    public double func_148928_d()
+    public double getY()
     {
-        return this.field_148938_b;
+        return this.y;
     }
 
-    public double func_148933_e()
+    public double getZ()
     {
-        return this.field_148939_c;
+        return this.z;
     }
 
-    public float func_148931_f()
+    public float getYaw()
     {
-        return this.field_148936_d;
+        return this.yaw;
     }
 
-    public float func_148930_g()
+    public float getPitch()
     {
-        return this.field_148937_e;
+        return this.pitch;
     }
 
-    public boolean func_148929_h()
+    public Set<S08PacketPlayerPosLook.EnumFlags> func_179834_f()
     {
-        return this.field_148935_f;
+        return this.field_179835_f;
     }
 
-    public void processPacket(INetHandler p_148833_1_)
+    public static enum EnumFlags
     {
-        this.processPacket((INetHandlerPlayClient)p_148833_1_);
+        X(0),
+        Y(1),
+        Z(2),
+        Y_ROT(3),
+        X_ROT(4);
+
+        private int field_180058_f;
+
+        private EnumFlags(int p_i45992_3_)
+        {
+            this.field_180058_f = p_i45992_3_;
+        }
+
+        private int func_180055_a()
+        {
+            return 1 << this.field_180058_f;
+        }
+
+        private boolean func_180054_b(int p_180054_1_)
+        {
+            return (p_180054_1_ & this.func_180055_a()) == this.func_180055_a();
+        }
+
+        public static Set<S08PacketPlayerPosLook.EnumFlags> func_180053_a(int p_180053_0_)
+        {
+            Set<S08PacketPlayerPosLook.EnumFlags> set = EnumSet.<S08PacketPlayerPosLook.EnumFlags>noneOf(S08PacketPlayerPosLook.EnumFlags.class);
+
+            for (S08PacketPlayerPosLook.EnumFlags s08packetplayerposlook$enumflags : values())
+            {
+                if (s08packetplayerposlook$enumflags.func_180054_b(p_180053_0_))
+                {
+                    set.add(s08packetplayerposlook$enumflags);
+                }
+            }
+
+            return set;
+        }
+
+        public static int func_180056_a(Set<S08PacketPlayerPosLook.EnumFlags> p_180056_0_)
+        {
+            int i = 0;
+
+            for (S08PacketPlayerPosLook.EnumFlags s08packetplayerposlook$enumflags : p_180056_0_)
+            {
+                i |= s08packetplayerposlook$enumflags.func_180055_a();
+            }
+
+            return i;
+        }
     }
 }

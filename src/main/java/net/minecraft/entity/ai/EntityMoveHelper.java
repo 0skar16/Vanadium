@@ -7,22 +7,21 @@ import net.minecraft.util.MathHelper;
 public class EntityMoveHelper
 {
     /** The EntityLiving that is being moved */
-    private EntityLiving entity;
-    private double posX;
-    private double posY;
-    private double posZ;
+    protected EntityLiving entity;
+    protected double posX;
+    protected double posY;
+    protected double posZ;
 
     /** The speed at which the entity should move */
-    private double speed;
-    private boolean update;
-    private static final String __OBFID = "CL_00001573";
+    protected double speed;
+    protected boolean update;
 
-    public EntityMoveHelper(EntityLiving p_i1614_1_)
+    public EntityMoveHelper(EntityLiving entitylivingIn)
     {
-        this.entity = p_i1614_1_;
-        this.posX = p_i1614_1_.posX;
-        this.posY = p_i1614_1_.posY;
-        this.posZ = p_i1614_1_.posZ;
+        this.entity = entitylivingIn;
+        this.posX = entitylivingIn.posX;
+        this.posY = entitylivingIn.posY;
+        this.posZ = entitylivingIn.posZ;
     }
 
     public boolean isUpdating()
@@ -38,12 +37,12 @@ public class EntityMoveHelper
     /**
      * Sets the speed and location to move to
      */
-    public void setMoveTo(double p_75642_1_, double p_75642_3_, double p_75642_5_, double p_75642_7_)
+    public void setMoveTo(double x, double y, double z, double speedIn)
     {
-        this.posX = p_75642_1_;
-        this.posY = p_75642_3_;
-        this.posZ = p_75642_5_;
-        this.speed = p_75642_7_;
+        this.posX = x;
+        this.posY = y;
+        this.posZ = z;
+        this.speed = speedIn;
         this.update = true;
     }
 
@@ -54,19 +53,19 @@ public class EntityMoveHelper
         if (this.update)
         {
             this.update = false;
-            int var1 = MathHelper.floor_double(this.entity.boundingBox.minY + 0.5D);
-            double var2 = this.posX - this.entity.posX;
-            double var4 = this.posZ - this.entity.posZ;
-            double var6 = this.posY - (double)var1;
-            double var8 = var2 * var2 + var6 * var6 + var4 * var4;
+            int i = MathHelper.floor_double(this.entity.getEntityBoundingBox().minY + 0.5D);
+            double d0 = this.posX - this.entity.posX;
+            double d1 = this.posZ - this.entity.posZ;
+            double d2 = this.posY - (double)i;
+            double d3 = d0 * d0 + d2 * d2 + d1 * d1;
 
-            if (var8 >= 2.500000277905201E-7D)
+            if (d3 >= 2.500000277905201E-7D)
             {
-                float var10 = (float)(Math.atan2(var4, var2) * 180.0D / Math.PI) - 90.0F;
-                this.entity.rotationYaw = this.limitAngle(this.entity.rotationYaw, var10, 30.0F);
+                float f = (float)(MathHelper.atan2(d1, d0) * 180.0D / Math.PI) - 90.0F;
+                this.entity.rotationYaw = this.limitAngle(this.entity.rotationYaw, f, 30.0F);
                 this.entity.setAIMoveSpeed((float)(this.speed * this.entity.getEntityAttribute(SharedMonsterAttributes.movementSpeed).getAttributeValue()));
 
-                if (var6 > 0.0D && var2 * var2 + var4 * var4 < 1.0D)
+                if (d2 > 0.0D && d0 * d0 + d1 * d1 < 1.0D)
                 {
                     this.entity.getJumpHelper().setJumping();
                 }
@@ -77,20 +76,46 @@ public class EntityMoveHelper
     /**
      * Limits the given angle to a upper and lower limit.
      */
-    private float limitAngle(float p_75639_1_, float p_75639_2_, float p_75639_3_)
+    protected float limitAngle(float p_75639_1_, float p_75639_2_, float p_75639_3_)
     {
-        float var4 = MathHelper.wrapAngleTo180_float(p_75639_2_ - p_75639_1_);
+        float f = MathHelper.wrapAngleTo180_float(p_75639_2_ - p_75639_1_);
 
-        if (var4 > p_75639_3_)
+        if (f > p_75639_3_)
         {
-            var4 = p_75639_3_;
+            f = p_75639_3_;
         }
 
-        if (var4 < -p_75639_3_)
+        if (f < -p_75639_3_)
         {
-            var4 = -p_75639_3_;
+            f = -p_75639_3_;
         }
 
-        return p_75639_1_ + var4;
+        float f1 = p_75639_1_ + f;
+
+        if (f1 < 0.0F)
+        {
+            f1 += 360.0F;
+        }
+        else if (f1 > 360.0F)
+        {
+            f1 -= 360.0F;
+        }
+
+        return f1;
+    }
+
+    public double getX()
+    {
+        return this.posX;
+    }
+
+    public double getY()
+    {
+        return this.posY;
+    }
+
+    public double getZ()
+    {
+        return this.posZ;
     }
 }

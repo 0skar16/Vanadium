@@ -1,261 +1,151 @@
 package net.minecraft.network.play.server;
 
+import com.google.common.collect.Lists;
 import java.io.IOException;
-import java.util.zip.DataFormatException;
-import java.util.zip.Deflater;
-import java.util.zip.Inflater;
-import net.minecraft.network.INetHandler;
+import java.util.List;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 import net.minecraft.world.chunk.Chunk;
-import net.minecraft.world.chunk.NibbleArray;
 import net.minecraft.world.chunk.storage.ExtendedBlockStorage;
 
-public class S21PacketChunkData extends Packet
+public class S21PacketChunkData implements Packet<INetHandlerPlayClient>
 {
-    private int field_149284_a;
-    private int field_149282_b;
-    private int field_149283_c;
-    private int field_149280_d;
-    private byte[] field_149281_e;
-    private byte[] field_149278_f;
+    private int chunkX;
+    private int chunkZ;
+    private S21PacketChunkData.Extracted extractedData;
     private boolean field_149279_g;
-    private int field_149285_h;
-    private static byte[] field_149286_i = new byte[196864];
-    private static final String __OBFID = "CL_00001304";
 
-    public S21PacketChunkData() {}
-
-    public S21PacketChunkData(Chunk p_i45196_1_, boolean p_i45196_2_, int p_i45196_3_)
+    public S21PacketChunkData()
     {
-        this.field_149284_a = p_i45196_1_.xPosition;
-        this.field_149282_b = p_i45196_1_.zPosition;
-        this.field_149279_g = p_i45196_2_;
-        S21PacketChunkData.Extracted var4 = func_149269_a(p_i45196_1_, p_i45196_2_, p_i45196_3_);
-        Deflater var5 = new Deflater(-1);
-        this.field_149280_d = var4.field_150281_c;
-        this.field_149283_c = var4.field_150280_b;
-
-        try
-        {
-            this.field_149278_f = var4.field_150282_a;
-            var5.setInput(var4.field_150282_a, 0, var4.field_150282_a.length);
-            var5.finish();
-            this.field_149281_e = new byte[var4.field_150282_a.length];
-            this.field_149285_h = var5.deflate(this.field_149281_e);
-        }
-        finally
-        {
-            var5.end();
-        }
     }
 
-    public static int func_149275_c()
+    public S21PacketChunkData(Chunk chunkIn, boolean p_i45196_2_, int p_i45196_3_)
     {
-        return 196864;
+        this.chunkX = chunkIn.xPosition;
+        this.chunkZ = chunkIn.zPosition;
+        this.field_149279_g = p_i45196_2_;
+        this.extractedData = getExtractedData(chunkIn, p_i45196_2_, !chunkIn.getWorld().provider.getHasNoSky(), p_i45196_3_);
     }
 
     /**
      * Reads the raw packet data from the data stream.
      */
-    public void readPacketData(PacketBuffer p_148837_1_) throws IOException
+    public void readPacketData(PacketBuffer buf) throws IOException
     {
-        this.field_149284_a = p_148837_1_.readInt();
-        this.field_149282_b = p_148837_1_.readInt();
-        this.field_149279_g = p_148837_1_.readBoolean();
-        this.field_149283_c = p_148837_1_.readShort();
-        this.field_149280_d = p_148837_1_.readShort();
-        this.field_149285_h = p_148837_1_.readInt();
-
-        if (field_149286_i.length < this.field_149285_h)
-        {
-            field_149286_i = new byte[this.field_149285_h];
-        }
-
-        p_148837_1_.readBytes(field_149286_i, 0, this.field_149285_h);
-        int var2 = 0;
-        int var3;
-
-        for (var3 = 0; var3 < 16; ++var3)
-        {
-            var2 += this.field_149283_c >> var3 & 1;
-        }
-
-        var3 = 12288 * var2;
-
-        if (this.field_149279_g)
-        {
-            var3 += 256;
-        }
-
-        this.field_149278_f = new byte[var3];
-        Inflater var4 = new Inflater();
-        var4.setInput(field_149286_i, 0, this.field_149285_h);
-
-        try
-        {
-            var4.inflate(this.field_149278_f);
-        }
-        catch (DataFormatException var9)
-        {
-            throw new IOException("Bad compressed data format");
-        }
-        finally
-        {
-            var4.end();
-        }
+        this.chunkX = buf.readInt();
+        this.chunkZ = buf.readInt();
+        this.field_149279_g = buf.readBoolean();
+        this.extractedData = new S21PacketChunkData.Extracted();
+        this.extractedData.dataSize = buf.readShort();
+        this.extractedData.data = buf.readByteArray();
     }
 
     /**
      * Writes the raw packet data to the data stream.
      */
-    public void writePacketData(PacketBuffer p_148840_1_) throws IOException
+    public void writePacketData(PacketBuffer buf) throws IOException
     {
-        p_148840_1_.writeInt(this.field_149284_a);
-        p_148840_1_.writeInt(this.field_149282_b);
-        p_148840_1_.writeBoolean(this.field_149279_g);
-        p_148840_1_.writeShort((short)(this.field_149283_c & 65535));
-        p_148840_1_.writeShort((short)(this.field_149280_d & 65535));
-        p_148840_1_.writeInt(this.field_149285_h);
-        p_148840_1_.writeBytes(this.field_149281_e, 0, this.field_149285_h);
-    }
-
-    public void processPacket(INetHandlerPlayClient p_148833_1_)
-    {
-        p_148833_1_.handleChunkData(this);
+        buf.writeInt(this.chunkX);
+        buf.writeInt(this.chunkZ);
+        buf.writeBoolean(this.field_149279_g);
+        buf.writeShort((short)(this.extractedData.dataSize & 65535));
+        buf.writeByteArray(this.extractedData.data);
     }
 
     /**
-     * Returns a string formatted as comma separated [field]=[value] values. Used by Minecraft for logging purposes.
+     * Passes this Packet on to the NetHandler for processing.
      */
-    public String serialize()
+    public void processPacket(INetHandlerPlayClient handler)
     {
-        return String.format("x=%d, z=%d, full=%b, sects=%d, add=%d, size=%d", new Object[] {Integer.valueOf(this.field_149284_a), Integer.valueOf(this.field_149282_b), Boolean.valueOf(this.field_149279_g), Integer.valueOf(this.field_149283_c), Integer.valueOf(this.field_149280_d), Integer.valueOf(this.field_149285_h)});
+        handler.handleChunkData(this);
     }
 
-    public byte[] func_149272_d()
+    public byte[] getExtractedDataBytes()
     {
-        return this.field_149278_f;
+        return this.extractedData.data;
     }
 
-    public static S21PacketChunkData.Extracted func_149269_a(Chunk p_149269_0_, boolean p_149269_1_, int p_149269_2_)
+    protected static int func_180737_a(int p_180737_0_, boolean p_180737_1_, boolean p_180737_2_)
     {
-        int var3 = 0;
-        ExtendedBlockStorage[] var4 = p_149269_0_.getBlockStorageArray();
-        int var5 = 0;
-        S21PacketChunkData.Extracted var6 = new S21PacketChunkData.Extracted();
-        byte[] var7 = field_149286_i;
+        int i = p_180737_0_ * 2 * 16 * 16 * 16;
+        int j = p_180737_0_ * 16 * 16 * 16 / 2;
+        int k = p_180737_1_ ? p_180737_0_ * 16 * 16 * 16 / 2 : 0;
+        int l = p_180737_2_ ? 256 : 0;
+        return i + j + k + l;
+    }
 
-        if (p_149269_1_)
+    public static S21PacketChunkData.Extracted getExtractedData(Chunk p_179756_0_, boolean p_179756_1_, boolean p_179756_2_, int p_179756_3_)
+    {
+        ExtendedBlockStorage[] aextendedblockstorage = p_179756_0_.getBlockStorageArray();
+        S21PacketChunkData.Extracted s21packetchunkdata$extracted = new S21PacketChunkData.Extracted();
+        List<ExtendedBlockStorage> list = Lists.<ExtendedBlockStorage>newArrayList();
+
+        for (int i = 0; i < aextendedblockstorage.length; ++i)
         {
-            p_149269_0_.sendUpdates = true;
-        }
+            ExtendedBlockStorage extendedblockstorage = aextendedblockstorage[i];
 
-        int var8;
-
-        for (var8 = 0; var8 < var4.length; ++var8)
-        {
-            if (var4[var8] != null && (!p_149269_1_ || !var4[var8].isEmpty()) && (p_149269_2_ & 1 << var8) != 0)
+            if (extendedblockstorage != null && (!p_179756_1_ || !extendedblockstorage.isEmpty()) && (p_179756_3_ & 1 << i) != 0)
             {
-                var6.field_150280_b |= 1 << var8;
-
-                if (var4[var8].getBlockMSBArray() != null)
-                {
-                    var6.field_150281_c |= 1 << var8;
-                    ++var5;
-                }
+                s21packetchunkdata$extracted.dataSize |= 1 << i;
+                list.add(extendedblockstorage);
             }
         }
 
-        for (var8 = 0; var8 < var4.length; ++var8)
+        s21packetchunkdata$extracted.data = new byte[func_180737_a(Integer.bitCount(s21packetchunkdata$extracted.dataSize), p_179756_2_, p_179756_1_)];
+        int j = 0;
+
+        for (ExtendedBlockStorage extendedblockstorage1 : list)
         {
-            if (var4[var8] != null && (!p_149269_1_ || !var4[var8].isEmpty()) && (p_149269_2_ & 1 << var8) != 0)
+            char[] achar = extendedblockstorage1.getData();
+
+            for (char c0 : achar)
             {
-                byte[] var9 = var4[var8].getBlockLSBArray();
-                System.arraycopy(var9, 0, var7, var3, var9.length);
-                var3 += var9.length;
+                s21packetchunkdata$extracted.data[j++] = (byte)(c0 & 255);
+                s21packetchunkdata$extracted.data[j++] = (byte)(c0 >> 8 & 255);
             }
         }
 
-        NibbleArray var11;
-
-        for (var8 = 0; var8 < var4.length; ++var8)
+        for (ExtendedBlockStorage extendedblockstorage2 : list)
         {
-            if (var4[var8] != null && (!p_149269_1_ || !var4[var8].isEmpty()) && (p_149269_2_ & 1 << var8) != 0)
+            j = func_179757_a(extendedblockstorage2.getBlocklightArray().getData(), s21packetchunkdata$extracted.data, j);
+        }
+
+        if (p_179756_2_)
+        {
+            for (ExtendedBlockStorage extendedblockstorage3 : list)
             {
-                var11 = var4[var8].getMetadataArray();
-                System.arraycopy(var11.data, 0, var7, var3, var11.data.length);
-                var3 += var11.data.length;
+                j = func_179757_a(extendedblockstorage3.getSkylightArray().getData(), s21packetchunkdata$extracted.data, j);
             }
         }
 
-        for (var8 = 0; var8 < var4.length; ++var8)
+        if (p_179756_1_)
         {
-            if (var4[var8] != null && (!p_149269_1_ || !var4[var8].isEmpty()) && (p_149269_2_ & 1 << var8) != 0)
-            {
-                var11 = var4[var8].getBlocklightArray();
-                System.arraycopy(var11.data, 0, var7, var3, var11.data.length);
-                var3 += var11.data.length;
-            }
+            func_179757_a(p_179756_0_.getBiomeArray(), s21packetchunkdata$extracted.data, j);
         }
 
-        if (!p_149269_0_.worldObj.provider.hasNoSky)
-        {
-            for (var8 = 0; var8 < var4.length; ++var8)
-            {
-                if (var4[var8] != null && (!p_149269_1_ || !var4[var8].isEmpty()) && (p_149269_2_ & 1 << var8) != 0)
-                {
-                    var11 = var4[var8].getSkylightArray();
-                    System.arraycopy(var11.data, 0, var7, var3, var11.data.length);
-                    var3 += var11.data.length;
-                }
-            }
-        }
-
-        if (var5 > 0)
-        {
-            for (var8 = 0; var8 < var4.length; ++var8)
-            {
-                if (var4[var8] != null && (!p_149269_1_ || !var4[var8].isEmpty()) && var4[var8].getBlockMSBArray() != null && (p_149269_2_ & 1 << var8) != 0)
-                {
-                    var11 = var4[var8].getBlockMSBArray();
-                    System.arraycopy(var11.data, 0, var7, var3, var11.data.length);
-                    var3 += var11.data.length;
-                }
-            }
-        }
-
-        if (p_149269_1_)
-        {
-            byte[] var10 = p_149269_0_.getBiomeArray();
-            System.arraycopy(var10, 0, var7, var3, var10.length);
-            var3 += var10.length;
-        }
-
-        var6.field_150282_a = new byte[var3];
-        System.arraycopy(var7, 0, var6.field_150282_a, 0, var3);
-        return var6;
+        return s21packetchunkdata$extracted;
     }
 
-    public int func_149273_e()
+    private static int func_179757_a(byte[] p_179757_0_, byte[] p_179757_1_, int p_179757_2_)
     {
-        return this.field_149284_a;
+        System.arraycopy(p_179757_0_, 0, p_179757_1_, p_179757_2_, p_179757_0_.length);
+        return p_179757_2_ + p_179757_0_.length;
     }
 
-    public int func_149271_f()
+    public int getChunkX()
     {
-        return this.field_149282_b;
+        return this.chunkX;
     }
 
-    public int func_149276_g()
+    public int getChunkZ()
     {
-        return this.field_149283_c;
+        return this.chunkZ;
     }
 
-    public int func_149270_h()
+    public int getExtractedSize()
     {
-        return this.field_149280_d;
+        return this.extractedData.dataSize;
     }
 
     public boolean func_149274_i()
@@ -263,16 +153,9 @@ public class S21PacketChunkData extends Packet
         return this.field_149279_g;
     }
 
-    public void processPacket(INetHandler p_148833_1_)
-    {
-        this.processPacket((INetHandlerPlayClient)p_148833_1_);
-    }
-
     public static class Extracted
     {
-        public byte[] field_150282_a;
-        public int field_150280_b;
-        public int field_150281_c;
-        private static final String __OBFID = "CL_00001305";
+        public byte[] data;
+        public int dataSize;
     }
 }

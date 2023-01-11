@@ -12,22 +12,22 @@ public class Button implements ApiGui{
         this.button = new GuiButton(9999+id, x,y,width,height,displayString);
     }
     public int getX(){
-        return this.button.x;
+        return this.button.xPosition;
     }
     public void setX(int x){
-        this.button.x = x;
+        this.button.xPosition = x;
     }
     public int getY(){
-        return this.button.y;
+        return this.button.yPosition;
     }
     public void setY(int y){
-        this.button.y = y;
+        this.button.yPosition = y;
     }
     public int getWidth(){
-        return this.button.getWidth();
+        return this.button.getButtonWidth();
     }
     public int getHeight(){
-        return this.button.getHeight();
+        return this.button.getButtonWidth();
     }
     @Override
     public void draw(Session session){
@@ -36,12 +36,10 @@ public class Button implements ApiGui{
         this.button.drawButton(Minecraft.getMinecraft(), x, y);
     }
     @Override
-    public boolean mousePressed(Session session){
-        int x = MouseHandler.INSTANCE.x;
-        int y = MouseHandler.INSTANCE.y;
-        boolean h = this.button.mousePressed(Minecraft.getMinecraft(), x, y);
+    public boolean mousePressed(int mouseX, int mouseY, int button){
+        boolean h = this.button.mousePressed(Minecraft.getMinecraft(), mouseX, mouseY);
         if(h){
-            this.button.func_146113_a(Minecraft.getMinecraft().getSoundHandler());
+            this.button.playPressSound(Minecraft.getMinecraft().getSoundHandler());
             this.onClick();
         }
         return h;

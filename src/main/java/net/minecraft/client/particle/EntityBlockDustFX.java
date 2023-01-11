@@ -1,17 +1,25 @@
 package net.minecraft.client.particle;
 
 import net.minecraft.block.Block;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.world.World;
 
 public class EntityBlockDustFX extends EntityDiggingFX
 {
-    private static final String __OBFID = "CL_00000931";
-
-    public EntityBlockDustFX(World p_i45072_1_, double p_i45072_2_, double p_i45072_4_, double p_i45072_6_, double p_i45072_8_, double p_i45072_10_, double p_i45072_12_, Block p_i45072_14_, int p_i45072_15_)
+    protected EntityBlockDustFX(World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double xSpeedIn, double ySpeedIn, double zSpeedIn, IBlockState state)
     {
-        super(p_i45072_1_, p_i45072_2_, p_i45072_4_, p_i45072_6_, p_i45072_8_, p_i45072_10_, p_i45072_12_, p_i45072_14_, p_i45072_15_);
-        this.motionX = p_i45072_8_;
-        this.motionY = p_i45072_10_;
-        this.motionZ = p_i45072_12_;
+        super(worldIn, xCoordIn, yCoordIn, zCoordIn, xSpeedIn, ySpeedIn, zSpeedIn, state);
+        this.motionX = xSpeedIn;
+        this.motionY = ySpeedIn;
+        this.motionZ = zSpeedIn;
+    }
+
+    public static class Factory implements IParticleFactory
+    {
+        public EntityFX getEntityFX(int particleID, World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double xSpeedIn, double ySpeedIn, double zSpeedIn, int... p_178902_15_)
+        {
+            IBlockState iblockstate = Block.getStateById(p_178902_15_[0]);
+            return iblockstate.getBlock().getRenderType() == -1 ? null : (new EntityBlockDustFX(worldIn, xCoordIn, yCoordIn, zCoordIn, xSpeedIn, ySpeedIn, zSpeedIn, iblockstate)).func_174845_l();
+        }
     }
 }

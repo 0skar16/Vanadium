@@ -5,200 +5,190 @@ import java.util.List;
 import net.minecraft.entity.DataWatcher;
 import net.minecraft.entity.EntityList;
 import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.network.INetHandler;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 import net.minecraft.util.MathHelper;
 
-public class S0FPacketSpawnMob extends Packet
+public class S0FPacketSpawnMob implements Packet<INetHandlerPlayClient>
 {
-    private int field_149042_a;
-    private int field_149040_b;
-    private int field_149041_c;
-    private int field_149038_d;
-    private int field_149039_e;
-    private int field_149036_f;
-    private int field_149037_g;
-    private int field_149047_h;
-    private byte field_149048_i;
-    private byte field_149045_j;
-    private byte field_149046_k;
+    private int entityId;
+    private int type;
+    private int x;
+    private int y;
+    private int z;
+    private int velocityX;
+    private int velocityY;
+    private int velocityZ;
+    private byte yaw;
+    private byte pitch;
+    private byte headPitch;
     private DataWatcher field_149043_l;
-    private List field_149044_m;
-    private static final String __OBFID = "CL_00001279";
+    private List<DataWatcher.WatchableObject> watcher;
 
-    public S0FPacketSpawnMob() {}
-
-    public S0FPacketSpawnMob(EntityLivingBase p_i45192_1_)
+    public S0FPacketSpawnMob()
     {
-        this.field_149042_a = p_i45192_1_.getEntityId();
-        this.field_149040_b = (byte)EntityList.getEntityID(p_i45192_1_);
-        this.field_149041_c = p_i45192_1_.myEntitySize.multiplyBy32AndRound(p_i45192_1_.posX);
-        this.field_149038_d = MathHelper.floor_double(p_i45192_1_.posY * 32.0D);
-        this.field_149039_e = p_i45192_1_.myEntitySize.multiplyBy32AndRound(p_i45192_1_.posZ);
-        this.field_149048_i = (byte)((int)(p_i45192_1_.rotationYaw * 256.0F / 360.0F));
-        this.field_149045_j = (byte)((int)(p_i45192_1_.rotationPitch * 256.0F / 360.0F));
-        this.field_149046_k = (byte)((int)(p_i45192_1_.rotationYawHead * 256.0F / 360.0F));
-        double var2 = 3.9D;
-        double var4 = p_i45192_1_.motionX;
-        double var6 = p_i45192_1_.motionY;
-        double var8 = p_i45192_1_.motionZ;
+    }
 
-        if (var4 < -var2)
+    public S0FPacketSpawnMob(EntityLivingBase entityIn)
+    {
+        this.entityId = entityIn.getEntityId();
+        this.type = (byte)EntityList.getEntityID(entityIn);
+        this.x = MathHelper.floor_double(entityIn.posX * 32.0D);
+        this.y = MathHelper.floor_double(entityIn.posY * 32.0D);
+        this.z = MathHelper.floor_double(entityIn.posZ * 32.0D);
+        this.yaw = (byte)((int)(entityIn.rotationYaw * 256.0F / 360.0F));
+        this.pitch = (byte)((int)(entityIn.rotationPitch * 256.0F / 360.0F));
+        this.headPitch = (byte)((int)(entityIn.rotationYawHead * 256.0F / 360.0F));
+        double d0 = 3.9D;
+        double d1 = entityIn.motionX;
+        double d2 = entityIn.motionY;
+        double d3 = entityIn.motionZ;
+
+        if (d1 < -d0)
         {
-            var4 = -var2;
+            d1 = -d0;
         }
 
-        if (var6 < -var2)
+        if (d2 < -d0)
         {
-            var6 = -var2;
+            d2 = -d0;
         }
 
-        if (var8 < -var2)
+        if (d3 < -d0)
         {
-            var8 = -var2;
+            d3 = -d0;
         }
 
-        if (var4 > var2)
+        if (d1 > d0)
         {
-            var4 = var2;
+            d1 = d0;
         }
 
-        if (var6 > var2)
+        if (d2 > d0)
         {
-            var6 = var2;
+            d2 = d0;
         }
 
-        if (var8 > var2)
+        if (d3 > d0)
         {
-            var8 = var2;
+            d3 = d0;
         }
 
-        this.field_149036_f = (int)(var4 * 8000.0D);
-        this.field_149037_g = (int)(var6 * 8000.0D);
-        this.field_149047_h = (int)(var8 * 8000.0D);
-        this.field_149043_l = p_i45192_1_.getDataWatcher();
+        this.velocityX = (int)(d1 * 8000.0D);
+        this.velocityY = (int)(d2 * 8000.0D);
+        this.velocityZ = (int)(d3 * 8000.0D);
+        this.field_149043_l = entityIn.getDataWatcher();
     }
 
     /**
      * Reads the raw packet data from the data stream.
      */
-    public void readPacketData(PacketBuffer p_148837_1_) throws IOException
+    public void readPacketData(PacketBuffer buf) throws IOException
     {
-        this.field_149042_a = p_148837_1_.readVarIntFromBuffer();
-        this.field_149040_b = p_148837_1_.readByte() & 255;
-        this.field_149041_c = p_148837_1_.readInt();
-        this.field_149038_d = p_148837_1_.readInt();
-        this.field_149039_e = p_148837_1_.readInt();
-        this.field_149048_i = p_148837_1_.readByte();
-        this.field_149045_j = p_148837_1_.readByte();
-        this.field_149046_k = p_148837_1_.readByte();
-        this.field_149036_f = p_148837_1_.readShort();
-        this.field_149037_g = p_148837_1_.readShort();
-        this.field_149047_h = p_148837_1_.readShort();
-        this.field_149044_m = DataWatcher.readWatchedListFromPacketBuffer(p_148837_1_);
+        this.entityId = buf.readVarIntFromBuffer();
+        this.type = buf.readByte() & 255;
+        this.x = buf.readInt();
+        this.y = buf.readInt();
+        this.z = buf.readInt();
+        this.yaw = buf.readByte();
+        this.pitch = buf.readByte();
+        this.headPitch = buf.readByte();
+        this.velocityX = buf.readShort();
+        this.velocityY = buf.readShort();
+        this.velocityZ = buf.readShort();
+        this.watcher = DataWatcher.readWatchedListFromPacketBuffer(buf);
     }
 
     /**
      * Writes the raw packet data to the data stream.
      */
-    public void writePacketData(PacketBuffer p_148840_1_) throws IOException
+    public void writePacketData(PacketBuffer buf) throws IOException
     {
-        p_148840_1_.writeVarIntToBuffer(this.field_149042_a);
-        p_148840_1_.writeByte(this.field_149040_b & 255);
-        p_148840_1_.writeInt(this.field_149041_c);
-        p_148840_1_.writeInt(this.field_149038_d);
-        p_148840_1_.writeInt(this.field_149039_e);
-        p_148840_1_.writeByte(this.field_149048_i);
-        p_148840_1_.writeByte(this.field_149045_j);
-        p_148840_1_.writeByte(this.field_149046_k);
-        p_148840_1_.writeShort(this.field_149036_f);
-        p_148840_1_.writeShort(this.field_149037_g);
-        p_148840_1_.writeShort(this.field_149047_h);
-        this.field_149043_l.func_151509_a(p_148840_1_);
-    }
-
-    public void processPacket(INetHandlerPlayClient p_148833_1_)
-    {
-        p_148833_1_.handleSpawnMob(this);
-    }
-
-    public List func_149027_c()
-    {
-        if (this.field_149044_m == null)
-        {
-            this.field_149044_m = this.field_149043_l.getAllWatched();
-        }
-
-        return this.field_149044_m;
+        buf.writeVarIntToBuffer(this.entityId);
+        buf.writeByte(this.type & 255);
+        buf.writeInt(this.x);
+        buf.writeInt(this.y);
+        buf.writeInt(this.z);
+        buf.writeByte(this.yaw);
+        buf.writeByte(this.pitch);
+        buf.writeByte(this.headPitch);
+        buf.writeShort(this.velocityX);
+        buf.writeShort(this.velocityY);
+        buf.writeShort(this.velocityZ);
+        this.field_149043_l.writeTo(buf);
     }
 
     /**
-     * Returns a string formatted as comma separated [field]=[value] values. Used by Minecraft for logging purposes.
+     * Passes this Packet on to the NetHandler for processing.
      */
-    public String serialize()
+    public void processPacket(INetHandlerPlayClient handler)
     {
-        return String.format("id=%d, type=%d, x=%.2f, y=%.2f, z=%.2f, xd=%.2f, yd=%.2f, zd=%.2f", new Object[] {Integer.valueOf(this.field_149042_a), Integer.valueOf(this.field_149040_b), Float.valueOf((float)this.field_149041_c / 32.0F), Float.valueOf((float)this.field_149038_d / 32.0F), Float.valueOf((float)this.field_149039_e / 32.0F), Float.valueOf((float)this.field_149036_f / 8000.0F), Float.valueOf((float)this.field_149037_g / 8000.0F), Float.valueOf((float)this.field_149047_h / 8000.0F)});
+        handler.handleSpawnMob(this);
     }
 
-    public int func_149024_d()
+    public List<DataWatcher.WatchableObject> func_149027_c()
     {
-        return this.field_149042_a;
+        if (this.watcher == null)
+        {
+            this.watcher = this.field_149043_l.getAllWatched();
+        }
+
+        return this.watcher;
     }
 
-    public int func_149025_e()
+    public int getEntityID()
     {
-        return this.field_149040_b;
+        return this.entityId;
     }
 
-    public int func_149023_f()
+    public int getEntityType()
     {
-        return this.field_149041_c;
+        return this.type;
     }
 
-    public int func_149034_g()
+    public int getX()
     {
-        return this.field_149038_d;
+        return this.x;
     }
 
-    public int func_149029_h()
+    public int getY()
     {
-        return this.field_149039_e;
+        return this.y;
     }
 
-    public int func_149026_i()
+    public int getZ()
     {
-        return this.field_149036_f;
+        return this.z;
     }
 
-    public int func_149033_j()
+    public int getVelocityX()
     {
-        return this.field_149037_g;
+        return this.velocityX;
     }
 
-    public int func_149031_k()
+    public int getVelocityY()
     {
-        return this.field_149047_h;
+        return this.velocityY;
     }
 
-    public byte func_149028_l()
+    public int getVelocityZ()
     {
-        return this.field_149048_i;
+        return this.velocityZ;
     }
 
-    public byte func_149030_m()
+    public byte getYaw()
     {
-        return this.field_149045_j;
+        return this.yaw;
     }
 
-    public byte func_149032_n()
+    public byte getPitch()
     {
-        return this.field_149046_k;
+        return this.pitch;
     }
 
-    public void processPacket(INetHandler p_148833_1_)
+    public byte getHeadPitch()
     {
-        this.processPacket((INetHandlerPlayClient)p_148833_1_);
+        return this.headPitch;
     }
 }

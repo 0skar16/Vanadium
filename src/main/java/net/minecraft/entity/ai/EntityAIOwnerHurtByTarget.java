@@ -8,12 +8,11 @@ public class EntityAIOwnerHurtByTarget extends EntityAITarget
     EntityTameable theDefendingTameable;
     EntityLivingBase theOwnerAttacker;
     private int field_142051_e;
-    private static final String __OBFID = "CL_00001624";
 
-    public EntityAIOwnerHurtByTarget(EntityTameable p_i1667_1_)
+    public EntityAIOwnerHurtByTarget(EntityTameable theDefendingTameableIn)
     {
-        super(p_i1667_1_, false);
-        this.theDefendingTameable = p_i1667_1_;
+        super(theDefendingTameableIn, false);
+        this.theDefendingTameable = theDefendingTameableIn;
         this.setMutexBits(1);
     }
 
@@ -28,17 +27,17 @@ public class EntityAIOwnerHurtByTarget extends EntityAITarget
         }
         else
         {
-            EntityLivingBase var1 = this.theDefendingTameable.getOwner();
+            EntityLivingBase entitylivingbase = this.theDefendingTameable.getOwner();
 
-            if (var1 == null)
+            if (entitylivingbase == null)
             {
                 return false;
             }
             else
             {
-                this.theOwnerAttacker = var1.getAITarget();
-                int var2 = var1.func_142015_aE();
-                return var2 != this.field_142051_e && this.isSuitableTarget(this.theOwnerAttacker, false) && this.theDefendingTameable.func_142018_a(this.theOwnerAttacker, var1);
+                this.theOwnerAttacker = entitylivingbase.getAITarget();
+                int i = entitylivingbase.getRevengeTimer();
+                return i != this.field_142051_e && this.isSuitableTarget(this.theOwnerAttacker, false) && this.theDefendingTameable.shouldAttackEntity(this.theOwnerAttacker, entitylivingbase);
             }
         }
     }
@@ -49,11 +48,11 @@ public class EntityAIOwnerHurtByTarget extends EntityAITarget
     public void startExecuting()
     {
         this.taskOwner.setAttackTarget(this.theOwnerAttacker);
-        EntityLivingBase var1 = this.theDefendingTameable.getOwner();
+        EntityLivingBase entitylivingbase = this.theDefendingTameable.getOwner();
 
-        if (var1 != null)
+        if (entitylivingbase != null)
         {
-            this.field_142051_e = var1.func_142015_aE();
+            this.field_142051_e = entitylivingbase.getRevengeTimer();
         }
 
         super.startExecuting();

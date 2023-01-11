@@ -1,83 +1,85 @@
 package net.minecraft.world.gen.feature;
 
+import java.util.List;
 import java.util.Random;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.init.Blocks;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityChest;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.WeightedRandomChestContent;
 import net.minecraft.world.World;
 
 public class WorldGeneratorBonusChest extends WorldGenerator
 {
-    /**
-     * Instance of WeightedRandomChestContent what will randomly generate items into the Bonus Chest.
-     */
-    private final WeightedRandomChestContent[] theBonusChestGenerator;
+    private final List<WeightedRandomChestContent> chestItems;
 
     /**
      * Value of this int will determine how much items gonna generate in Bonus Chest.
      */
     private final int itemsToGenerateInBonusChest;
-    private static final String __OBFID = "CL_00000403";
 
-    public WorldGeneratorBonusChest(WeightedRandomChestContent[] p_i2010_1_, int p_i2010_2_)
+    public WorldGeneratorBonusChest(List<WeightedRandomChestContent> p_i45634_1_, int p_i45634_2_)
     {
-        this.theBonusChestGenerator = p_i2010_1_;
-        this.itemsToGenerateInBonusChest = p_i2010_2_;
+        this.chestItems = p_i45634_1_;
+        this.itemsToGenerateInBonusChest = p_i45634_2_;
     }
 
-    public boolean generate(World p_76484_1_, Random p_76484_2_, int p_76484_3_, int p_76484_4_, int p_76484_5_)
+    public boolean generate(World worldIn, Random rand, BlockPos position)
     {
-        Block var6;
+        Block block;
 
-        while (((var6 = p_76484_1_.getBlock(p_76484_3_, p_76484_4_, p_76484_5_)).getMaterial() == Material.air || var6.getMaterial() == Material.leaves) && p_76484_4_ > 1)
+        while (((block = worldIn.getBlockState(position).getBlock()).getMaterial() == Material.air || block.getMaterial() == Material.leaves) && position.getY() > 1)
         {
-            --p_76484_4_;
+            position = position.down();
         }
 
-        if (p_76484_4_ < 1)
+        if (position.getY() < 1)
         {
             return false;
         }
         else
         {
-            ++p_76484_4_;
+            position = position.up();
 
-            for (int var7 = 0; var7 < 4; ++var7)
+            for (int i = 0; i < 4; ++i)
             {
-                int var8 = p_76484_3_ + p_76484_2_.nextInt(4) - p_76484_2_.nextInt(4);
-                int var9 = p_76484_4_ + p_76484_2_.nextInt(3) - p_76484_2_.nextInt(3);
-                int var10 = p_76484_5_ + p_76484_2_.nextInt(4) - p_76484_2_.nextInt(4);
+                BlockPos blockpos = position.add(rand.nextInt(4) - rand.nextInt(4), rand.nextInt(3) - rand.nextInt(3), rand.nextInt(4) - rand.nextInt(4));
 
-                if (p_76484_1_.isAirBlock(var8, var9, var10) && World.doesBlockHaveSolidTopSurface(p_76484_1_, var8, var9 - 1, var10))
+                if (worldIn.isAirBlock(blockpos) && World.doesBlockHaveSolidTopSurface(worldIn, blockpos.down()))
                 {
-                    p_76484_1_.setBlock(var8, var9, var10, Blocks.chest, 0, 2);
-                    TileEntityChest var11 = (TileEntityChest)p_76484_1_.getTileEntity(var8, var9, var10);
+                    worldIn.setBlockState(blockpos, Blocks.chest.getDefaultState(), 2);
+                    TileEntity tileentity = worldIn.getTileEntity(blockpos);
 
-                    if (var11 != null && var11 != null)
+                    if (tileentity instanceof TileEntityChest)
                     {
-                        WeightedRandomChestContent.generateChestContents(p_76484_2_, this.theBonusChestGenerator, var11, this.itemsToGenerateInBonusChest);
+                        WeightedRandomChestContent.generateChestContents(rand, this.chestItems, (TileEntityChest)tileentity, this.itemsToGenerateInBonusChest);
                     }
 
-                    if (p_76484_1_.isAirBlock(var8 - 1, var9, var10) && World.doesBlockHaveSolidTopSurface(p_76484_1_, var8 - 1, var9 - 1, var10))
+                    BlockPos blockpos1 = blockpos.east();
+                    BlockPos blockpos2 = blockpos.west();
+                    BlockPos blockpos3 = blockpos.north();
+                    BlockPos blockpos4 = blockpos.south();
+
+                    if (worldIn.isAirBlock(blockpos2) && World.doesBlockHaveSolidTopSurface(worldIn, blockpos2.down()))
                     {
-                        p_76484_1_.setBlock(var8 - 1, var9, var10, Blocks.torch, 0, 2);
+                        worldIn.setBlockState(blockpos2, Blocks.torch.getDefaultState(), 2);
                     }
 
-                    if (p_76484_1_.isAirBlock(var8 + 1, var9, var10) && World.doesBlockHaveSolidTopSurface(p_76484_1_, var8 - 1, var9 - 1, var10))
+                    if (worldIn.isAirBlock(blockpos1) && World.doesBlockHaveSolidTopSurface(worldIn, blockpos1.down()))
                     {
-                        p_76484_1_.setBlock(var8 + 1, var9, var10, Blocks.torch, 0, 2);
+                        worldIn.setBlockState(blockpos1, Blocks.torch.getDefaultState(), 2);
                     }
 
-                    if (p_76484_1_.isAirBlock(var8, var9, var10 - 1) && World.doesBlockHaveSolidTopSurface(p_76484_1_, var8 - 1, var9 - 1, var10))
+                    if (worldIn.isAirBlock(blockpos3) && World.doesBlockHaveSolidTopSurface(worldIn, blockpos3.down()))
                     {
-                        p_76484_1_.setBlock(var8, var9, var10 - 1, Blocks.torch, 0, 2);
+                        worldIn.setBlockState(blockpos3, Blocks.torch.getDefaultState(), 2);
                     }
 
-                    if (p_76484_1_.isAirBlock(var8, var9, var10 + 1) && World.doesBlockHaveSolidTopSurface(p_76484_1_, var8 - 1, var9 - 1, var10))
+                    if (worldIn.isAirBlock(blockpos4) && World.doesBlockHaveSolidTopSurface(worldIn, blockpos4.down()))
                     {
-                        p_76484_1_.setBlock(var8, var9, var10 + 1, Blocks.torch, 0, 2);
+                        worldIn.setBlockState(blockpos4, Blocks.torch.getDefaultState(), 2);
                     }
 
                     return true;

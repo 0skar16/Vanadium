@@ -8,8 +8,6 @@ import net.minecraft.world.chunk.storage.IChunkLoader;
 
 public class SaveHandlerMP implements ISaveHandler
 {
-    private static final String __OBFID = "CL_00000602";
-
     /**
      * Loads and returns the world info
      */
@@ -21,12 +19,14 @@ public class SaveHandlerMP implements ISaveHandler
     /**
      * Checks the session lock to prevent save collisions
      */
-    public void checkSessionLock() throws MinecraftException {}
+    public void checkSessionLock() throws MinecraftException
+    {
+    }
 
     /**
-     * Returns the chunk loader with the provided world provider
+     * initializes and returns the chunk loader for the specified world provider
      */
-    public IChunkLoader getChunkLoader(WorldProvider p_75763_1_)
+    public IChunkLoader getChunkLoader(WorldProvider provider)
     {
         return null;
     }
@@ -34,17 +34,18 @@ public class SaveHandlerMP implements ISaveHandler
     /**
      * Saves the given World Info with the given NBTTagCompound as the Player.
      */
-    public void saveWorldInfoWithPlayer(WorldInfo p_75755_1_, NBTTagCompound p_75755_2_) {}
+    public void saveWorldInfoWithPlayer(WorldInfo worldInformation, NBTTagCompound tagCompound)
+    {
+    }
 
     /**
-     * Saves the passed in world info.
+     * used to update level.dat from old format to MCRegion format
      */
-    public void saveWorldInfo(WorldInfo p_75761_1_) {}
+    public void saveWorldInfo(WorldInfo worldInformation)
+    {
+    }
 
-    /**
-     * returns null if no saveHandler is relevent (eg. SMP)
-     */
-    public IPlayerFileData getSaveHandler()
+    public IPlayerFileData getPlayerNBTManager()
     {
         return null;
     }
@@ -52,12 +53,14 @@ public class SaveHandlerMP implements ISaveHandler
     /**
      * Called to flush all changes to disk, waiting for them to complete.
      */
-    public void flush() {}
+    public void flush()
+    {
+    }
 
     /**
      * Gets the file location of the given map
      */
-    public File getMapFileFromName(String p_75758_1_)
+    public File getMapFileFromName(String mapName)
     {
         return null;
     }

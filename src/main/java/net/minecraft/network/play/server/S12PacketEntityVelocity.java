@@ -2,123 +2,113 @@ package net.minecraft.network.play.server;
 
 import java.io.IOException;
 import net.minecraft.entity.Entity;
-import net.minecraft.network.INetHandler;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayClient;
 
-public class S12PacketEntityVelocity extends Packet
+public class S12PacketEntityVelocity implements Packet<INetHandlerPlayClient>
 {
-    private int field_149417_a;
-    private int field_149415_b;
-    private int field_149416_c;
-    private int field_149414_d;
-    private static final String __OBFID = "CL_00001328";
+    private int entityID;
+    private int motionX;
+    private int motionY;
+    private int motionZ;
 
-    public S12PacketEntityVelocity() {}
-
-    public S12PacketEntityVelocity(Entity p_i45219_1_)
+    public S12PacketEntityVelocity()
     {
-        this(p_i45219_1_.getEntityId(), p_i45219_1_.motionX, p_i45219_1_.motionY, p_i45219_1_.motionZ);
     }
 
-    public S12PacketEntityVelocity(int p_i45220_1_, double p_i45220_2_, double p_i45220_4_, double p_i45220_6_)
+    public S12PacketEntityVelocity(Entity entityIn)
     {
-        this.field_149417_a = p_i45220_1_;
-        double var8 = 3.9D;
+        this(entityIn.getEntityId(), entityIn.motionX, entityIn.motionY, entityIn.motionZ);
+    }
 
-        if (p_i45220_2_ < -var8)
+    public S12PacketEntityVelocity(int entityIDIn, double motionXIn, double motionYIn, double motionZIn)
+    {
+        this.entityID = entityIDIn;
+        double d0 = 3.9D;
+
+        if (motionXIn < -d0)
         {
-            p_i45220_2_ = -var8;
+            motionXIn = -d0;
         }
 
-        if (p_i45220_4_ < -var8)
+        if (motionYIn < -d0)
         {
-            p_i45220_4_ = -var8;
+            motionYIn = -d0;
         }
 
-        if (p_i45220_6_ < -var8)
+        if (motionZIn < -d0)
         {
-            p_i45220_6_ = -var8;
+            motionZIn = -d0;
         }
 
-        if (p_i45220_2_ > var8)
+        if (motionXIn > d0)
         {
-            p_i45220_2_ = var8;
+            motionXIn = d0;
         }
 
-        if (p_i45220_4_ > var8)
+        if (motionYIn > d0)
         {
-            p_i45220_4_ = var8;
+            motionYIn = d0;
         }
 
-        if (p_i45220_6_ > var8)
+        if (motionZIn > d0)
         {
-            p_i45220_6_ = var8;
+            motionZIn = d0;
         }
 
-        this.field_149415_b = (int)(p_i45220_2_ * 8000.0D);
-        this.field_149416_c = (int)(p_i45220_4_ * 8000.0D);
-        this.field_149414_d = (int)(p_i45220_6_ * 8000.0D);
+        this.motionX = (int)(motionXIn * 8000.0D);
+        this.motionY = (int)(motionYIn * 8000.0D);
+        this.motionZ = (int)(motionZIn * 8000.0D);
     }
 
     /**
      * Reads the raw packet data from the data stream.
      */
-    public void readPacketData(PacketBuffer p_148837_1_) throws IOException
+    public void readPacketData(PacketBuffer buf) throws IOException
     {
-        this.field_149417_a = p_148837_1_.readInt();
-        this.field_149415_b = p_148837_1_.readShort();
-        this.field_149416_c = p_148837_1_.readShort();
-        this.field_149414_d = p_148837_1_.readShort();
+        this.entityID = buf.readVarIntFromBuffer();
+        this.motionX = buf.readShort();
+        this.motionY = buf.readShort();
+        this.motionZ = buf.readShort();
     }
 
     /**
      * Writes the raw packet data to the data stream.
      */
-    public void writePacketData(PacketBuffer p_148840_1_) throws IOException
+    public void writePacketData(PacketBuffer buf) throws IOException
     {
-        p_148840_1_.writeInt(this.field_149417_a);
-        p_148840_1_.writeShort(this.field_149415_b);
-        p_148840_1_.writeShort(this.field_149416_c);
-        p_148840_1_.writeShort(this.field_149414_d);
-    }
-
-    public void processPacket(INetHandlerPlayClient p_148833_1_)
-    {
-        p_148833_1_.handleEntityVelocity(this);
+        buf.writeVarIntToBuffer(this.entityID);
+        buf.writeShort(this.motionX);
+        buf.writeShort(this.motionY);
+        buf.writeShort(this.motionZ);
     }
 
     /**
-     * Returns a string formatted as comma separated [field]=[value] values. Used by Minecraft for logging purposes.
+     * Passes this Packet on to the NetHandler for processing.
      */
-    public String serialize()
+    public void processPacket(INetHandlerPlayClient handler)
     {
-        return String.format("id=%d, x=%.2f, y=%.2f, z=%.2f", new Object[] {Integer.valueOf(this.field_149417_a), Float.valueOf((float)this.field_149415_b / 8000.0F), Float.valueOf((float)this.field_149416_c / 8000.0F), Float.valueOf((float)this.field_149414_d / 8000.0F)});
+        handler.handleEntityVelocity(this);
     }
 
-    public int func_149412_c()
+    public int getEntityID()
     {
-        return this.field_149417_a;
+        return this.entityID;
     }
 
-    public int func_149411_d()
+    public int getMotionX()
     {
-        return this.field_149415_b;
+        return this.motionX;
     }
 
-    public int func_149410_e()
+    public int getMotionY()
     {
-        return this.field_149416_c;
+        return this.motionY;
     }
 
-    public int func_149409_f()
+    public int getMotionZ()
     {
-        return this.field_149414_d;
-    }
-
-    public void processPacket(INetHandler p_148833_1_)
-    {
-        this.processPacket((INetHandlerPlayClient)p_148833_1_);
+        return this.motionZ;
     }
 }

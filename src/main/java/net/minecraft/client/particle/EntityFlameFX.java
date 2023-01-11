@@ -1,23 +1,24 @@
 package net.minecraft.client.particle;
 
-import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.WorldRenderer;
+import net.minecraft.entity.Entity;
+import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 
 public class EntityFlameFX extends EntityFX
 {
     /** the scale of the flame FX */
     private float flameScale;
-    private static final String __OBFID = "CL_00000907";
 
-    public EntityFlameFX(World p_i1209_1_, double p_i1209_2_, double p_i1209_4_, double p_i1209_6_, double p_i1209_8_, double p_i1209_10_, double p_i1209_12_)
+    protected EntityFlameFX(World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double xSpeedIn, double ySpeedIn, double zSpeedIn)
     {
-        super(p_i1209_1_, p_i1209_2_, p_i1209_4_, p_i1209_6_, p_i1209_8_, p_i1209_10_, p_i1209_12_);
-        this.motionX = this.motionX * 0.009999999776482582D + p_i1209_8_;
-        this.motionY = this.motionY * 0.009999999776482582D + p_i1209_10_;
-        this.motionZ = this.motionZ * 0.009999999776482582D + p_i1209_12_;
-        double var10000 = p_i1209_2_ + (double)((this.rand.nextFloat() - this.rand.nextFloat()) * 0.05F);
-        var10000 = p_i1209_4_ + (double)((this.rand.nextFloat() - this.rand.nextFloat()) * 0.05F);
-        var10000 = p_i1209_6_ + (double)((this.rand.nextFloat() - this.rand.nextFloat()) * 0.05F);
+        super(worldIn, xCoordIn, yCoordIn, zCoordIn, xSpeedIn, ySpeedIn, zSpeedIn);
+        this.motionX = this.motionX * 0.009999999776482582D + xSpeedIn;
+        this.motionY = this.motionY * 0.009999999776482582D + ySpeedIn;
+        this.motionZ = this.motionZ * 0.009999999776482582D + zSpeedIn;
+        this.posX += (double)((this.rand.nextFloat() - this.rand.nextFloat()) * 0.05F);
+        this.posY += (double)((this.rand.nextFloat() - this.rand.nextFloat()) * 0.05F);
+        this.posZ += (double)((this.rand.nextFloat() - this.rand.nextFloat()) * 0.05F);
         this.flameScale = this.particleScale;
         this.particleRed = this.particleGreen = this.particleBlue = 1.0F;
         this.particleMaxAge = (int)(8.0D / (Math.random() * 0.8D + 0.2D)) + 4;
@@ -25,59 +26,42 @@ public class EntityFlameFX extends EntityFX
         this.setParticleTextureIndex(48);
     }
 
-    public void renderParticle(Tessellator p_70539_1_, float p_70539_2_, float p_70539_3_, float p_70539_4_, float p_70539_5_, float p_70539_6_, float p_70539_7_)
+    /**
+     * Renders the particle
+     */
+    public void renderParticle(WorldRenderer worldRendererIn, Entity entityIn, float partialTicks, float rotationX, float rotationZ, float rotationYZ, float rotationXY, float rotationXZ)
     {
-        float var8 = ((float)this.particleAge + p_70539_2_) / (float)this.particleMaxAge;
-        this.particleScale = this.flameScale * (1.0F - var8 * var8 * 0.5F);
-        super.renderParticle(p_70539_1_, p_70539_2_, p_70539_3_, p_70539_4_, p_70539_5_, p_70539_6_, p_70539_7_);
+        float f = ((float)this.particleAge + partialTicks) / (float)this.particleMaxAge;
+        this.particleScale = this.flameScale * (1.0F - f * f * 0.5F);
+        super.renderParticle(worldRendererIn, entityIn, partialTicks, rotationX, rotationZ, rotationYZ, rotationXY, rotationXZ);
     }
 
-    public int getBrightnessForRender(float p_70070_1_)
+    public int getBrightnessForRender(float partialTicks)
     {
-        float var2 = ((float)this.particleAge + p_70070_1_) / (float)this.particleMaxAge;
+        float f = ((float)this.particleAge + partialTicks) / (float)this.particleMaxAge;
+        f = MathHelper.clamp_float(f, 0.0F, 1.0F);
+        int i = super.getBrightnessForRender(partialTicks);
+        int j = i & 255;
+        int k = i >> 16 & 255;
+        j = j + (int)(f * 15.0F * 16.0F);
 
-        if (var2 < 0.0F)
+        if (j > 240)
         {
-            var2 = 0.0F;
+            j = 240;
         }
 
-        if (var2 > 1.0F)
-        {
-            var2 = 1.0F;
-        }
-
-        int var3 = super.getBrightnessForRender(p_70070_1_);
-        int var4 = var3 & 255;
-        int var5 = var3 >> 16 & 255;
-        var4 += (int)(var2 * 15.0F * 16.0F);
-
-        if (var4 > 240)
-        {
-            var4 = 240;
-        }
-
-        return var4 | var5 << 16;
+        return j | k << 16;
     }
 
     /**
      * Gets how bright this entity is.
      */
-    public float getBrightness(float p_70013_1_)
+    public float getBrightness(float partialTicks)
     {
-        float var2 = ((float)this.particleAge + p_70013_1_) / (float)this.particleMaxAge;
-
-        if (var2 < 0.0F)
-        {
-            var2 = 0.0F;
-        }
-
-        if (var2 > 1.0F)
-        {
-            var2 = 1.0F;
-        }
-
-        float var3 = super.getBrightness(p_70013_1_);
-        return var3 * var2 + (1.0F - var2);
+        float f = ((float)this.particleAge + partialTicks) / (float)this.particleMaxAge;
+        f = MathHelper.clamp_float(f, 0.0F, 1.0F);
+        float f1 = super.getBrightness(partialTicks);
+        return f1 * f + (1.0F - f);
     }
 
     /**
@@ -103,6 +87,14 @@ public class EntityFlameFX extends EntityFX
         {
             this.motionX *= 0.699999988079071D;
             this.motionZ *= 0.699999988079071D;
+        }
+    }
+
+    public static class Factory implements IParticleFactory
+    {
+        public EntityFX getEntityFX(int particleID, World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double xSpeedIn, double ySpeedIn, double zSpeedIn, int... p_178902_15_)
+        {
+            return new EntityFlameFX(worldIn, xCoordIn, yCoordIn, zCoordIn, xSpeedIn, ySpeedIn, zSpeedIn);
         }
     }
 }

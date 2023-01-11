@@ -1,14 +1,10 @@
 package dev.ztech.vanadium.api.rendering.custom;
 
 import dev.ztech.vanadium.api.base.Base;
-import dev.ztech.vanadium.api.base.Resource;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Gui;
-import net.minecraft.client.renderer.OpenGlHelper;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.texture.TextureUtil;
-import net.minecraft.util.ResourceLocation;
-import org.lwjgl.opengl.GL11;
+import net.minecraft.client.renderer.WorldRenderer;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 
 public class Renderer2D {
     ITexture currentTexture;
@@ -24,41 +20,28 @@ public class Renderer2D {
     }
 
     public void drawRect(int x, int y, int width, int height, int color){
-        width = x+width;
-        height = y+height;
-        int var5;
-
-        if (x < width)
-        {
-            var5 = x;
-            x = width;
-            width = var5;
-        }
-
-        if (y < height)
-        {
-            var5 = y;
-            y = height;
-            height = var5;
-        }
-
+        int x1 = x;
+        int x2 = x+width;
+        int y1 = y+height;
+        int y2 = y;
         float a = (float)(color >> 24 & 255) / 255.0F;
         float r = (float)(color >> 16 & 255) / 255.0F;
         float g = (float)(color >> 8 & 255) / 255.0F;
         float b = (float)(color & 255) / 255.0F;
-        Tessellator var9 = Tessellator.instance;
-        GL11.glEnable(GL11.GL_BLEND);
-        GL11.glDisable(GL11.GL_TEXTURE_2D);
-        OpenGlHelper.glBlendFunc(770, 771, 1, 0);
-        GL11.glColor4f(r, g, b, a);
-        var9.startDrawingQuads();
-        var9.addVertex((double)x, (double)height, 0.0D);
-        var9.addVertex((double)width, (double)height, 0.0D);
-        var9.addVertex((double)width, (double)y, 0.0D);
-        var9.addVertex((double)x, (double)y, 0.0D);
-        var9.draw();
-        GL11.glEnable(GL11.GL_TEXTURE_2D);
-        GL11.glDisable(GL11.GL_BLEND);
+        Tessellator tessellator = Tessellator.getInstance();
+        WorldRenderer worldrenderer = tessellator.getWorldRenderer();
+        GlStateManager.enableBlend();
+        GlStateManager.disableTexture2D();
+        GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
+        GlStateManager.color(r, g, b, a);
+        worldrenderer.begin(7, DefaultVertexFormats.POSITION);
+        worldrenderer.pos((double)x1, (double)y1, 0.0D).endVertex();
+        worldrenderer.pos((double)x2, (double)y1, 0.0D).endVertex();
+        worldrenderer.pos((double)x2, (double)y2, 0.0D).endVertex();
+        worldrenderer.pos((double)x1, (double)y2, 0.0D).endVertex();
+        tessellator.draw();
+        GlStateManager.enableTexture2D();
+        GlStateManager.disableBlend();
     }
     public void drawTexturedRect(int x, int y, int texX, int texY, int width, int height){
         if(currentTexture == null){
@@ -72,12 +55,15 @@ public class Renderer2D {
         float my = dy/8F;
         float var7 = (0.00390625F*8F)/dx/**mx*/;
         float var8 = (0.00390625F*8F)/dy/**my*/;
-        Tessellator tessellator = Tessellator.instance;
-        tessellator.startDrawingQuads();
-        tessellator.addVertexWithUV((double)(x + 0), (double)(y + height), (double)this.zLevel, (double)((float)(texX + 0) * var7), (double)((float)(texY + height) * var8));
-        tessellator.addVertexWithUV((double)(x + width), (double)(y + height), (double)this.zLevel, (double)((float)(texX + width) * var7), (double)((float)(texY + height) * var8));
-        tessellator.addVertexWithUV((double)(x + width), (double)(y + 0), (double)this.zLevel, (double)((float)(texX + width) * var7), (double)((float)(texY + 0) * var8));
-        tessellator.addVertexWithUV((double)(x + 0), (double)(y + 0), (double)this.zLevel, (double)((float)(texX + 0) * var7), (double)((float)(texY + 0) * var8));
+        float f = 0.00390625F;
+        float f1 = 0.00390625F;
+        Tessellator tessellator = Tessellator.getInstance();
+        WorldRenderer worldrenderer = tessellator.getWorldRenderer();
+        worldrenderer.begin(7, DefaultVertexFormats.POSITION_TEX);
+        worldrenderer.pos((double)(x + 0), (double)(y + height), (double)this.zLevel).tex((double)((float)(texX + 0) * f), (double)((float)(texX + height) * f1)).endVertex();
+        worldrenderer.pos((double)(x + width), (double)(y + height), (double)this.zLevel).tex((double)((float)(texX + width) * f), (double)((float)(texY + height) * f1)).endVertex();
+        worldrenderer.pos((double)(x + width), (double)(y + 0), (double)this.zLevel).tex((double)((float)(texX + width) * f), (double)((float)(texY + 0) * f1)).endVertex();
+        worldrenderer.pos((double)(x + 0), (double)(y + 0), (double)this.zLevel).tex((double)((float)(texX + 0) * f), (double)((float)(texY + 0) * f1)).endVertex();
         tessellator.draw();
     }
     public void drawHorizontalLine(int y, int start, int end, int color){
@@ -103,37 +89,30 @@ public class Renderer2D {
         public void drawGradientRect(int x, int y, int width, int height, int startColor, int endColor){
             width = x+width;
             height = y+height;
-            float var7 = (float)(startColor >> 24 & 255) / 255.0F;
-            float var8 = (float)(startColor >> 16 & 255) / 255.0F;
-            float var9 = (float)(startColor >> 8 & 255) / 255.0F;
-            float var10 = (float)(startColor & 255) / 255.0F;
-            float var11 = (float)(endColor >> 24 & 255) / 255.0F;
-            float var12 = (float)(endColor >> 16 & 255) / 255.0F;
-            float var13 = (float)(endColor >> 8 & 255) / 255.0F;
-            float var14 = (float)(endColor & 255) / 255.0F;
-            GL11.glDisable(GL11.GL_TEXTURE_2D);
-            GL11.glEnable(GL11.GL_BLEND);
-            GL11.glDisable(GL11.GL_ALPHA_TEST);
-            OpenGlHelper.glBlendFunc(770, 771, 1, 0);
-            GL11.glShadeModel(GL11.GL_SMOOTH);
-            Tessellator var15 = Tessellator.instance;
-            var15.startDrawingQuads();
-            var15.setColorRGBA_F(var8, var9, var10, var7);
-            var15.addVertex((double)width, (double)y, (double)this.zLevel);
-            var15.addVertex((double)x, (double)y, (double)this.zLevel);
-            var15.setColorRGBA_F(var12, var13, var14, var11);
-            var15.addVertex((double)x, (double)height, (double)this.zLevel);
-            var15.addVertex((double)width, (double)height, (double)this.zLevel);
-            var15.draw();
-            GL11.glShadeModel(GL11.GL_FLAT);
-            GL11.glDisable(GL11.GL_BLEND);
-            GL11.glEnable(GL11.GL_ALPHA_TEST);
-            GL11.glEnable(GL11.GL_TEXTURE_2D);
-    }
-    public void drawHollowRect(int x, int y, int width, int height, int color){
-        this.drawHorizontalLine(y, x, x+width, color);
-        this.drawHorizontalLine(y-height, x, x+width, color);
-        this.drawVerticalLine(x, y, y-height, color);
-        this.drawVerticalLine(x+width, y, y-height, color);
+            float a1 = (float)(startColor >> 24 & 255) / 255.0F;
+            float r1 = (float)(startColor >> 16 & 255) / 255.0F;
+            float g1 = (float)(startColor >> 8 & 255) / 255.0F;
+            float b1 = (float)(startColor & 255) / 255.0F;
+            float a2 = (float)(endColor >> 24 & 255) / 255.0F;
+            float r2 = (float)(endColor >> 16 & 255) / 255.0F;
+            float g2 = (float)(endColor >> 8 & 255) / 255.0F;
+            float b2 = (float)(endColor & 255) / 255.0F;
+            GlStateManager.disableTexture2D();
+            GlStateManager.enableBlend();
+            GlStateManager.disableAlpha();
+            GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
+            GlStateManager.shadeModel(7425);
+            Tessellator tessellator = Tessellator.getInstance();
+            WorldRenderer worldrenderer = tessellator.getWorldRenderer();
+            worldrenderer.begin(7, DefaultVertexFormats.POSITION_COLOR);
+            worldrenderer.pos((double)width, (double)height, (double)this.zLevel).color(r1, g1, b1, a1).endVertex();
+            worldrenderer.pos((double)x, (double)height, (double)this.zLevel).color(r1, g1, b1, a1).endVertex();
+            worldrenderer.pos((double)x, (double)y, (double)this.zLevel).color(r2, g2, b2, a2).endVertex();
+            worldrenderer.pos((double)width, (double)y, (double)this.zLevel).color(r2, g2, b2, a2).endVertex();
+            tessellator.draw();
+            GlStateManager.shadeModel(7424);
+            GlStateManager.disableBlend();
+            GlStateManager.enableAlpha();
+            GlStateManager.enableTexture2D();
     }
 }

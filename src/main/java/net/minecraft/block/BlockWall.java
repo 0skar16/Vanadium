@@ -2,144 +2,236 @@ package net.minecraft.block;
 
 import java.util.List;
 import net.minecraft.block.material.Material;
-import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.block.properties.IProperty;
+import net.minecraft.block.properties.PropertyBool;
+import net.minecraft.block.properties.PropertyEnum;
+import net.minecraft.block.state.BlockState;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.AxisAlignedBB;
-import net.minecraft.util.IIcon;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.IStringSerializable;
+import net.minecraft.util.StatCollector;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 
 public class BlockWall extends Block
 {
-    public static final String[] field_150092_a = new String[] {"normal", "mossy"};
-    private static final String __OBFID = "CL_00000331";
+    public static final PropertyBool UP = PropertyBool.create("up");
+    public static final PropertyBool NORTH = PropertyBool.create("north");
+    public static final PropertyBool EAST = PropertyBool.create("east");
+    public static final PropertyBool SOUTH = PropertyBool.create("south");
+    public static final PropertyBool WEST = PropertyBool.create("west");
+    public static final PropertyEnum<BlockWall.EnumType> VARIANT = PropertyEnum.<BlockWall.EnumType>create("variant", BlockWall.EnumType.class);
 
-    public BlockWall(Block p_i45435_1_)
+    public BlockWall(Block modelBlock)
     {
-        super(p_i45435_1_.blockMaterial);
-        this.setHardness(p_i45435_1_.blockHardness);
-        this.setResistance(p_i45435_1_.blockResistance / 3.0F);
-        this.setStepSound(p_i45435_1_.stepSound);
+        super(modelBlock.blockMaterial);
+        this.setDefaultState(this.blockState.getBaseState().withProperty(UP, Boolean.valueOf(false)).withProperty(NORTH, Boolean.valueOf(false)).withProperty(EAST, Boolean.valueOf(false)).withProperty(SOUTH, Boolean.valueOf(false)).withProperty(WEST, Boolean.valueOf(false)).withProperty(VARIANT, BlockWall.EnumType.NORMAL));
+        this.setHardness(modelBlock.blockHardness);
+        this.setResistance(modelBlock.blockResistance / 3.0F);
+        this.setStepSound(modelBlock.stepSound);
         this.setCreativeTab(CreativeTabs.tabBlock);
     }
 
     /**
-     * Gets the block's texture. Args: side, meta
+     * Gets the localized name of this block. Used for the statistics page.
      */
-    public IIcon getIcon(int p_149691_1_, int p_149691_2_)
+    public String getLocalizedName()
     {
-        return p_149691_2_ == 1 ? Blocks.mossy_cobblestone.getBlockTextureFromSide(p_149691_1_) : Blocks.cobblestone.getBlockTextureFromSide(p_149691_1_);
+        return StatCollector.translateToLocal(this.getUnlocalizedName() + "." + BlockWall.EnumType.NORMAL.getUnlocalizedName() + ".name");
+    }
+
+    public boolean isFullCube()
+    {
+        return false;
+    }
+
+    public boolean isPassable(IBlockAccess worldIn, BlockPos pos)
+    {
+        return false;
     }
 
     /**
-     * The type of render function that is called for this block
+     * Used to determine ambient occlusion and culling when rebuilding chunks for render
      */
-    public int getRenderType()
-    {
-        return 32;
-    }
-
-    public boolean renderAsNormalBlock()
-    {
-        return false;
-    }
-
-    public boolean getBlocksMovement(IBlockAccess p_149655_1_, int p_149655_2_, int p_149655_3_, int p_149655_4_)
-    {
-        return false;
-    }
-
     public boolean isOpaqueCube()
     {
         return false;
     }
 
-    public void setBlockBoundsBasedOnState(IBlockAccess p_149719_1_, int p_149719_2_, int p_149719_3_, int p_149719_4_)
+    public void setBlockBoundsBasedOnState(IBlockAccess worldIn, BlockPos pos)
     {
-        boolean var5 = this.func_150091_e(p_149719_1_, p_149719_2_, p_149719_3_, p_149719_4_ - 1);
-        boolean var6 = this.func_150091_e(p_149719_1_, p_149719_2_, p_149719_3_, p_149719_4_ + 1);
-        boolean var7 = this.func_150091_e(p_149719_1_, p_149719_2_ - 1, p_149719_3_, p_149719_4_);
-        boolean var8 = this.func_150091_e(p_149719_1_, p_149719_2_ + 1, p_149719_3_, p_149719_4_);
-        float var9 = 0.25F;
-        float var10 = 0.75F;
-        float var11 = 0.25F;
-        float var12 = 0.75F;
-        float var13 = 1.0F;
+        boolean flag = this.canConnectTo(worldIn, pos.north());
+        boolean flag1 = this.canConnectTo(worldIn, pos.south());
+        boolean flag2 = this.canConnectTo(worldIn, pos.west());
+        boolean flag3 = this.canConnectTo(worldIn, pos.east());
+        float f = 0.25F;
+        float f1 = 0.75F;
+        float f2 = 0.25F;
+        float f3 = 0.75F;
+        float f4 = 1.0F;
 
-        if (var5)
+        if (flag)
         {
-            var11 = 0.0F;
+            f2 = 0.0F;
         }
 
-        if (var6)
+        if (flag1)
         {
-            var12 = 1.0F;
+            f3 = 1.0F;
         }
 
-        if (var7)
+        if (flag2)
         {
-            var9 = 0.0F;
+            f = 0.0F;
         }
 
-        if (var8)
+        if (flag3)
         {
-            var10 = 1.0F;
+            f1 = 1.0F;
         }
 
-        if (var5 && var6 && !var7 && !var8)
+        if (flag && flag1 && !flag2 && !flag3)
         {
-            var13 = 0.8125F;
-            var9 = 0.3125F;
-            var10 = 0.6875F;
+            f4 = 0.8125F;
+            f = 0.3125F;
+            f1 = 0.6875F;
         }
-        else if (!var5 && !var6 && var7 && var8)
+        else if (!flag && !flag1 && flag2 && flag3)
         {
-            var13 = 0.8125F;
-            var11 = 0.3125F;
-            var12 = 0.6875F;
+            f4 = 0.8125F;
+            f2 = 0.3125F;
+            f3 = 0.6875F;
         }
 
-        this.setBlockBounds(var9, 0.0F, var11, var10, var13, var12);
+        this.setBlockBounds(f, 0.0F, f2, f1, f4, f3);
+    }
+
+    public AxisAlignedBB getCollisionBoundingBox(World worldIn, BlockPos pos, IBlockState state)
+    {
+        this.setBlockBoundsBasedOnState(worldIn, pos);
+        this.maxY = 1.5D;
+        return super.getCollisionBoundingBox(worldIn, pos, state);
+    }
+
+    public boolean canConnectTo(IBlockAccess worldIn, BlockPos pos)
+    {
+        Block block = worldIn.getBlockState(pos).getBlock();
+        return block == Blocks.barrier ? false : (block != this && !(block instanceof BlockFenceGate) ? (block.blockMaterial.isOpaque() && block.isFullCube() ? block.blockMaterial != Material.gourd : false) : true);
     }
 
     /**
-     * Returns a bounding box from the pool of bounding boxes (this means this box can change after the pool has been
-     * cleared to be reused)
+     * returns a list of blocks with the same ID, but different meta (eg: wood returns 4 blocks)
      */
-    public AxisAlignedBB getCollisionBoundingBoxFromPool(World p_149668_1_, int p_149668_2_, int p_149668_3_, int p_149668_4_)
+    public void getSubBlocks(Item itemIn, CreativeTabs tab, List<ItemStack> list)
     {
-        this.setBlockBoundsBasedOnState(p_149668_1_, p_149668_2_, p_149668_3_, p_149668_4_);
-        this.field_149756_F = 1.5D;
-        return super.getCollisionBoundingBoxFromPool(p_149668_1_, p_149668_2_, p_149668_3_, p_149668_4_);
-    }
-
-    public boolean func_150091_e(IBlockAccess p_150091_1_, int p_150091_2_, int p_150091_3_, int p_150091_4_)
-    {
-        Block var5 = p_150091_1_.getBlock(p_150091_2_, p_150091_3_, p_150091_4_);
-        return var5 != this && var5 != Blocks.fence_gate ? (var5.blockMaterial.isOpaque() && var5.renderAsNormalBlock() ? var5.blockMaterial != Material.field_151572_C : false) : true;
-    }
-
-    public void getSubBlocks(Item p_149666_1_, CreativeTabs p_149666_2_, List p_149666_3_)
-    {
-        p_149666_3_.add(new ItemStack(p_149666_1_, 1, 0));
-        p_149666_3_.add(new ItemStack(p_149666_1_, 1, 1));
+        for (BlockWall.EnumType blockwall$enumtype : BlockWall.EnumType.values())
+        {
+            list.add(new ItemStack(itemIn, 1, blockwall$enumtype.getMetadata()));
+        }
     }
 
     /**
-     * Determines the damage on the item the block drops. Used in cloth and wood.
+     * Gets the metadata of the item this Block can drop. This method is called when the block gets destroyed. It
+     * returns the metadata of the dropped item based on the old metadata of the block.
      */
-    public int damageDropped(int p_149692_1_)
+    public int damageDropped(IBlockState state)
     {
-        return p_149692_1_;
+        return ((BlockWall.EnumType)state.getValue(VARIANT)).getMetadata();
     }
 
-    public boolean shouldSideBeRendered(IBlockAccess p_149646_1_, int p_149646_2_, int p_149646_3_, int p_149646_4_, int p_149646_5_)
+    public boolean shouldSideBeRendered(IBlockAccess worldIn, BlockPos pos, EnumFacing side)
     {
-        return p_149646_5_ == 0 ? super.shouldSideBeRendered(p_149646_1_, p_149646_2_, p_149646_3_, p_149646_4_, p_149646_5_) : true;
+        return side == EnumFacing.DOWN ? super.shouldSideBeRendered(worldIn, pos, side) : true;
     }
 
-    public void registerBlockIcons(IIconRegister p_149651_1_) {}
+    /**
+     * Convert the given metadata into a BlockState for this Block
+     */
+    public IBlockState getStateFromMeta(int meta)
+    {
+        return this.getDefaultState().withProperty(VARIANT, BlockWall.EnumType.byMetadata(meta));
+    }
+
+    /**
+     * Convert the BlockState into the correct metadata value
+     */
+    public int getMetaFromState(IBlockState state)
+    {
+        return ((BlockWall.EnumType)state.getValue(VARIANT)).getMetadata();
+    }
+
+    /**
+     * Get the actual Block state of this Block at the given position. This applies properties not visible in the
+     * metadata, such as fence connections.
+     */
+    public IBlockState getActualState(IBlockState state, IBlockAccess worldIn, BlockPos pos)
+    {
+        return state.withProperty(UP, Boolean.valueOf(!worldIn.isAirBlock(pos.up()))).withProperty(NORTH, Boolean.valueOf(this.canConnectTo(worldIn, pos.north()))).withProperty(EAST, Boolean.valueOf(this.canConnectTo(worldIn, pos.east()))).withProperty(SOUTH, Boolean.valueOf(this.canConnectTo(worldIn, pos.south()))).withProperty(WEST, Boolean.valueOf(this.canConnectTo(worldIn, pos.west())));
+    }
+
+    protected BlockState createBlockState()
+    {
+        return new BlockState(this, new IProperty[] {UP, NORTH, EAST, WEST, SOUTH, VARIANT});
+    }
+
+    public static enum EnumType implements IStringSerializable
+    {
+        NORMAL(0, "cobblestone", "normal"),
+        MOSSY(1, "mossy_cobblestone", "mossy");
+
+        private static final BlockWall.EnumType[] META_LOOKUP = new BlockWall.EnumType[values().length];
+        private final int meta;
+        private final String name;
+        private String unlocalizedName;
+
+        private EnumType(int meta, String name, String unlocalizedName)
+        {
+            this.meta = meta;
+            this.name = name;
+            this.unlocalizedName = unlocalizedName;
+        }
+
+        public int getMetadata()
+        {
+            return this.meta;
+        }
+
+        public String toString()
+        {
+            return this.name;
+        }
+
+        public static BlockWall.EnumType byMetadata(int meta)
+        {
+            if (meta < 0 || meta >= META_LOOKUP.length)
+            {
+                meta = 0;
+            }
+
+            return META_LOOKUP[meta];
+        }
+
+        public String getName()
+        {
+            return this.name;
+        }
+
+        public String getUnlocalizedName()
+        {
+            return this.unlocalizedName;
+        }
+
+        static {
+            for (BlockWall.EnumType blockwall$enumtype : values())
+            {
+                META_LOOKUP[blockwall$enumtype.getMetadata()] = blockwall$enumtype;
+            }
+        }
+    }
 }

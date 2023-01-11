@@ -1,60 +1,76 @@
 package net.minecraft.network.play.client;
 
 import java.io.IOException;
-import net.minecraft.network.INetHandler;
 import net.minecraft.network.Packet;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.INetHandlerPlayServer;
+import net.minecraft.util.BlockPos;
 import org.apache.commons.lang3.StringUtils;
 
-public class C14PacketTabComplete extends Packet
+public class C14PacketTabComplete implements Packet<INetHandlerPlayServer>
 {
-    private String field_149420_a;
-    private static final String __OBFID = "CL_00001346";
+    private String message;
+    private BlockPos targetBlock;
 
-    public C14PacketTabComplete() {}
-
-    public C14PacketTabComplete(String p_i45239_1_)
+    public C14PacketTabComplete()
     {
-        this.field_149420_a = p_i45239_1_;
+    }
+
+    public C14PacketTabComplete(String msg)
+    {
+        this(msg, (BlockPos)null);
+    }
+
+    public C14PacketTabComplete(String msg, BlockPos target)
+    {
+        this.message = msg;
+        this.targetBlock = target;
     }
 
     /**
      * Reads the raw packet data from the data stream.
      */
-    public void readPacketData(PacketBuffer p_148837_1_) throws IOException
+    public void readPacketData(PacketBuffer buf) throws IOException
     {
-        this.field_149420_a = p_148837_1_.readStringFromBuffer(32767);
+        this.message = buf.readStringFromBuffer(32767);
+        boolean flag = buf.readBoolean();
+
+        if (flag)
+        {
+            this.targetBlock = buf.readBlockPos();
+        }
     }
 
     /**
      * Writes the raw packet data to the data stream.
      */
-    public void writePacketData(PacketBuffer p_148840_1_) throws IOException
+    public void writePacketData(PacketBuffer buf) throws IOException
     {
-        p_148840_1_.writeStringToBuffer(StringUtils.substring(this.field_149420_a, 0, 32767));
-    }
+        buf.writeString(StringUtils.substring(this.message, 0, 32767));
+        boolean flag = this.targetBlock != null;
+        buf.writeBoolean(flag);
 
-    public void processPacket(INetHandlerPlayServer p_148833_1_)
-    {
-        p_148833_1_.processTabComplete(this);
-    }
-
-    public String func_149419_c()
-    {
-        return this.field_149420_a;
+        if (flag)
+        {
+            buf.writeBlockPos(this.targetBlock);
+        }
     }
 
     /**
-     * Returns a string formatted as comma separated [field]=[value] values. Used by Minecraft for logging purposes.
+     * Passes this Packet on to the NetHandler for processing.
      */
-    public String serialize()
+    public void processPacket(INetHandlerPlayServer handler)
     {
-        return String.format("message=\'%s\'", new Object[] {this.field_149420_a});
+        handler.processTabComplete(this);
     }
 
-    public void processPacket(INetHandler p_148833_1_)
+    public String getMessage()
     {
-        this.processPacket((INetHandlerPlayServer)p_148833_1_);
+        return this.message;
+    }
+
+    public BlockPos getTargetBlock()
+    {
+        return this.targetBlock;
     }
 }

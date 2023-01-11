@@ -5,53 +5,53 @@ import net.minecraft.entity.EntityHanging;
 import net.minecraft.entity.item.EntityItemFrame;
 import net.minecraft.entity.item.EntityPainting;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.Direction;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.world.World;
 
 public class ItemHangingEntity extends Item
 {
-    private final Class hangingEntityClass;
-    private static final String __OBFID = "CL_00000038";
+    private final Class <? extends EntityHanging > hangingEntityClass;
 
-    public ItemHangingEntity(Class p_i45342_1_)
+    public ItemHangingEntity(Class <? extends EntityHanging > entityClass)
     {
-        this.hangingEntityClass = p_i45342_1_;
+        this.hangingEntityClass = entityClass;
         this.setCreativeTab(CreativeTabs.tabDecorations);
     }
 
     /**
-     * Callback for item usage. If the item does something special on right clicking, he will have one of those. Return
-     * True if something happen and false if it don't. This is for ITEMS, not BLOCKS
+     * Called when a Block is right-clicked with this Item
      */
-    public boolean onItemUse(ItemStack p_77648_1_, EntityPlayer p_77648_2_, World p_77648_3_, int p_77648_4_, int p_77648_5_, int p_77648_6_, int p_77648_7_, float p_77648_8_, float p_77648_9_, float p_77648_10_)
+    public boolean onItemUse(ItemStack stack, EntityPlayer playerIn, World worldIn, BlockPos pos, EnumFacing side, float hitX, float hitY, float hitZ)
     {
-        if (p_77648_7_ == 0)
+        if (side == EnumFacing.DOWN)
         {
             return false;
         }
-        else if (p_77648_7_ == 1)
+        else if (side == EnumFacing.UP)
         {
             return false;
         }
         else
         {
-            int var11 = Direction.facingToDirection[p_77648_7_];
-            EntityHanging var12 = this.createHangingEntity(p_77648_3_, p_77648_4_, p_77648_5_, p_77648_6_, var11);
+            BlockPos blockpos = pos.offset(side);
 
-            if (!p_77648_2_.canPlayerEdit(p_77648_4_, p_77648_5_, p_77648_6_, p_77648_7_, p_77648_1_))
+            if (!playerIn.canPlayerEdit(blockpos, side, stack))
             {
                 return false;
             }
             else
             {
-                if (var12 != null && var12.onValidSurface())
+                EntityHanging entityhanging = this.createEntity(worldIn, blockpos, side);
+
+                if (entityhanging != null && entityhanging.onValidSurface())
                 {
-                    if (!p_77648_3_.isClient)
+                    if (!worldIn.isRemote)
                     {
-                        p_77648_3_.spawnEntityInWorld(var12);
+                        worldIn.spawnEntityInWorld(entityhanging);
                     }
 
-                    --p_77648_1_.stackSize;
+                    --stack.stackSize;
                 }
 
                 return true;
@@ -59,11 +59,8 @@ public class ItemHangingEntity extends Item
         }
     }
 
-    /**
-     * Create the hanging entity associated to this item.
-     */
-    private EntityHanging createHangingEntity(World p_82810_1_, int p_82810_2_, int p_82810_3_, int p_82810_4_, int p_82810_5_)
+    private EntityHanging createEntity(World worldIn, BlockPos pos, EnumFacing clickedSide)
     {
-        return (EntityHanging)(this.hangingEntityClass == EntityPainting.class ? new EntityPainting(p_82810_1_, p_82810_2_, p_82810_3_, p_82810_4_, p_82810_5_) : (this.hangingEntityClass == EntityItemFrame.class ? new EntityItemFrame(p_82810_1_, p_82810_2_, p_82810_3_, p_82810_4_, p_82810_5_) : null));
+        return (EntityHanging)(this.hangingEntityClass == EntityPainting.class ? new EntityPainting(worldIn, pos, clickedSide) : (this.hangingEntityClass == EntityItemFrame.class ? new EntityItemFrame(worldIn, pos, clickedSide) : null));
     }
 }

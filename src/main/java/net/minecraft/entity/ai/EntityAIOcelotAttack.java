@@ -10,12 +10,11 @@ public class EntityAIOcelotAttack extends EntityAIBase
     EntityLiving theEntity;
     EntityLivingBase theVictim;
     int attackCountdown;
-    private static final String __OBFID = "CL_00001600";
 
-    public EntityAIOcelotAttack(EntityLiving p_i1641_1_)
+    public EntityAIOcelotAttack(EntityLiving theEntityIn)
     {
-        this.theEntity = p_i1641_1_;
-        this.theWorld = p_i1641_1_.worldObj;
+        this.theEntity = theEntityIn;
+        this.theWorld = theEntityIn.worldObj;
         this.setMutexBits(3);
     }
 
@@ -24,15 +23,15 @@ public class EntityAIOcelotAttack extends EntityAIBase
      */
     public boolean shouldExecute()
     {
-        EntityLivingBase var1 = this.theEntity.getAttackTarget();
+        EntityLivingBase entitylivingbase = this.theEntity.getAttackTarget();
 
-        if (var1 == null)
+        if (entitylivingbase == null)
         {
             return false;
         }
         else
         {
-            this.theVictim = var1;
+            this.theVictim = entitylivingbase;
             return true;
         }
     }
@@ -60,23 +59,23 @@ public class EntityAIOcelotAttack extends EntityAIBase
     public void updateTask()
     {
         this.theEntity.getLookHelper().setLookPositionWithEntity(this.theVictim, 30.0F, 30.0F);
-        double var1 = (double)(this.theEntity.width * 2.0F * this.theEntity.width * 2.0F);
-        double var3 = this.theEntity.getDistanceSq(this.theVictim.posX, this.theVictim.boundingBox.minY, this.theVictim.posZ);
-        double var5 = 0.8D;
+        double d0 = (double)(this.theEntity.width * 2.0F * this.theEntity.width * 2.0F);
+        double d1 = this.theEntity.getDistanceSq(this.theVictim.posX, this.theVictim.getEntityBoundingBox().minY, this.theVictim.posZ);
+        double d2 = 0.8D;
 
-        if (var3 > var1 && var3 < 16.0D)
+        if (d1 > d0 && d1 < 16.0D)
         {
-            var5 = 1.33D;
+            d2 = 1.33D;
         }
-        else if (var3 < 225.0D)
+        else if (d1 < 225.0D)
         {
-            var5 = 0.6D;
+            d2 = 0.6D;
         }
 
-        this.theEntity.getNavigator().tryMoveToEntityLiving(this.theVictim, var5);
+        this.theEntity.getNavigator().tryMoveToEntityLiving(this.theVictim, d2);
         this.attackCountdown = Math.max(this.attackCountdown - 1, 0);
 
-        if (var3 <= var1)
+        if (d1 <= d0)
         {
             if (this.attackCountdown <= 0)
             {

@@ -6,16 +6,15 @@ import net.minecraft.util.Vec3;
 public class EntityAIPanic extends EntityAIBase
 {
     private EntityCreature theEntityCreature;
-    private double speed;
+    protected double speed;
     private double randPosX;
     private double randPosY;
     private double randPosZ;
-    private static final String __OBFID = "CL_00001604";
 
-    public EntityAIPanic(EntityCreature p_i1645_1_, double p_i1645_2_)
+    public EntityAIPanic(EntityCreature creature, double speedIn)
     {
-        this.theEntityCreature = p_i1645_1_;
-        this.speed = p_i1645_2_;
+        this.theEntityCreature = creature;
+        this.speed = speedIn;
         this.setMutexBits(1);
     }
 
@@ -30,17 +29,17 @@ public class EntityAIPanic extends EntityAIBase
         }
         else
         {
-            Vec3 var1 = RandomPositionGenerator.findRandomTarget(this.theEntityCreature, 5, 4);
+            Vec3 vec3 = RandomPositionGenerator.findRandomTarget(this.theEntityCreature, 5, 4);
 
-            if (var1 == null)
+            if (vec3 == null)
             {
                 return false;
             }
             else
             {
-                this.randPosX = var1.xCoord;
-                this.randPosY = var1.yCoord;
-                this.randPosZ = var1.zCoord;
+                this.randPosX = vec3.xCoord;
+                this.randPosY = vec3.yCoord;
+                this.randPosZ = vec3.zCoord;
                 return true;
             }
         }

@@ -2,28 +2,51 @@ package net.minecraft.block;
 
 import java.util.Random;
 import net.minecraft.block.material.Material;
+import net.minecraft.block.properties.IProperty;
+import net.minecraft.block.properties.PropertyBool;
+import net.minecraft.block.state.BlockState;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.stats.StatList;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.AxisAlignedBB;
-import net.minecraft.util.Direction;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.EnumWorldBlockLayer;
 import net.minecraft.world.ColorizerFoliage;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 
 public class BlockVine extends Block
 {
-    private static final String __OBFID = "CL_00000330";
+    public static final PropertyBool UP = PropertyBool.create("up");
+    public static final PropertyBool NORTH = PropertyBool.create("north");
+    public static final PropertyBool EAST = PropertyBool.create("east");
+    public static final PropertyBool SOUTH = PropertyBool.create("south");
+    public static final PropertyBool WEST = PropertyBool.create("west");
+    public static final PropertyBool[] ALL_FACES = new PropertyBool[] {UP, NORTH, SOUTH, WEST, EAST};
 
     public BlockVine()
     {
         super(Material.vine);
+        this.setDefaultState(this.blockState.getBaseState().withProperty(UP, Boolean.valueOf(false)).withProperty(NORTH, Boolean.valueOf(false)).withProperty(EAST, Boolean.valueOf(false)).withProperty(SOUTH, Boolean.valueOf(false)).withProperty(WEST, Boolean.valueOf(false)));
         this.setTickRandomly(true);
         this.setCreativeTab(CreativeTabs.tabDecorations);
+    }
+
+    /**
+     * Get the actual Block state of this Block at the given position. This applies properties not visible in the
+     * metadata, such as fence connections.
+     */
+    public IBlockState getActualState(IBlockState state, IBlockAccess worldIn, BlockPos pos)
+    {
+        return state.withProperty(UP, Boolean.valueOf(worldIn.getBlockState(pos.up()).getBlock().isBlockNormalCube()));
     }
 
     /**
@@ -35,160 +58,153 @@ public class BlockVine extends Block
     }
 
     /**
-     * The type of render function that is called for this block
+     * Used to determine ambient occlusion and culling when rebuilding chunks for render
      */
-    public int getRenderType()
-    {
-        return 20;
-    }
-
     public boolean isOpaqueCube()
     {
         return false;
     }
 
-    public boolean renderAsNormalBlock()
+    public boolean isFullCube()
     {
         return false;
     }
 
-    public void setBlockBoundsBasedOnState(IBlockAccess p_149719_1_, int p_149719_2_, int p_149719_3_, int p_149719_4_)
+    /**
+     * Whether this Block can be replaced directly by other blocks (true for e.g. tall grass)
+     */
+    public boolean isReplaceable(World worldIn, BlockPos pos)
     {
-        float var5 = 0.0625F;
-        int var6 = p_149719_1_.getBlockMetadata(p_149719_2_, p_149719_3_, p_149719_4_);
-        float var7 = 1.0F;
-        float var8 = 1.0F;
-        float var9 = 1.0F;
-        float var10 = 0.0F;
-        float var11 = 0.0F;
-        float var12 = 0.0F;
-        boolean var13 = var6 > 0;
-
-        if ((var6 & 2) != 0)
-        {
-            var10 = Math.max(var10, 0.0625F);
-            var7 = 0.0F;
-            var8 = 0.0F;
-            var11 = 1.0F;
-            var9 = 0.0F;
-            var12 = 1.0F;
-            var13 = true;
-        }
-
-        if ((var6 & 8) != 0)
-        {
-            var7 = Math.min(var7, 0.9375F);
-            var10 = 1.0F;
-            var8 = 0.0F;
-            var11 = 1.0F;
-            var9 = 0.0F;
-            var12 = 1.0F;
-            var13 = true;
-        }
-
-        if ((var6 & 4) != 0)
-        {
-            var12 = Math.max(var12, 0.0625F);
-            var9 = 0.0F;
-            var7 = 0.0F;
-            var10 = 1.0F;
-            var8 = 0.0F;
-            var11 = 1.0F;
-            var13 = true;
-        }
-
-        if ((var6 & 1) != 0)
-        {
-            var9 = Math.min(var9, 0.9375F);
-            var12 = 1.0F;
-            var7 = 0.0F;
-            var10 = 1.0F;
-            var8 = 0.0F;
-            var11 = 1.0F;
-            var13 = true;
-        }
-
-        if (!var13 && this.func_150093_a(p_149719_1_.getBlock(p_149719_2_, p_149719_3_ + 1, p_149719_4_)))
-        {
-            var8 = Math.min(var8, 0.9375F);
-            var11 = 1.0F;
-            var7 = 0.0F;
-            var10 = 1.0F;
-            var9 = 0.0F;
-            var12 = 1.0F;
-        }
-
-        this.setBlockBounds(var7, var8, var9, var10, var11, var12);
+        return true;
     }
 
-    /**
-     * Returns a bounding box from the pool of bounding boxes (this means this box can change after the pool has been
-     * cleared to be reused)
-     */
-    public AxisAlignedBB getCollisionBoundingBoxFromPool(World p_149668_1_, int p_149668_2_, int p_149668_3_, int p_149668_4_)
+    public void setBlockBoundsBasedOnState(IBlockAccess worldIn, BlockPos pos)
+    {
+        float f = 0.0625F;
+        float f1 = 1.0F;
+        float f2 = 1.0F;
+        float f3 = 1.0F;
+        float f4 = 0.0F;
+        float f5 = 0.0F;
+        float f6 = 0.0F;
+        boolean flag = false;
+
+        if (((Boolean)worldIn.getBlockState(pos).getValue(WEST)).booleanValue())
+        {
+            f4 = Math.max(f4, 0.0625F);
+            f1 = 0.0F;
+            f2 = 0.0F;
+            f5 = 1.0F;
+            f3 = 0.0F;
+            f6 = 1.0F;
+            flag = true;
+        }
+
+        if (((Boolean)worldIn.getBlockState(pos).getValue(EAST)).booleanValue())
+        {
+            f1 = Math.min(f1, 0.9375F);
+            f4 = 1.0F;
+            f2 = 0.0F;
+            f5 = 1.0F;
+            f3 = 0.0F;
+            f6 = 1.0F;
+            flag = true;
+        }
+
+        if (((Boolean)worldIn.getBlockState(pos).getValue(NORTH)).booleanValue())
+        {
+            f6 = Math.max(f6, 0.0625F);
+            f3 = 0.0F;
+            f1 = 0.0F;
+            f4 = 1.0F;
+            f2 = 0.0F;
+            f5 = 1.0F;
+            flag = true;
+        }
+
+        if (((Boolean)worldIn.getBlockState(pos).getValue(SOUTH)).booleanValue())
+        {
+            f3 = Math.min(f3, 0.9375F);
+            f6 = 1.0F;
+            f1 = 0.0F;
+            f4 = 1.0F;
+            f2 = 0.0F;
+            f5 = 1.0F;
+            flag = true;
+        }
+
+        if (!flag && this.canPlaceOn(worldIn.getBlockState(pos.up()).getBlock()))
+        {
+            f2 = Math.min(f2, 0.9375F);
+            f5 = 1.0F;
+            f1 = 0.0F;
+            f4 = 1.0F;
+            f3 = 0.0F;
+            f6 = 1.0F;
+        }
+
+        this.setBlockBounds(f1, f2, f3, f4, f5, f6);
+    }
+
+    public AxisAlignedBB getCollisionBoundingBox(World worldIn, BlockPos pos, IBlockState state)
     {
         return null;
     }
 
     /**
-     * checks to see if you can place this block can be placed on that side of a block: BlockLever overrides
+     * Check whether this Block can be placed on the given side
      */
-    public boolean canPlaceBlockOnSide(World p_149707_1_, int p_149707_2_, int p_149707_3_, int p_149707_4_, int p_149707_5_)
+    public boolean canPlaceBlockOnSide(World worldIn, BlockPos pos, EnumFacing side)
     {
-        switch (p_149707_5_)
+        switch (side)
         {
-            case 1:
-                return this.func_150093_a(p_149707_1_.getBlock(p_149707_2_, p_149707_3_ + 1, p_149707_4_));
+            case UP:
+                return this.canPlaceOn(worldIn.getBlockState(pos.up()).getBlock());
 
-            case 2:
-                return this.func_150093_a(p_149707_1_.getBlock(p_149707_2_, p_149707_3_, p_149707_4_ + 1));
-
-            case 3:
-                return this.func_150093_a(p_149707_1_.getBlock(p_149707_2_, p_149707_3_, p_149707_4_ - 1));
-
-            case 4:
-                return this.func_150093_a(p_149707_1_.getBlock(p_149707_2_ + 1, p_149707_3_, p_149707_4_));
-
-            case 5:
-                return this.func_150093_a(p_149707_1_.getBlock(p_149707_2_ - 1, p_149707_3_, p_149707_4_));
+            case NORTH:
+            case SOUTH:
+            case EAST:
+            case WEST:
+                return this.canPlaceOn(worldIn.getBlockState(pos.offset(side.getOpposite())).getBlock());
 
             default:
                 return false;
         }
     }
 
-    private boolean func_150093_a(Block p_150093_1_)
+    private boolean canPlaceOn(Block blockIn)
     {
-        return p_150093_1_.renderAsNormalBlock() && p_150093_1_.blockMaterial.blocksMovement();
+        return blockIn.isFullCube() && blockIn.blockMaterial.blocksMovement();
     }
 
-    private boolean func_150094_e(World p_150094_1_, int p_150094_2_, int p_150094_3_, int p_150094_4_)
+    private boolean recheckGrownSides(World worldIn, BlockPos pos, IBlockState state)
     {
-        int var5 = p_150094_1_.getBlockMetadata(p_150094_2_, p_150094_3_, p_150094_4_);
-        int var6 = var5;
+        IBlockState iblockstate = state;
 
-        if (var5 > 0)
+        for (EnumFacing enumfacing : EnumFacing.Plane.HORIZONTAL)
         {
-            for (int var7 = 0; var7 <= 3; ++var7)
-            {
-                int var8 = 1 << var7;
+            PropertyBool propertybool = getPropertyFor(enumfacing);
 
-                if ((var5 & var8) != 0 && !this.func_150093_a(p_150094_1_.getBlock(p_150094_2_ + Direction.offsetX[var7], p_150094_3_, p_150094_4_ + Direction.offsetZ[var7])) && (p_150094_1_.getBlock(p_150094_2_, p_150094_3_ + 1, p_150094_4_) != this || (p_150094_1_.getBlockMetadata(p_150094_2_, p_150094_3_ + 1, p_150094_4_) & var8) == 0))
+            if (((Boolean)state.getValue(propertybool)).booleanValue() && !this.canPlaceOn(worldIn.getBlockState(pos.offset(enumfacing)).getBlock()))
+            {
+                IBlockState iblockstate1 = worldIn.getBlockState(pos.up());
+
+                if (iblockstate1.getBlock() != this || !((Boolean)iblockstate1.getValue(propertybool)).booleanValue())
                 {
-                    var6 &= ~var8;
+                    state = state.withProperty(propertybool, Boolean.valueOf(false));
                 }
             }
         }
 
-        if (var6 == 0 && !this.func_150093_a(p_150094_1_.getBlock(p_150094_2_, p_150094_3_ + 1, p_150094_4_)))
+        if (getNumGrownFaces(state) == 0)
         {
             return false;
         }
         else
         {
-            if (var6 != var5)
+            if (iblockstate != state)
             {
-                p_150094_1_.setBlockMetadataWithNotify(p_150094_2_, p_150094_3_, p_150094_4_, var6, 2);
+                worldIn.setBlockState(pos, state, 2);
             }
 
             return true;
@@ -200,196 +216,189 @@ public class BlockVine extends Block
         return ColorizerFoliage.getFoliageColorBasic();
     }
 
-    /**
-     * Returns the color this block should be rendered. Used by leaves.
-     */
-    public int getRenderColor(int p_149741_1_)
+    public int getRenderColor(IBlockState state)
     {
         return ColorizerFoliage.getFoliageColorBasic();
     }
 
-    /**
-     * Returns a integer with hex for 0xrrggbb with this color multiplied against the blocks color. Note only called
-     * when first determining what to render.
-     */
-    public int colorMultiplier(IBlockAccess p_149720_1_, int p_149720_2_, int p_149720_3_, int p_149720_4_)
+    public int colorMultiplier(IBlockAccess worldIn, BlockPos pos, int renderPass)
     {
-        return p_149720_1_.getBiomeGenForCoords(p_149720_2_, p_149720_4_).getBiomeFoliageColor(p_149720_2_, p_149720_3_, p_149720_4_);
+        return worldIn.getBiomeGenForCoords(pos).getFoliageColorAtPos(pos);
     }
 
-    public void onNeighborBlockChange(World p_149695_1_, int p_149695_2_, int p_149695_3_, int p_149695_4_, Block p_149695_5_)
+    /**
+     * Called when a neighboring block changes.
+     */
+    public void onNeighborBlockChange(World worldIn, BlockPos pos, IBlockState state, Block neighborBlock)
     {
-        if (!p_149695_1_.isClient && !this.func_150094_e(p_149695_1_, p_149695_2_, p_149695_3_, p_149695_4_))
+        if (!worldIn.isRemote && !this.recheckGrownSides(worldIn, pos, state))
         {
-            this.dropBlockAsItem(p_149695_1_, p_149695_2_, p_149695_3_, p_149695_4_, p_149695_1_.getBlockMetadata(p_149695_2_, p_149695_3_, p_149695_4_), 0);
-            p_149695_1_.setBlockToAir(p_149695_2_, p_149695_3_, p_149695_4_);
+            this.dropBlockAsItem(worldIn, pos, state, 0);
+            worldIn.setBlockToAir(pos);
         }
     }
 
-    /**
-     * Ticks the block if it's been scheduled
-     */
-    public void updateTick(World p_149674_1_, int p_149674_2_, int p_149674_3_, int p_149674_4_, Random p_149674_5_)
+    public void updateTick(World worldIn, BlockPos pos, IBlockState state, Random rand)
     {
-        if (!p_149674_1_.isClient && p_149674_1_.rand.nextInt(4) == 0)
+        if (!worldIn.isRemote)
         {
-            byte var6 = 4;
-            int var7 = 5;
-            boolean var8 = false;
-            int var9;
-            int var10;
-            int var11;
-            label134:
-
-            for (var9 = p_149674_2_ - var6; var9 <= p_149674_2_ + var6; ++var9)
+            if (worldIn.rand.nextInt(4) == 0)
             {
-                for (var10 = p_149674_4_ - var6; var10 <= p_149674_4_ + var6; ++var10)
-                {
-                    for (var11 = p_149674_3_ - 1; var11 <= p_149674_3_ + 1; ++var11)
-                    {
-                        if (p_149674_1_.getBlock(var9, var11, var10) == this)
-                        {
-                            --var7;
+                int i = 4;
+                int j = 5;
+                boolean flag = false;
+                label62:
 
-                            if (var7 <= 0)
+                for (int k = -i; k <= i; ++k)
+                {
+                    for (int l = -i; l <= i; ++l)
+                    {
+                        for (int i1 = -1; i1 <= 1; ++i1)
+                        {
+                            if (worldIn.getBlockState(pos.add(k, i1, l)).getBlock() == this)
                             {
-                                var8 = true;
-                                break label134;
+                                --j;
+
+                                if (j <= 0)
+                                {
+                                    flag = true;
+                                    break label62;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                EnumFacing enumfacing1 = EnumFacing.random(rand);
+                BlockPos blockpos1 = pos.up();
+
+                if (enumfacing1 == EnumFacing.UP && pos.getY() < 255 && worldIn.isAirBlock(blockpos1))
+                {
+                    if (!flag)
+                    {
+                        IBlockState iblockstate2 = state;
+
+                        for (EnumFacing enumfacing3 : EnumFacing.Plane.HORIZONTAL)
+                        {
+                            if (rand.nextBoolean() || !this.canPlaceOn(worldIn.getBlockState(blockpos1.offset(enumfacing3)).getBlock()))
+                            {
+                                iblockstate2 = iblockstate2.withProperty(getPropertyFor(enumfacing3), Boolean.valueOf(false));
+                            }
+                        }
+
+                        if (((Boolean)iblockstate2.getValue(NORTH)).booleanValue() || ((Boolean)iblockstate2.getValue(EAST)).booleanValue() || ((Boolean)iblockstate2.getValue(SOUTH)).booleanValue() || ((Boolean)iblockstate2.getValue(WEST)).booleanValue())
+                        {
+                            worldIn.setBlockState(blockpos1, iblockstate2, 2);
+                        }
+                    }
+                }
+                else if (enumfacing1.getAxis().isHorizontal() && !((Boolean)state.getValue(getPropertyFor(enumfacing1))).booleanValue())
+                {
+                    if (!flag)
+                    {
+                        BlockPos blockpos3 = pos.offset(enumfacing1);
+                        Block block1 = worldIn.getBlockState(blockpos3).getBlock();
+
+                        if (block1.blockMaterial == Material.air)
+                        {
+                            EnumFacing enumfacing2 = enumfacing1.rotateY();
+                            EnumFacing enumfacing4 = enumfacing1.rotateYCCW();
+                            boolean flag1 = ((Boolean)state.getValue(getPropertyFor(enumfacing2))).booleanValue();
+                            boolean flag2 = ((Boolean)state.getValue(getPropertyFor(enumfacing4))).booleanValue();
+                            BlockPos blockpos4 = blockpos3.offset(enumfacing2);
+                            BlockPos blockpos = blockpos3.offset(enumfacing4);
+
+                            if (flag1 && this.canPlaceOn(worldIn.getBlockState(blockpos4).getBlock()))
+                            {
+                                worldIn.setBlockState(blockpos3, this.getDefaultState().withProperty(getPropertyFor(enumfacing2), Boolean.valueOf(true)), 2);
+                            }
+                            else if (flag2 && this.canPlaceOn(worldIn.getBlockState(blockpos).getBlock()))
+                            {
+                                worldIn.setBlockState(blockpos3, this.getDefaultState().withProperty(getPropertyFor(enumfacing4), Boolean.valueOf(true)), 2);
+                            }
+                            else if (flag1 && worldIn.isAirBlock(blockpos4) && this.canPlaceOn(worldIn.getBlockState(pos.offset(enumfacing2)).getBlock()))
+                            {
+                                worldIn.setBlockState(blockpos4, this.getDefaultState().withProperty(getPropertyFor(enumfacing1.getOpposite()), Boolean.valueOf(true)), 2);
+                            }
+                            else if (flag2 && worldIn.isAirBlock(blockpos) && this.canPlaceOn(worldIn.getBlockState(pos.offset(enumfacing4)).getBlock()))
+                            {
+                                worldIn.setBlockState(blockpos, this.getDefaultState().withProperty(getPropertyFor(enumfacing1.getOpposite()), Boolean.valueOf(true)), 2);
+                            }
+                            else if (this.canPlaceOn(worldIn.getBlockState(blockpos3.up()).getBlock()))
+                            {
+                                worldIn.setBlockState(blockpos3, this.getDefaultState(), 2);
+                            }
+                        }
+                        else if (block1.blockMaterial.isOpaque() && block1.isFullCube())
+                        {
+                            worldIn.setBlockState(pos, state.withProperty(getPropertyFor(enumfacing1), Boolean.valueOf(true)), 2);
+                        }
+                    }
+                }
+                else
+                {
+                    if (pos.getY() > 1)
+                    {
+                        BlockPos blockpos2 = pos.down();
+                        IBlockState iblockstate = worldIn.getBlockState(blockpos2);
+                        Block block = iblockstate.getBlock();
+
+                        if (block.blockMaterial == Material.air)
+                        {
+                            IBlockState iblockstate1 = state;
+
+                            for (EnumFacing enumfacing : EnumFacing.Plane.HORIZONTAL)
+                            {
+                                if (rand.nextBoolean())
+                                {
+                                    iblockstate1 = iblockstate1.withProperty(getPropertyFor(enumfacing), Boolean.valueOf(false));
+                                }
+                            }
+
+                            if (((Boolean)iblockstate1.getValue(NORTH)).booleanValue() || ((Boolean)iblockstate1.getValue(EAST)).booleanValue() || ((Boolean)iblockstate1.getValue(SOUTH)).booleanValue() || ((Boolean)iblockstate1.getValue(WEST)).booleanValue())
+                            {
+                                worldIn.setBlockState(blockpos2, iblockstate1, 2);
+                            }
+                        }
+                        else if (block == this)
+                        {
+                            IBlockState iblockstate3 = iblockstate;
+
+                            for (EnumFacing enumfacing5 : EnumFacing.Plane.HORIZONTAL)
+                            {
+                                PropertyBool propertybool = getPropertyFor(enumfacing5);
+
+                                if (rand.nextBoolean() && ((Boolean)state.getValue(propertybool)).booleanValue())
+                                {
+                                    iblockstate3 = iblockstate3.withProperty(propertybool, Boolean.valueOf(true));
+                                }
+                            }
+
+                            if (((Boolean)iblockstate3.getValue(NORTH)).booleanValue() || ((Boolean)iblockstate3.getValue(EAST)).booleanValue() || ((Boolean)iblockstate3.getValue(SOUTH)).booleanValue() || ((Boolean)iblockstate3.getValue(WEST)).booleanValue())
+                            {
+                                worldIn.setBlockState(blockpos2, iblockstate3, 2);
                             }
                         }
                     }
                 }
             }
-
-            var9 = p_149674_1_.getBlockMetadata(p_149674_2_, p_149674_3_, p_149674_4_);
-            var10 = p_149674_1_.rand.nextInt(6);
-            var11 = Direction.facingToDirection[var10];
-            int var13;
-
-            if (var10 == 1 && p_149674_3_ < 255 && p_149674_1_.isAirBlock(p_149674_2_, p_149674_3_ + 1, p_149674_4_))
-            {
-                if (var8)
-                {
-                    return;
-                }
-
-                int var15 = p_149674_1_.rand.nextInt(16) & var9;
-
-                if (var15 > 0)
-                {
-                    for (var13 = 0; var13 <= 3; ++var13)
-                    {
-                        if (!this.func_150093_a(p_149674_1_.getBlock(p_149674_2_ + Direction.offsetX[var13], p_149674_3_ + 1, p_149674_4_ + Direction.offsetZ[var13])))
-                        {
-                            var15 &= ~(1 << var13);
-                        }
-                    }
-
-                    if (var15 > 0)
-                    {
-                        p_149674_1_.setBlock(p_149674_2_, p_149674_3_ + 1, p_149674_4_, this, var15, 2);
-                    }
-                }
-            }
-            else
-            {
-                Block var12;
-                int var14;
-
-                if (var10 >= 2 && var10 <= 5 && (var9 & 1 << var11) == 0)
-                {
-                    if (var8)
-                    {
-                        return;
-                    }
-
-                    var12 = p_149674_1_.getBlock(p_149674_2_ + Direction.offsetX[var11], p_149674_3_, p_149674_4_ + Direction.offsetZ[var11]);
-
-                    if (var12.blockMaterial == Material.air)
-                    {
-                        var13 = var11 + 1 & 3;
-                        var14 = var11 + 3 & 3;
-
-                        if ((var9 & 1 << var13) != 0 && this.func_150093_a(p_149674_1_.getBlock(p_149674_2_ + Direction.offsetX[var11] + Direction.offsetX[var13], p_149674_3_, p_149674_4_ + Direction.offsetZ[var11] + Direction.offsetZ[var13])))
-                        {
-                            p_149674_1_.setBlock(p_149674_2_ + Direction.offsetX[var11], p_149674_3_, p_149674_4_ + Direction.offsetZ[var11], this, 1 << var13, 2);
-                        }
-                        else if ((var9 & 1 << var14) != 0 && this.func_150093_a(p_149674_1_.getBlock(p_149674_2_ + Direction.offsetX[var11] + Direction.offsetX[var14], p_149674_3_, p_149674_4_ + Direction.offsetZ[var11] + Direction.offsetZ[var14])))
-                        {
-                            p_149674_1_.setBlock(p_149674_2_ + Direction.offsetX[var11], p_149674_3_, p_149674_4_ + Direction.offsetZ[var11], this, 1 << var14, 2);
-                        }
-                        else if ((var9 & 1 << var13) != 0 && p_149674_1_.isAirBlock(p_149674_2_ + Direction.offsetX[var11] + Direction.offsetX[var13], p_149674_3_, p_149674_4_ + Direction.offsetZ[var11] + Direction.offsetZ[var13]) && this.func_150093_a(p_149674_1_.getBlock(p_149674_2_ + Direction.offsetX[var13], p_149674_3_, p_149674_4_ + Direction.offsetZ[var13])))
-                        {
-                            p_149674_1_.setBlock(p_149674_2_ + Direction.offsetX[var11] + Direction.offsetX[var13], p_149674_3_, p_149674_4_ + Direction.offsetZ[var11] + Direction.offsetZ[var13], this, 1 << (var11 + 2 & 3), 2);
-                        }
-                        else if ((var9 & 1 << var14) != 0 && p_149674_1_.isAirBlock(p_149674_2_ + Direction.offsetX[var11] + Direction.offsetX[var14], p_149674_3_, p_149674_4_ + Direction.offsetZ[var11] + Direction.offsetZ[var14]) && this.func_150093_a(p_149674_1_.getBlock(p_149674_2_ + Direction.offsetX[var14], p_149674_3_, p_149674_4_ + Direction.offsetZ[var14])))
-                        {
-                            p_149674_1_.setBlock(p_149674_2_ + Direction.offsetX[var11] + Direction.offsetX[var14], p_149674_3_, p_149674_4_ + Direction.offsetZ[var11] + Direction.offsetZ[var14], this, 1 << (var11 + 2 & 3), 2);
-                        }
-                        else if (this.func_150093_a(p_149674_1_.getBlock(p_149674_2_ + Direction.offsetX[var11], p_149674_3_ + 1, p_149674_4_ + Direction.offsetZ[var11])))
-                        {
-                            p_149674_1_.setBlock(p_149674_2_ + Direction.offsetX[var11], p_149674_3_, p_149674_4_ + Direction.offsetZ[var11], this, 0, 2);
-                        }
-                    }
-                    else if (var12.blockMaterial.isOpaque() && var12.renderAsNormalBlock())
-                    {
-                        p_149674_1_.setBlockMetadataWithNotify(p_149674_2_, p_149674_3_, p_149674_4_, var9 | 1 << var11, 2);
-                    }
-                }
-                else if (p_149674_3_ > 1)
-                {
-                    var12 = p_149674_1_.getBlock(p_149674_2_, p_149674_3_ - 1, p_149674_4_);
-
-                    if (var12.blockMaterial == Material.air)
-                    {
-                        var13 = p_149674_1_.rand.nextInt(16) & var9;
-
-                        if (var13 > 0)
-                        {
-                            p_149674_1_.setBlock(p_149674_2_, p_149674_3_ - 1, p_149674_4_, this, var13, 2);
-                        }
-                    }
-                    else if (var12 == this)
-                    {
-                        var13 = p_149674_1_.rand.nextInt(16) & var9;
-                        var14 = p_149674_1_.getBlockMetadata(p_149674_2_, p_149674_3_ - 1, p_149674_4_);
-
-                        if (var14 != (var14 | var13))
-                        {
-                            p_149674_1_.setBlockMetadataWithNotify(p_149674_2_, p_149674_3_ - 1, p_149674_4_, var14 | var13, 2);
-                        }
-                    }
-                }
-            }
         }
     }
 
-    public int onBlockPlaced(World p_149660_1_, int p_149660_2_, int p_149660_3_, int p_149660_4_, int p_149660_5_, float p_149660_6_, float p_149660_7_, float p_149660_8_, int p_149660_9_)
+    /**
+     * Called by ItemBlocks just before a block is actually set in the world, to allow for adjustments to the
+     * IBlockstate
+     */
+    public IBlockState onBlockPlaced(World worldIn, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta, EntityLivingBase placer)
     {
-        byte var10 = 0;
-
-        switch (p_149660_5_)
-        {
-            case 2:
-                var10 = 1;
-                break;
-
-            case 3:
-                var10 = 4;
-                break;
-
-            case 4:
-                var10 = 8;
-                break;
-
-            case 5:
-                var10 = 2;
-        }
-
-        return var10 != 0 ? var10 : p_149660_9_;
+        IBlockState iblockstate = this.getDefaultState().withProperty(UP, Boolean.valueOf(false)).withProperty(NORTH, Boolean.valueOf(false)).withProperty(EAST, Boolean.valueOf(false)).withProperty(SOUTH, Boolean.valueOf(false)).withProperty(WEST, Boolean.valueOf(false));
+        return facing.getAxis().isHorizontal() ? iblockstate.withProperty(getPropertyFor(facing.getOpposite()), Boolean.valueOf(true)) : iblockstate;
     }
 
-    public Item getItemDropped(int p_149650_1_, Random p_149650_2_, int p_149650_3_)
+    /**
+     * Get the Item that this Block should drop when harvested.
+     */
+    public Item getItemDropped(IBlockState state, Random rand, int fortune)
     {
         return null;
     }
@@ -397,21 +406,108 @@ public class BlockVine extends Block
     /**
      * Returns the quantity of items to drop on block destruction.
      */
-    public int quantityDropped(Random p_149745_1_)
+    public int quantityDropped(Random random)
     {
         return 0;
     }
 
-    public void harvestBlock(World p_149636_1_, EntityPlayer p_149636_2_, int p_149636_3_, int p_149636_4_, int p_149636_5_, int p_149636_6_)
+    public void harvestBlock(World worldIn, EntityPlayer player, BlockPos pos, IBlockState state, TileEntity te)
     {
-        if (!p_149636_1_.isClient && p_149636_2_.getCurrentEquippedItem() != null && p_149636_2_.getCurrentEquippedItem().getItem() == Items.shears)
+        if (!worldIn.isRemote && player.getCurrentEquippedItem() != null && player.getCurrentEquippedItem().getItem() == Items.shears)
         {
-            p_149636_2_.addStat(StatList.mineBlockStatArray[Block.getIdFromBlock(this)], 1);
-            this.dropBlockAsItem_do(p_149636_1_, p_149636_3_, p_149636_4_, p_149636_5_, new ItemStack(Blocks.vine, 1, 0));
+            player.triggerAchievement(StatList.mineBlockStatArray[Block.getIdFromBlock(this)]);
+            spawnAsEntity(worldIn, pos, new ItemStack(Blocks.vine, 1, 0));
         }
         else
         {
-            super.harvestBlock(p_149636_1_, p_149636_2_, p_149636_3_, p_149636_4_, p_149636_5_, p_149636_6_);
+            super.harvestBlock(worldIn, player, pos, state, te);
         }
+    }
+
+    public EnumWorldBlockLayer getBlockLayer()
+    {
+        return EnumWorldBlockLayer.CUTOUT;
+    }
+
+    /**
+     * Convert the given metadata into a BlockState for this Block
+     */
+    public IBlockState getStateFromMeta(int meta)
+    {
+        return this.getDefaultState().withProperty(SOUTH, Boolean.valueOf((meta & 1) > 0)).withProperty(WEST, Boolean.valueOf((meta & 2) > 0)).withProperty(NORTH, Boolean.valueOf((meta & 4) > 0)).withProperty(EAST, Boolean.valueOf((meta & 8) > 0));
+    }
+
+    /**
+     * Convert the BlockState into the correct metadata value
+     */
+    public int getMetaFromState(IBlockState state)
+    {
+        int i = 0;
+
+        if (((Boolean)state.getValue(SOUTH)).booleanValue())
+        {
+            i |= 1;
+        }
+
+        if (((Boolean)state.getValue(WEST)).booleanValue())
+        {
+            i |= 2;
+        }
+
+        if (((Boolean)state.getValue(NORTH)).booleanValue())
+        {
+            i |= 4;
+        }
+
+        if (((Boolean)state.getValue(EAST)).booleanValue())
+        {
+            i |= 8;
+        }
+
+        return i;
+    }
+
+    protected BlockState createBlockState()
+    {
+        return new BlockState(this, new IProperty[] {UP, NORTH, EAST, SOUTH, WEST});
+    }
+
+    public static PropertyBool getPropertyFor(EnumFacing side)
+    {
+        switch (side)
+        {
+            case UP:
+                return UP;
+
+            case NORTH:
+                return NORTH;
+
+            case SOUTH:
+                return SOUTH;
+
+            case EAST:
+                return EAST;
+
+            case WEST:
+                return WEST;
+
+            default:
+                throw new IllegalArgumentException(side + " is an invalid choice");
+        }
+    }
+
+    public static int getNumGrownFaces(IBlockState state)
+    {
+        int i = 0;
+
+        for (PropertyBool propertybool : ALL_FACES)
+        {
+            if (((Boolean)state.getValue(propertybool)).booleanValue())
+            {
+                ++i;
+            }
+        }
+
+        return i;
     }
 }

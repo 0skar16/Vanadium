@@ -1,147 +1,156 @@
 package net.minecraft.block;
 
 import java.util.Random;
+import net.minecraft.block.properties.IProperty;
+import net.minecraft.block.properties.PropertyBool;
+import net.minecraft.block.properties.PropertyInteger;
+import net.minecraft.block.state.BlockState;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.EnumParticleTypes;
+import net.minecraft.util.StatCollector;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 
 public class BlockRedstoneRepeater extends BlockRedstoneDiode
 {
-    public static final double[] field_149973_b = new double[] { -0.0625D, 0.0625D, 0.1875D, 0.3125D};
-    private static final int[] field_149974_M = new int[] {1, 2, 3, 4};
-    private static final String __OBFID = "CL_00000301";
+    public static final PropertyBool LOCKED = PropertyBool.create("locked");
+    public static final PropertyInteger DELAY = PropertyInteger.create("delay", 1, 4);
 
-    protected BlockRedstoneRepeater(boolean p_i45424_1_)
+    protected BlockRedstoneRepeater(boolean powered)
     {
-        super(p_i45424_1_);
+        super(powered);
+        this.setDefaultState(this.blockState.getBaseState().withProperty(FACING, EnumFacing.NORTH).withProperty(DELAY, Integer.valueOf(1)).withProperty(LOCKED, Boolean.valueOf(false)));
     }
 
     /**
-     * Called upon block activation (right click on the block.)
+     * Gets the localized name of this block. Used for the statistics page.
      */
-    public boolean onBlockActivated(World p_149727_1_, int p_149727_2_, int p_149727_3_, int p_149727_4_, EntityPlayer p_149727_5_, int p_149727_6_, float p_149727_7_, float p_149727_8_, float p_149727_9_)
+    public String getLocalizedName()
     {
-        int var10 = p_149727_1_.getBlockMetadata(p_149727_2_, p_149727_3_, p_149727_4_);
-        int var11 = (var10 & 12) >> 2;
-        var11 = var11 + 1 << 2 & 12;
-        p_149727_1_.setBlockMetadataWithNotify(p_149727_2_, p_149727_3_, p_149727_4_, var11 | var10 & 3, 3);
-        return true;
-    }
-
-    protected int func_149901_b(int p_149901_1_)
-    {
-        return field_149974_M[(p_149901_1_ & 12) >> 2] * 2;
-    }
-
-    protected BlockRedstoneDiode func_149906_e()
-    {
-        return Blocks.powered_repeater;
-    }
-
-    protected BlockRedstoneDiode func_149898_i()
-    {
-        return Blocks.unpowered_repeater;
-    }
-
-    public Item getItemDropped(int p_149650_1_, Random p_149650_2_, int p_149650_3_)
-    {
-        return Items.repeater;
+        return StatCollector.translateToLocal("item.diode.name");
     }
 
     /**
-     * Gets an item for the block being called on. Args: world, x, y, z
+     * Get the actual Block state of this Block at the given position. This applies properties not visible in the
+     * metadata, such as fence connections.
      */
-    public Item getItem(World p_149694_1_, int p_149694_2_, int p_149694_3_, int p_149694_4_)
+    public IBlockState getActualState(IBlockState state, IBlockAccess worldIn, BlockPos pos)
     {
-        return Items.repeater;
+        return state.withProperty(LOCKED, Boolean.valueOf(this.isLocked(worldIn, pos, state)));
     }
 
-    /**
-     * The type of render function that is called for this block
-     */
-    public int getRenderType()
+    public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumFacing side, float hitX, float hitY, float hitZ)
     {
-        return 15;
-    }
-
-    public boolean func_149910_g(IBlockAccess p_149910_1_, int p_149910_2_, int p_149910_3_, int p_149910_4_, int p_149910_5_)
-    {
-        return this.func_149902_h(p_149910_1_, p_149910_2_, p_149910_3_, p_149910_4_, p_149910_5_) > 0;
-    }
-
-    protected boolean func_149908_a(Block p_149908_1_)
-    {
-        return func_149909_d(p_149908_1_);
-    }
-
-    /**
-     * A randomly called display update to be able to add particles or other items for display
-     */
-    public void randomDisplayTick(World p_149734_1_, int p_149734_2_, int p_149734_3_, int p_149734_4_, Random p_149734_5_)
-    {
-        if (this.field_149914_a)
+        if (!playerIn.capabilities.allowEdit)
         {
-            int var6 = p_149734_1_.getBlockMetadata(p_149734_2_, p_149734_3_, p_149734_4_);
-            int var7 = func_149895_l(var6);
-            double var8 = (double)((float)p_149734_2_ + 0.5F) + (double)(p_149734_5_.nextFloat() - 0.5F) * 0.2D;
-            double var10 = (double)((float)p_149734_3_ + 0.4F) + (double)(p_149734_5_.nextFloat() - 0.5F) * 0.2D;
-            double var12 = (double)((float)p_149734_4_ + 0.5F) + (double)(p_149734_5_.nextFloat() - 0.5F) * 0.2D;
-            double var14 = 0.0D;
-            double var16 = 0.0D;
-
-            if (p_149734_5_.nextInt(2) == 0)
-            {
-                switch (var7)
-                {
-                    case 0:
-                        var16 = -0.3125D;
-                        break;
-
-                    case 1:
-                        var14 = 0.3125D;
-                        break;
-
-                    case 2:
-                        var16 = 0.3125D;
-                        break;
-
-                    case 3:
-                        var14 = -0.3125D;
-                }
-            }
-            else
-            {
-                int var18 = (var6 & 12) >> 2;
-
-                switch (var7)
-                {
-                    case 0:
-                        var16 = field_149973_b[var18];
-                        break;
-
-                    case 1:
-                        var14 = -field_149973_b[var18];
-                        break;
-
-                    case 2:
-                        var16 = -field_149973_b[var18];
-                        break;
-
-                    case 3:
-                        var14 = field_149973_b[var18];
-                }
-            }
-
-            p_149734_1_.spawnParticle("reddust", var8 + var14, var10, var12 + var16, 0.0D, 0.0D, 0.0D);
+            return false;
+        }
+        else
+        {
+            worldIn.setBlockState(pos, state.cycleProperty(DELAY), 3);
+            return true;
         }
     }
 
-    public void breakBlock(World p_149749_1_, int p_149749_2_, int p_149749_3_, int p_149749_4_, Block p_149749_5_, int p_149749_6_)
+    protected int getDelay(IBlockState state)
     {
-        super.breakBlock(p_149749_1_, p_149749_2_, p_149749_3_, p_149749_4_, p_149749_5_, p_149749_6_);
-        this.func_149911_e(p_149749_1_, p_149749_2_, p_149749_3_, p_149749_4_);
+        return ((Integer)state.getValue(DELAY)).intValue() * 2;
+    }
+
+    protected IBlockState getPoweredState(IBlockState unpoweredState)
+    {
+        Integer integer = (Integer)unpoweredState.getValue(DELAY);
+        Boolean obool = (Boolean)unpoweredState.getValue(LOCKED);
+        EnumFacing enumfacing = (EnumFacing)unpoweredState.getValue(FACING);
+        return Blocks.powered_repeater.getDefaultState().withProperty(FACING, enumfacing).withProperty(DELAY, integer).withProperty(LOCKED, obool);
+    }
+
+    protected IBlockState getUnpoweredState(IBlockState poweredState)
+    {
+        Integer integer = (Integer)poweredState.getValue(DELAY);
+        Boolean obool = (Boolean)poweredState.getValue(LOCKED);
+        EnumFacing enumfacing = (EnumFacing)poweredState.getValue(FACING);
+        return Blocks.unpowered_repeater.getDefaultState().withProperty(FACING, enumfacing).withProperty(DELAY, integer).withProperty(LOCKED, obool);
+    }
+
+    /**
+     * Get the Item that this Block should drop when harvested.
+     */
+    public Item getItemDropped(IBlockState state, Random rand, int fortune)
+    {
+        return Items.repeater;
+    }
+
+    public Item getItem(World worldIn, BlockPos pos)
+    {
+        return Items.repeater;
+    }
+
+    public boolean isLocked(IBlockAccess worldIn, BlockPos pos, IBlockState state)
+    {
+        return this.getPowerOnSides(worldIn, pos, state) > 0;
+    }
+
+    protected boolean canPowerSide(Block blockIn)
+    {
+        return isRedstoneRepeaterBlockID(blockIn);
+    }
+
+    public void randomDisplayTick(World worldIn, BlockPos pos, IBlockState state, Random rand)
+    {
+        if (this.isRepeaterPowered)
+        {
+            EnumFacing enumfacing = (EnumFacing)state.getValue(FACING);
+            double d0 = (double)((float)pos.getX() + 0.5F) + (double)(rand.nextFloat() - 0.5F) * 0.2D;
+            double d1 = (double)((float)pos.getY() + 0.4F) + (double)(rand.nextFloat() - 0.5F) * 0.2D;
+            double d2 = (double)((float)pos.getZ() + 0.5F) + (double)(rand.nextFloat() - 0.5F) * 0.2D;
+            float f = -5.0F;
+
+            if (rand.nextBoolean())
+            {
+                f = (float)(((Integer)state.getValue(DELAY)).intValue() * 2 - 1);
+            }
+
+            f = f / 16.0F;
+            double d3 = (double)(f * (float)enumfacing.getFrontOffsetX());
+            double d4 = (double)(f * (float)enumfacing.getFrontOffsetZ());
+            worldIn.spawnParticle(EnumParticleTypes.REDSTONE, d0 + d3, d1, d2 + d4, 0.0D, 0.0D, 0.0D, new int[0]);
+        }
+    }
+
+    public void breakBlock(World worldIn, BlockPos pos, IBlockState state)
+    {
+        super.breakBlock(worldIn, pos, state);
+        this.notifyNeighbors(worldIn, pos, state);
+    }
+
+    /**
+     * Convert the given metadata into a BlockState for this Block
+     */
+    public IBlockState getStateFromMeta(int meta)
+    {
+        return this.getDefaultState().withProperty(FACING, EnumFacing.getHorizontal(meta)).withProperty(LOCKED, Boolean.valueOf(false)).withProperty(DELAY, Integer.valueOf(1 + (meta >> 2)));
+    }
+
+    /**
+     * Convert the BlockState into the correct metadata value
+     */
+    public int getMetaFromState(IBlockState state)
+    {
+        int i = 0;
+        i = i | ((EnumFacing)state.getValue(FACING)).getHorizontalIndex();
+        i = i | ((Integer)state.getValue(DELAY)).intValue() - 1 << 2;
+        return i;
+    }
+
+    protected BlockState createBlockState()
+    {
+        return new BlockState(this, new IProperty[] {FACING, DELAY, LOCKED});
     }
 }

@@ -1,74 +1,160 @@
 package net.minecraft.block;
 
 import java.util.Random;
+import net.minecraft.block.material.MapColor;
 import net.minecraft.block.material.Material;
-import net.minecraft.client.renderer.texture.IIconRegister;
-import net.minecraft.init.Blocks;
+import net.minecraft.block.properties.IProperty;
+import net.minecraft.block.properties.PropertyEnum;
+import net.minecraft.block.state.BlockState;
+import net.minecraft.block.state.IBlockState;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.item.Item;
-import net.minecraft.util.IIcon;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.IStringSerializable;
 import net.minecraft.world.World;
 
 public class BlockHugeMushroom extends Block
 {
-    private static final String[] field_149793_a = new String[] {"skin_brown", "skin_red"};
-    private final int field_149792_b;
-    private IIcon[] field_149794_M;
-    private IIcon field_149795_N;
-    private IIcon field_149796_O;
-    private static final String __OBFID = "CL_00000258";
+    public static final PropertyEnum<BlockHugeMushroom.EnumType> VARIANT = PropertyEnum.<BlockHugeMushroom.EnumType>create("variant", BlockHugeMushroom.EnumType.class);
+    private final Block smallBlock;
 
-    public BlockHugeMushroom(Material p_i45412_1_, int p_i45412_2_)
+    public BlockHugeMushroom(Material p_i46392_1_, MapColor p_i46392_2_, Block p_i46392_3_)
     {
-        super(p_i45412_1_);
-        this.field_149792_b = p_i45412_2_;
-    }
-
-    /**
-     * Gets the block's texture. Args: side, meta
-     */
-    public IIcon getIcon(int p_149691_1_, int p_149691_2_)
-    {
-        return p_149691_2_ == 10 && p_149691_1_ > 1 ? this.field_149795_N : (p_149691_2_ >= 1 && p_149691_2_ <= 9 && p_149691_1_ == 1 ? this.field_149794_M[this.field_149792_b] : (p_149691_2_ >= 1 && p_149691_2_ <= 3 && p_149691_1_ == 2 ? this.field_149794_M[this.field_149792_b] : (p_149691_2_ >= 7 && p_149691_2_ <= 9 && p_149691_1_ == 3 ? this.field_149794_M[this.field_149792_b] : ((p_149691_2_ == 1 || p_149691_2_ == 4 || p_149691_2_ == 7) && p_149691_1_ == 4 ? this.field_149794_M[this.field_149792_b] : ((p_149691_2_ == 3 || p_149691_2_ == 6 || p_149691_2_ == 9) && p_149691_1_ == 5 ? this.field_149794_M[this.field_149792_b] : (p_149691_2_ == 14 ? this.field_149794_M[this.field_149792_b] : (p_149691_2_ == 15 ? this.field_149795_N : this.field_149796_O)))))));
+        super(p_i46392_1_, p_i46392_2_);
+        this.setDefaultState(this.blockState.getBaseState().withProperty(VARIANT, BlockHugeMushroom.EnumType.ALL_OUTSIDE));
+        this.smallBlock = p_i46392_3_;
     }
 
     /**
      * Returns the quantity of items to drop on block destruction.
      */
-    public int quantityDropped(Random p_149745_1_)
+    public int quantityDropped(Random random)
     {
-        int var2 = p_149745_1_.nextInt(10) - 7;
-
-        if (var2 < 0)
-        {
-            var2 = 0;
-        }
-
-        return var2;
-    }
-
-    public Item getItemDropped(int p_149650_1_, Random p_149650_2_, int p_149650_3_)
-    {
-        return Item.getItemById(Block.getIdFromBlock(Blocks.brown_mushroom) + this.field_149792_b);
+        return Math.max(0, random.nextInt(10) - 7);
     }
 
     /**
-     * Gets an item for the block being called on. Args: world, x, y, z
+     * Get the MapColor for this Block and the given BlockState
      */
-    public Item getItem(World p_149694_1_, int p_149694_2_, int p_149694_3_, int p_149694_4_)
+    public MapColor getMapColor(IBlockState state)
     {
-        return Item.getItemById(Block.getIdFromBlock(Blocks.brown_mushroom) + this.field_149792_b);
+        switch ((BlockHugeMushroom.EnumType)state.getValue(VARIANT))
+        {
+            case ALL_STEM:
+                return MapColor.clothColor;
+
+            case ALL_INSIDE:
+                return MapColor.sandColor;
+
+            case STEM:
+                return MapColor.sandColor;
+
+            default:
+                return super.getMapColor(state);
+        }
     }
 
-    public void registerBlockIcons(IIconRegister p_149651_1_)
+    /**
+     * Get the Item that this Block should drop when harvested.
+     */
+    public Item getItemDropped(IBlockState state, Random rand, int fortune)
     {
-        this.field_149794_M = new IIcon[field_149793_a.length];
+        return Item.getItemFromBlock(this.smallBlock);
+    }
 
-        for (int var2 = 0; var2 < this.field_149794_M.length; ++var2)
+    public Item getItem(World worldIn, BlockPos pos)
+    {
+        return Item.getItemFromBlock(this.smallBlock);
+    }
+
+    /**
+     * Called by ItemBlocks just before a block is actually set in the world, to allow for adjustments to the
+     * IBlockstate
+     */
+    public IBlockState onBlockPlaced(World worldIn, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta, EntityLivingBase placer)
+    {
+        return this.getDefaultState();
+    }
+
+    /**
+     * Convert the given metadata into a BlockState for this Block
+     */
+    public IBlockState getStateFromMeta(int meta)
+    {
+        return this.getDefaultState().withProperty(VARIANT, BlockHugeMushroom.EnumType.byMetadata(meta));
+    }
+
+    /**
+     * Convert the BlockState into the correct metadata value
+     */
+    public int getMetaFromState(IBlockState state)
+    {
+        return ((BlockHugeMushroom.EnumType)state.getValue(VARIANT)).getMetadata();
+    }
+
+    protected BlockState createBlockState()
+    {
+        return new BlockState(this, new IProperty[] {VARIANT});
+    }
+
+    public static enum EnumType implements IStringSerializable
+    {
+        NORTH_WEST(1, "north_west"),
+        NORTH(2, "north"),
+        NORTH_EAST(3, "north_east"),
+        WEST(4, "west"),
+        CENTER(5, "center"),
+        EAST(6, "east"),
+        SOUTH_WEST(7, "south_west"),
+        SOUTH(8, "south"),
+        SOUTH_EAST(9, "south_east"),
+        STEM(10, "stem"),
+        ALL_INSIDE(0, "all_inside"),
+        ALL_OUTSIDE(14, "all_outside"),
+        ALL_STEM(15, "all_stem");
+
+        private static final BlockHugeMushroom.EnumType[] META_LOOKUP = new BlockHugeMushroom.EnumType[16];
+        private final int meta;
+        private final String name;
+
+        private EnumType(int meta, String name)
         {
-            this.field_149794_M[var2] = p_149651_1_.registerIcon(this.getTextureName() + "_" + field_149793_a[var2]);
+            this.meta = meta;
+            this.name = name;
         }
 
-        this.field_149796_O = p_149651_1_.registerIcon(this.getTextureName() + "_" + "inside");
-        this.field_149795_N = p_149651_1_.registerIcon(this.getTextureName() + "_" + "skin_stem");
+        public int getMetadata()
+        {
+            return this.meta;
+        }
+
+        public String toString()
+        {
+            return this.name;
+        }
+
+        public static BlockHugeMushroom.EnumType byMetadata(int meta)
+        {
+            if (meta < 0 || meta >= META_LOOKUP.length)
+            {
+                meta = 0;
+            }
+
+            BlockHugeMushroom.EnumType blockhugemushroom$enumtype = META_LOOKUP[meta];
+            return blockhugemushroom$enumtype == null ? META_LOOKUP[0] : blockhugemushroom$enumtype;
+        }
+
+        public String getName()
+        {
+            return this.name;
+        }
+
+        static {
+            for (BlockHugeMushroom.EnumType blockhugemushroom$enumtype : values())
+            {
+                META_LOOKUP[blockhugemushroom$enumtype.getMetadata()] = blockhugemushroom$enumtype;
+            }
+        }
     }
 }

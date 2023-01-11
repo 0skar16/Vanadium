@@ -1,6 +1,7 @@
 package net.minecraft.client.particle;
 
-import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.WorldRenderer;
+import net.minecraft.entity.Entity;
 import net.minecraft.world.World;
 
 public class EntityPortalFX extends EntityFX
@@ -9,20 +10,19 @@ public class EntityPortalFX extends EntityFX
     private double portalPosX;
     private double portalPosY;
     private double portalPosZ;
-    private static final String __OBFID = "CL_00000921";
 
-    public EntityPortalFX(World p_i46351_1_, double p_i46351_2_, double p_i46351_4_, double p_i46351_6_, double p_i46351_8_, double p_i46351_10_, double p_i46351_12_)
+    protected EntityPortalFX(World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double xSpeedIn, double ySpeedIn, double zSpeedIn)
     {
-        super(p_i46351_1_, p_i46351_2_, p_i46351_4_, p_i46351_6_, p_i46351_8_, p_i46351_10_, p_i46351_12_);
-        this.motionX = p_i46351_8_;
-        this.motionY = p_i46351_10_;
-        this.motionZ = p_i46351_12_;
-        this.portalPosX = this.posX = p_i46351_2_;
-        this.portalPosY = this.posY = p_i46351_4_;
-        this.portalPosZ = this.posZ = p_i46351_6_;
-        float var14 = this.rand.nextFloat() * 0.6F + 0.4F;
+        super(worldIn, xCoordIn, yCoordIn, zCoordIn, xSpeedIn, ySpeedIn, zSpeedIn);
+        this.motionX = xSpeedIn;
+        this.motionY = ySpeedIn;
+        this.motionZ = zSpeedIn;
+        this.portalPosX = this.posX = xCoordIn;
+        this.portalPosY = this.posY = yCoordIn;
+        this.portalPosZ = this.posZ = zCoordIn;
+        float f = this.rand.nextFloat() * 0.6F + 0.4F;
         this.portalParticleScale = this.particleScale = this.rand.nextFloat() * 0.2F + 0.5F;
-        this.particleRed = this.particleGreen = this.particleBlue = 1.0F * var14;
+        this.particleRed = this.particleGreen = this.particleBlue = 1.0F * f;
         this.particleGreen *= 0.3F;
         this.particleRed *= 0.9F;
         this.particleMaxAge = (int)(Math.random() * 10.0D) + 40;
@@ -30,43 +30,46 @@ public class EntityPortalFX extends EntityFX
         this.setParticleTextureIndex((int)(Math.random() * 8.0D));
     }
 
-    public void renderParticle(Tessellator p_70539_1_, float p_70539_2_, float p_70539_3_, float p_70539_4_, float p_70539_5_, float p_70539_6_, float p_70539_7_)
+    /**
+     * Renders the particle
+     */
+    public void renderParticle(WorldRenderer worldRendererIn, Entity entityIn, float partialTicks, float rotationX, float rotationZ, float rotationYZ, float rotationXY, float rotationXZ)
     {
-        float var8 = ((float)this.particleAge + p_70539_2_) / (float)this.particleMaxAge;
-        var8 = 1.0F - var8;
-        var8 *= var8;
-        var8 = 1.0F - var8;
-        this.particleScale = this.portalParticleScale * var8;
-        super.renderParticle(p_70539_1_, p_70539_2_, p_70539_3_, p_70539_4_, p_70539_5_, p_70539_6_, p_70539_7_);
+        float f = ((float)this.particleAge + partialTicks) / (float)this.particleMaxAge;
+        f = 1.0F - f;
+        f = f * f;
+        f = 1.0F - f;
+        this.particleScale = this.portalParticleScale * f;
+        super.renderParticle(worldRendererIn, entityIn, partialTicks, rotationX, rotationZ, rotationYZ, rotationXY, rotationXZ);
     }
 
-    public int getBrightnessForRender(float p_70070_1_)
+    public int getBrightnessForRender(float partialTicks)
     {
-        int var2 = super.getBrightnessForRender(p_70070_1_);
-        float var3 = (float)this.particleAge / (float)this.particleMaxAge;
-        var3 *= var3;
-        var3 *= var3;
-        int var4 = var2 & 255;
-        int var5 = var2 >> 16 & 255;
-        var5 += (int)(var3 * 15.0F * 16.0F);
+        int i = super.getBrightnessForRender(partialTicks);
+        float f = (float)this.particleAge / (float)this.particleMaxAge;
+        f = f * f;
+        f = f * f;
+        int j = i & 255;
+        int k = i >> 16 & 255;
+        k = k + (int)(f * 15.0F * 16.0F);
 
-        if (var5 > 240)
+        if (k > 240)
         {
-            var5 = 240;
+            k = 240;
         }
 
-        return var4 | var5 << 16;
+        return j | k << 16;
     }
 
     /**
      * Gets how bright this entity is.
      */
-    public float getBrightness(float p_70013_1_)
+    public float getBrightness(float partialTicks)
     {
-        float var2 = super.getBrightness(p_70013_1_);
-        float var3 = (float)this.particleAge / (float)this.particleMaxAge;
-        var3 = var3 * var3 * var3 * var3;
-        return var2 * (1.0F - var3) + var3;
+        float f = super.getBrightness(partialTicks);
+        float f1 = (float)this.particleAge / (float)this.particleMaxAge;
+        f1 = f1 * f1 * f1 * f1;
+        return f * (1.0F - f1) + f1;
     }
 
     /**
@@ -77,17 +80,24 @@ public class EntityPortalFX extends EntityFX
         this.prevPosX = this.posX;
         this.prevPosY = this.posY;
         this.prevPosZ = this.posZ;
-        float var1 = (float)this.particleAge / (float)this.particleMaxAge;
-        float var2 = var1;
-        var1 = -var1 + var1 * var1 * 2.0F;
-        var1 = 1.0F - var1;
-        this.posX = this.portalPosX + this.motionX * (double)var1;
-        this.posY = this.portalPosY + this.motionY * (double)var1 + (double)(1.0F - var2);
-        this.posZ = this.portalPosZ + this.motionZ * (double)var1;
+        float f = (float)this.particleAge / (float)this.particleMaxAge;
+        f = -f + f * f * 2.0F;
+        f = 1.0F - f;
+        this.posX = this.portalPosX + this.motionX * (double)f;
+        this.posY = this.portalPosY + this.motionY * (double)f + (double)(1.0F - f);
+        this.posZ = this.portalPosZ + this.motionZ * (double)f;
 
         if (this.particleAge++ >= this.particleMaxAge)
         {
             this.setDead();
+        }
+    }
+
+    public static class Factory implements IParticleFactory
+    {
+        public EntityFX getEntityFX(int particleID, World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double xSpeedIn, double ySpeedIn, double zSpeedIn, int... p_178902_15_)
+        {
+            return new EntityPortalFX(worldIn, xCoordIn, yCoordIn, zCoordIn, xSpeedIn, ySpeedIn, zSpeedIn);
         }
     }
 }

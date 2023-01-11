@@ -8,18 +8,17 @@ public class NBTTagString extends NBTBase
 {
     /** The string value for the tag (cannot be empty). */
     private String data;
-    private static final String __OBFID = "CL_00001228";
 
     public NBTTagString()
     {
         this.data = "";
     }
 
-    public NBTTagString(String p_i1389_1_)
+    public NBTTagString(String data)
     {
-        this.data = p_i1389_1_;
+        this.data = data;
 
-        if (p_i1389_1_ == null)
+        if (data == null)
         {
             throw new IllegalArgumentException("Empty string not allowed");
         }
@@ -28,15 +27,16 @@ public class NBTTagString extends NBTBase
     /**
      * Write the actual data contents of the tag, implemented in NBT extension classes
      */
-    void write(DataOutput p_74734_1_) throws IOException
+    void write(DataOutput output) throws IOException
     {
-        p_74734_1_.writeUTF(this.data);
+        output.writeUTF(this.data);
     }
 
-    void func_152446_a(DataInput p_152446_1_, int p_152446_2_, NBTSizeTracker p_152446_3_) throws IOException
+    void read(DataInput input, int depth, NBTSizeTracker sizeTracker) throws IOException
     {
-        this.data = p_152446_1_.readUTF();
-        p_152446_3_.func_152450_a((long)(16 * this.data.length()));
+        sizeTracker.read(288L);
+        this.data = input.readUTF();
+        sizeTracker.read((long)(16 * this.data.length()));
     }
 
     /**
@@ -49,7 +49,7 @@ public class NBTTagString extends NBTBase
 
     public String toString()
     {
-        return "\"" + this.data + "\"";
+        return "\"" + this.data.replace("\"", "\\\"") + "\"";
     }
 
     /**
@@ -60,6 +60,14 @@ public class NBTTagString extends NBTBase
         return new NBTTagString(this.data);
     }
 
+    /**
+     * Return whether this compound has no tags.
+     */
+    public boolean hasNoTags()
+    {
+        return this.data.isEmpty();
+    }
+
     public boolean equals(Object p_equals_1_)
     {
         if (!super.equals(p_equals_1_))
@@ -68,8 +76,8 @@ public class NBTTagString extends NBTBase
         }
         else
         {
-            NBTTagString var2 = (NBTTagString)p_equals_1_;
-            return this.data == null && var2.data == null || this.data != null && this.data.equals(var2.data);
+            NBTTagString nbttagstring = (NBTTagString)p_equals_1_;
+            return this.data == null && nbttagstring.data == null || this.data != null && this.data.equals(nbttagstring.data);
         }
     }
 
@@ -78,7 +86,7 @@ public class NBTTagString extends NBTBase
         return super.hashCode() ^ this.data.hashCode();
     }
 
-    public String func_150285_a_()
+    public String getString()
     {
         return this.data;
     }

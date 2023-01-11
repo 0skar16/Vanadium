@@ -1,35 +1,36 @@
 package net.minecraft.entity.ai.attributes;
 
+import net.minecraft.util.MathHelper;
+
 public class RangedAttribute extends BaseAttribute
 {
     private final double minimumValue;
     private final double maximumValue;
     private String description;
-    private static final String __OBFID = "CL_00001568";
 
-    public RangedAttribute(String p_i1609_1_, double p_i1609_2_, double p_i1609_4_, double p_i1609_6_)
+    public RangedAttribute(IAttribute p_i45891_1_, String unlocalizedNameIn, double defaultValue, double minimumValueIn, double maximumValueIn)
     {
-        super(p_i1609_1_, p_i1609_2_);
-        this.minimumValue = p_i1609_4_;
-        this.maximumValue = p_i1609_6_;
+        super(p_i45891_1_, unlocalizedNameIn, defaultValue);
+        this.minimumValue = minimumValueIn;
+        this.maximumValue = maximumValueIn;
 
-        if (p_i1609_4_ > p_i1609_6_)
+        if (minimumValueIn > maximumValueIn)
         {
             throw new IllegalArgumentException("Minimum value cannot be bigger than maximum value!");
         }
-        else if (p_i1609_2_ < p_i1609_4_)
+        else if (defaultValue < minimumValueIn)
         {
             throw new IllegalArgumentException("Default value cannot be lower than minimum value!");
         }
-        else if (p_i1609_2_ > p_i1609_6_)
+        else if (defaultValue > maximumValueIn)
         {
             throw new IllegalArgumentException("Default value cannot be bigger than maximum value!");
         }
     }
 
-    public RangedAttribute setDescription(String p_111117_1_)
+    public RangedAttribute setDescription(String descriptionIn)
     {
-        this.description = p_111117_1_;
+        this.description = descriptionIn;
         return this;
     }
 
@@ -40,16 +41,7 @@ public class RangedAttribute extends BaseAttribute
 
     public double clampValue(double p_111109_1_)
     {
-        if (p_111109_1_ < this.minimumValue)
-        {
-            p_111109_1_ = this.minimumValue;
-        }
-
-        if (p_111109_1_ > this.maximumValue)
-        {
-            p_111109_1_ = this.maximumValue;
-        }
-
+        p_111109_1_ = MathHelper.clamp_double(p_111109_1_, this.minimumValue, this.maximumValue);
         return p_111109_1_;
     }
 }

@@ -1,28 +1,29 @@
 package net.minecraft.client.shader;
 
 import com.google.common.collect.Lists;
-import java.util.Iterator;
+import java.io.IOException;
 import java.util.List;
-import javax.vecmath.Matrix4f;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.WorldRenderer;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.resources.IResourceManager;
 import net.minecraft.client.util.JsonException;
-import org.lwjgl.opengl.GL11;
+import org.lwjgl.util.vector.Matrix4f;
 
 public class Shader
 {
     private final ShaderManager manager;
     public final Framebuffer framebufferIn;
     public final Framebuffer framebufferOut;
-    private final List listAuxFramebuffers = Lists.newArrayList();
-    private final List listAuxNames = Lists.newArrayList();
-    private final List listAuxWidths = Lists.newArrayList();
-    private final List listAuxHeights = Lists.newArrayList();
+    private final List<Object> listAuxFramebuffers = Lists.<Object>newArrayList();
+    private final List<String> listAuxNames = Lists.<String>newArrayList();
+    private final List<Integer> listAuxWidths = Lists.<Integer>newArrayList();
+    private final List<Integer> listAuxHeights = Lists.<Integer>newArrayList();
     private Matrix4f projectionMatrix;
-    private static final String __OBFID = "CL_00001042";
 
-    public Shader(IResourceManager p_i45089_1_, String p_i45089_2_, Framebuffer p_i45089_3_, Framebuffer p_i45089_4_) throws JsonException
+    public Shader(IResourceManager p_i45089_1_, String p_i45089_2_, Framebuffer p_i45089_3_, Framebuffer p_i45089_4_) throws JsonException, IOException
     {
         this.manager = new ShaderManager(p_i45089_1_, p_i45089_2_);
         this.framebufferIn = p_i45089_3_;
@@ -31,7 +32,7 @@ public class Shader
 
     public void deleteShader()
     {
-        this.manager.func_147988_a();
+        this.manager.deleteShader();
     }
 
     public void addAuxFramebuffer(String p_148041_1_, Object p_148041_2_, int p_148041_3_, int p_148041_4_)
@@ -44,15 +45,15 @@ public class Shader
 
     private void preLoadShader()
     {
-        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-        GL11.glDisable(GL11.GL_BLEND);
-        GL11.glDisable(GL11.GL_DEPTH_TEST);
-        GL11.glDisable(GL11.GL_ALPHA_TEST);
-        GL11.glDisable(GL11.GL_FOG);
-        GL11.glDisable(GL11.GL_LIGHTING);
-        GL11.glDisable(GL11.GL_COLOR_MATERIAL);
-        GL11.glEnable(GL11.GL_TEXTURE_2D);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        GlStateManager.disableBlend();
+        GlStateManager.disableDepth();
+        GlStateManager.disableAlpha();
+        GlStateManager.disableFog();
+        GlStateManager.disableLighting();
+        GlStateManager.disableColorMaterial();
+        GlStateManager.enableTexture2D();
+        GlStateManager.bindTexture(0);
     }
 
     public void setProjectionMatrix(Matrix4f p_148045_1_)
@@ -64,50 +65,47 @@ public class Shader
     {
         this.preLoadShader();
         this.framebufferIn.unbindFramebuffer();
-        float var2 = (float)this.framebufferOut.framebufferTextureWidth;
-        float var3 = (float)this.framebufferOut.framebufferTextureHeight;
-        GL11.glViewport(0, 0, (int)var2, (int)var3);
-        this.manager.func_147992_a("DiffuseSampler", this.framebufferIn);
+        float f = (float)this.framebufferOut.framebufferTextureWidth;
+        float f1 = (float)this.framebufferOut.framebufferTextureHeight;
+        GlStateManager.viewport(0, 0, (int)f, (int)f1);
+        this.manager.addSamplerTexture("DiffuseSampler", this.framebufferIn);
 
-        for (int var4 = 0; var4 < this.listAuxFramebuffers.size(); ++var4)
+        for (int i = 0; i < this.listAuxFramebuffers.size(); ++i)
         {
-            this.manager.func_147992_a((String)this.listAuxNames.get(var4), this.listAuxFramebuffers.get(var4));
-            this.manager.func_147984_b("AuxSize" + var4).func_148087_a((float)((Integer)this.listAuxWidths.get(var4)).intValue(), (float)((Integer)this.listAuxHeights.get(var4)).intValue());
+            this.manager.addSamplerTexture((String)this.listAuxNames.get(i), this.listAuxFramebuffers.get(i));
+            this.manager.getShaderUniformOrDefault("AuxSize" + i).set((float)((Integer)this.listAuxWidths.get(i)).intValue(), (float)((Integer)this.listAuxHeights.get(i)).intValue());
         }
 
-        this.manager.func_147984_b("ProjMat").func_148088_a(this.projectionMatrix);
-        this.manager.func_147984_b("InSize").func_148087_a((float)this.framebufferIn.framebufferTextureWidth, (float)this.framebufferIn.framebufferTextureHeight);
-        this.manager.func_147984_b("OutSize").func_148087_a(var2, var3);
-        this.manager.func_147984_b("Time").func_148090_a(p_148042_1_);
-        Minecraft var8 = Minecraft.getMinecraft();
-        this.manager.func_147984_b("ScreenSize").func_148087_a((float)var8.displayWidth, (float)var8.displayHeight);
-        this.manager.func_147995_c();
+        this.manager.getShaderUniformOrDefault("ProjMat").set(this.projectionMatrix);
+        this.manager.getShaderUniformOrDefault("InSize").set((float)this.framebufferIn.framebufferTextureWidth, (float)this.framebufferIn.framebufferTextureHeight);
+        this.manager.getShaderUniformOrDefault("OutSize").set(f, f1);
+        this.manager.getShaderUniformOrDefault("Time").set(p_148042_1_);
+        Minecraft minecraft = Minecraft.getMinecraft();
+        this.manager.getShaderUniformOrDefault("ScreenSize").set((float)minecraft.displayWidth, (float)minecraft.displayHeight);
+        this.manager.useShader();
         this.framebufferOut.framebufferClear();
         this.framebufferOut.bindFramebuffer(false);
-        GL11.glDepthMask(false);
-        GL11.glColorMask(true, true, true, false);
-        Tessellator var5 = Tessellator.instance;
-        var5.startDrawingQuads();
-        var5.setColorOpaque_I(-1);
-        var5.addVertex(0.0D, (double)var3, 500.0D);
-        var5.addVertex((double)var2, (double)var3, 500.0D);
-        var5.addVertex((double)var2, 0.0D, 500.0D);
-        var5.addVertex(0.0D, 0.0D, 500.0D);
-        var5.draw();
-        GL11.glDepthMask(true);
-        GL11.glColorMask(true, true, true, true);
-        this.manager.func_147993_b();
+        GlStateManager.depthMask(false);
+        GlStateManager.colorMask(true, true, true, true);
+        Tessellator tessellator = Tessellator.getInstance();
+        WorldRenderer worldrenderer = tessellator.getWorldRenderer();
+        worldrenderer.begin(7, DefaultVertexFormats.POSITION_COLOR);
+        worldrenderer.pos(0.0D, (double)f1, 500.0D).color(255, 255, 255, 255).endVertex();
+        worldrenderer.pos((double)f, (double)f1, 500.0D).color(255, 255, 255, 255).endVertex();
+        worldrenderer.pos((double)f, 0.0D, 500.0D).color(255, 255, 255, 255).endVertex();
+        worldrenderer.pos(0.0D, 0.0D, 500.0D).color(255, 255, 255, 255).endVertex();
+        tessellator.draw();
+        GlStateManager.depthMask(true);
+        GlStateManager.colorMask(true, true, true, true);
+        this.manager.endShader();
         this.framebufferOut.unbindFramebuffer();
         this.framebufferIn.unbindFramebufferTexture();
-        Iterator var6 = this.listAuxFramebuffers.iterator();
 
-        while (var6.hasNext())
+        for (Object object : this.listAuxFramebuffers)
         {
-            Object var7 = var6.next();
-
-            if (var7 instanceof Framebuffer)
+            if (object instanceof Framebuffer)
             {
-                ((Framebuffer)var7).unbindFramebufferTexture();
+                ((Framebuffer)object).unbindFramebufferTexture();
             }
         }
     }

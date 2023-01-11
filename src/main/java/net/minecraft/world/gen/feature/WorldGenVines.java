@@ -1,36 +1,34 @@
 package net.minecraft.world.gen.feature;
 
 import java.util.Random;
+import net.minecraft.block.BlockVine;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
-import net.minecraft.util.Direction;
-import net.minecraft.util.Facing;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.world.World;
 
 public class WorldGenVines extends WorldGenerator
 {
-    private static final String __OBFID = "CL_00000439";
-
-    public boolean generate(World p_76484_1_, Random p_76484_2_, int p_76484_3_, int p_76484_4_, int p_76484_5_)
+    public boolean generate(World worldIn, Random rand, BlockPos position)
     {
-        int var6 = p_76484_3_;
-
-        for (int var7 = p_76484_5_; p_76484_4_ < 128; ++p_76484_4_)
+        for (; position.getY() < 128; position = position.up())
         {
-            if (p_76484_1_.isAirBlock(p_76484_3_, p_76484_4_, p_76484_5_))
+            if (worldIn.isAirBlock(position))
             {
-                for (int var8 = 2; var8 <= 5; ++var8)
+                for (EnumFacing enumfacing : EnumFacing.Plane.HORIZONTAL.facings())
                 {
-                    if (Blocks.vine.canPlaceBlockOnSide(p_76484_1_, p_76484_3_, p_76484_4_, p_76484_5_, var8))
+                    if (Blocks.vine.canPlaceBlockOnSide(worldIn, position, enumfacing))
                     {
-                        p_76484_1_.setBlock(p_76484_3_, p_76484_4_, p_76484_5_, Blocks.vine, 1 << Direction.facingToDirection[Facing.oppositeSide[var8]], 2);
+                        IBlockState iblockstate = Blocks.vine.getDefaultState().withProperty(BlockVine.NORTH, Boolean.valueOf(enumfacing == EnumFacing.NORTH)).withProperty(BlockVine.EAST, Boolean.valueOf(enumfacing == EnumFacing.EAST)).withProperty(BlockVine.SOUTH, Boolean.valueOf(enumfacing == EnumFacing.SOUTH)).withProperty(BlockVine.WEST, Boolean.valueOf(enumfacing == EnumFacing.WEST));
+                        worldIn.setBlockState(position, iblockstate, 2);
                         break;
                     }
                 }
             }
             else
             {
-                p_76484_3_ = var6 + p_76484_2_.nextInt(4) - p_76484_2_.nextInt(4);
-                p_76484_5_ = var7 + p_76484_2_.nextInt(4) - p_76484_2_.nextInt(4);
+                position = position.add(rand.nextInt(4) - rand.nextInt(4), 0, rand.nextInt(4) - rand.nextInt(4));
             }
         }
 

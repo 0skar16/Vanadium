@@ -2,10 +2,9 @@ package net.minecraft.realms;
 
 import net.minecraft.world.storage.SaveFormatComparator;
 
-public class RealmsLevelSummary implements Comparable
+public class RealmsLevelSummary implements Comparable<RealmsLevelSummary>
 {
     private SaveFormatComparator levelSummary;
-    private static final String __OBFID = "CL_00001857";
 
     public RealmsLevelSummary(SaveFormatComparator p_i1109_1_)
     {
@@ -54,16 +53,11 @@ public class RealmsLevelSummary implements Comparable
 
     public long getSizeOnDisk()
     {
-        return this.levelSummary.func_154336_c();
+        return this.levelSummary.getSizeOnDisk();
     }
 
     public int compareTo(RealmsLevelSummary p_compareTo_1_)
     {
         return this.levelSummary.getLastTimePlayed() < p_compareTo_1_.getLastPlayed() ? 1 : (this.levelSummary.getLastTimePlayed() > p_compareTo_1_.getLastPlayed() ? -1 : this.levelSummary.getFileName().compareTo(p_compareTo_1_.getLevelId()));
-    }
-
-    public int compareTo(Object p_compareTo_1_)
-    {
-        return this.compareTo((RealmsLevelSummary)p_compareTo_1_);
     }
 }

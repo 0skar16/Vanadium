@@ -1,22 +1,29 @@
 package net.minecraft.block;
 
+import net.minecraft.block.material.MapColor;
 import net.minecraft.block.material.Material;
-import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
+import net.minecraft.stats.StatList;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityBeacon;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.EnumWorldBlockLayer;
+import net.minecraft.util.HttpUtil;
 import net.minecraft.world.World;
+import net.minecraft.world.WorldServer;
+import net.minecraft.world.chunk.Chunk;
 
 public class BlockBeacon extends BlockContainer
 {
-    private static final String __OBFID = "CL_00000197";
-
     public BlockBeacon()
     {
-        super(Material.glass);
+        super(Material.glass, MapColor.diamondColor);
         this.setHardness(3.0F);
         this.setCreativeTab(CreativeTabs.tabMisc);
     }
@@ -24,66 +31,126 @@ public class BlockBeacon extends BlockContainer
     /**
      * Returns a new instance of a block's tile entity class. Called on placing the block.
      */
-    public TileEntity createNewTileEntity(World p_149915_1_, int p_149915_2_)
+    public TileEntity createNewTileEntity(World worldIn, int meta)
     {
         return new TileEntityBeacon();
     }
 
-    /**
-     * Called upon block activation (right click on the block.)
-     */
-    public boolean onBlockActivated(World p_149727_1_, int p_149727_2_, int p_149727_3_, int p_149727_4_, EntityPlayer p_149727_5_, int p_149727_6_, float p_149727_7_, float p_149727_8_, float p_149727_9_)
+    public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumFacing side, float hitX, float hitY, float hitZ)
     {
-        if (p_149727_1_.isClient)
+        if (worldIn.isRemote)
         {
             return true;
         }
         else
         {
-            TileEntityBeacon var10 = (TileEntityBeacon)p_149727_1_.getTileEntity(p_149727_2_, p_149727_3_, p_149727_4_);
+            TileEntity tileentity = worldIn.getTileEntity(pos);
 
-            if (var10 != null)
+            if (tileentity instanceof TileEntityBeacon)
             {
-                p_149727_5_.func_146104_a(var10);
+                playerIn.displayGUIChest((TileEntityBeacon)tileentity);
+                playerIn.triggerAchievement(StatList.field_181730_N);
             }
 
             return true;
         }
     }
 
+    /**
+     * Used to determine ambient occlusion and culling when rebuilding chunks for render
+     */
     public boolean isOpaqueCube()
     {
         return false;
     }
 
-    public boolean renderAsNormalBlock()
+    public boolean isFullCube()
     {
         return false;
     }
 
     /**
-     * The type of render function that is called for this block
+     * The type of render function called. 3 for standard block models, 2 for TESR's, 1 for liquids, -1 is no render
      */
     public int getRenderType()
     {
-        return 34;
-    }
-
-    public void registerBlockIcons(IIconRegister p_149651_1_)
-    {
-        super.registerBlockIcons(p_149651_1_);
+        return 3;
     }
 
     /**
-     * Called when the block is placed in the world.
+     * Called by ItemBlocks after a block is set in the world, to allow post-place logic
      */
-    public void onBlockPlacedBy(World p_149689_1_, int p_149689_2_, int p_149689_3_, int p_149689_4_, EntityLivingBase p_149689_5_, ItemStack p_149689_6_)
+    public void onBlockPlacedBy(World worldIn, BlockPos pos, IBlockState state, EntityLivingBase placer, ItemStack stack)
     {
-        super.onBlockPlacedBy(p_149689_1_, p_149689_2_, p_149689_3_, p_149689_4_, p_149689_5_, p_149689_6_);
+        super.onBlockPlacedBy(worldIn, pos, state, placer, stack);
 
-        if (p_149689_6_.hasDisplayName())
+        if (stack.hasDisplayName())
         {
-            ((TileEntityBeacon)p_149689_1_.getTileEntity(p_149689_2_, p_149689_3_, p_149689_4_)).func_145999_a(p_149689_6_.getDisplayName());
+            TileEntity tileentity = worldIn.getTileEntity(pos);
+
+            if (tileentity instanceof TileEntityBeacon)
+            {
+                ((TileEntityBeacon)tileentity).setName(stack.getDisplayName());
+            }
         }
+    }
+
+    /**
+     * Called when a neighboring block changes.
+     */
+    public void onNeighborBlockChange(World worldIn, BlockPos pos, IBlockState state, Block neighborBlock)
+    {
+        TileEntity tileentity = worldIn.getTileEntity(pos);
+
+        if (tileentity instanceof TileEntityBeacon)
+        {
+            ((TileEntityBeacon)tileentity).updateBeacon();
+            worldIn.addBlockEvent(pos, this, 1, 0);
+        }
+    }
+
+    public EnumWorldBlockLayer getBlockLayer()
+    {
+        return EnumWorldBlockLayer.CUTOUT;
+    }
+
+    public static void updateColorAsync(final World worldIn, final BlockPos glassPos)
+    {
+        HttpUtil.field_180193_a.submit(new Runnable()
+        {
+            public void run()
+            {
+                Chunk chunk = worldIn.getChunkFromBlockCoords(glassPos);
+
+                for (int i = glassPos.getY() - 1; i >= 0; --i)
+                {
+                    final BlockPos blockpos = new BlockPos(glassPos.getX(), i, glassPos.getZ());
+
+                    if (!chunk.canSeeSky(blockpos))
+                    {
+                        break;
+                    }
+
+                    IBlockState iblockstate = worldIn.getBlockState(blockpos);
+
+                    if (iblockstate.getBlock() == Blocks.beacon)
+                    {
+                        ((WorldServer)worldIn).addScheduledTask(new Runnable()
+                        {
+                            public void run()
+                            {
+                                TileEntity tileentity = worldIn.getTileEntity(blockpos);
+
+                                if (tileentity instanceof TileEntityBeacon)
+                                {
+                                    ((TileEntityBeacon)tileentity).updateBeacon();
+                                    worldIn.addBlockEvent(blockpos, Blocks.beacon, 1, 0);
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+        });
     }
 }

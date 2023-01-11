@@ -1,54 +1,73 @@
 package net.minecraft.client.particle;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.OpenGlHelper;
-import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.WorldRenderer;
 import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.entity.Entity;
+import net.minecraft.src.Config;
 import net.minecraft.world.World;
-import org.lwjgl.opengl.GL11;
+import net.optifine.shaders.Program;
+import net.optifine.shaders.Shaders;
 
 public class EntityPickupFX extends EntityFX
 {
-    private Entity entityToPickUp;
-    private Entity entityPickingUp;
+    private Entity field_174840_a;
+    private Entity field_174843_ax;
     private int age;
     private int maxAge;
+    private float field_174841_aA;
+    private RenderManager field_174842_aB = Minecraft.getMinecraft().getRenderManager();
 
-    /** renamed from yOffset to fix shadowing Entity.yOffset */
-    private float yOffs;
-    private static final String __OBFID = "CL_00000930";
-
-    public EntityPickupFX(World p_i1233_1_, Entity p_i1233_2_, Entity p_i1233_3_, float p_i1233_4_)
+    public EntityPickupFX(World worldIn, Entity p_i1233_2_, Entity p_i1233_3_, float p_i1233_4_)
     {
-        super(p_i1233_1_, p_i1233_2_.posX, p_i1233_2_.posY, p_i1233_2_.posZ, p_i1233_2_.motionX, p_i1233_2_.motionY, p_i1233_2_.motionZ);
-        this.entityToPickUp = p_i1233_2_;
-        this.entityPickingUp = p_i1233_3_;
+        super(worldIn, p_i1233_2_.posX, p_i1233_2_.posY, p_i1233_2_.posZ, p_i1233_2_.motionX, p_i1233_2_.motionY, p_i1233_2_.motionZ);
+        this.field_174840_a = p_i1233_2_;
+        this.field_174843_ax = p_i1233_3_;
         this.maxAge = 3;
-        this.yOffs = p_i1233_4_;
+        this.field_174841_aA = p_i1233_4_;
     }
 
-    public void renderParticle(Tessellator p_70539_1_, float p_70539_2_, float p_70539_3_, float p_70539_4_, float p_70539_5_, float p_70539_6_, float p_70539_7_)
+    /**
+     * Renders the particle
+     */
+    public void renderParticle(WorldRenderer worldRendererIn, Entity entityIn, float partialTicks, float rotationX, float rotationZ, float rotationYZ, float rotationXY, float rotationXZ)
     {
-        float var8 = ((float)this.age + p_70539_2_) / (float)this.maxAge;
-        var8 *= var8;
-        double var9 = this.entityToPickUp.posX;
-        double var11 = this.entityToPickUp.posY;
-        double var13 = this.entityToPickUp.posZ;
-        double var15 = this.entityPickingUp.lastTickPosX + (this.entityPickingUp.posX - this.entityPickingUp.lastTickPosX) * (double)p_70539_2_;
-        double var17 = this.entityPickingUp.lastTickPosY + (this.entityPickingUp.posY - this.entityPickingUp.lastTickPosY) * (double)p_70539_2_ + (double)this.yOffs;
-        double var19 = this.entityPickingUp.lastTickPosZ + (this.entityPickingUp.posZ - this.entityPickingUp.lastTickPosZ) * (double)p_70539_2_;
-        double var21 = var9 + (var15 - var9) * (double)var8;
-        double var23 = var11 + (var17 - var11) * (double)var8;
-        double var25 = var13 + (var19 - var13) * (double)var8;
-        int var27 = this.getBrightnessForRender(p_70539_2_);
-        int var28 = var27 % 65536;
-        int var29 = var27 / 65536;
-        OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, (float)var28 / 1.0F, (float)var29 / 1.0F);
-        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-        var21 -= interpPosX;
-        var23 -= interpPosY;
-        var25 -= interpPosZ;
-        RenderManager.instance.func_147940_a(this.entityToPickUp, (double)((float)var21), (double)((float)var23), (double)((float)var25), this.entityToPickUp.rotationYaw, p_70539_2_);
+        Program program = null;
+
+        if (Config.isShaders())
+        {
+            program = Shaders.activeProgram;
+            Shaders.nextEntity(this.field_174840_a);
+        }
+
+        float f = ((float)this.age + partialTicks) / (float)this.maxAge;
+        f = f * f;
+        double d0 = this.field_174840_a.posX;
+        double d1 = this.field_174840_a.posY;
+        double d2 = this.field_174840_a.posZ;
+        double d3 = this.field_174843_ax.lastTickPosX + (this.field_174843_ax.posX - this.field_174843_ax.lastTickPosX) * (double)partialTicks;
+        double d4 = this.field_174843_ax.lastTickPosY + (this.field_174843_ax.posY - this.field_174843_ax.lastTickPosY) * (double)partialTicks + (double)this.field_174841_aA;
+        double d5 = this.field_174843_ax.lastTickPosZ + (this.field_174843_ax.posZ - this.field_174843_ax.lastTickPosZ) * (double)partialTicks;
+        double d6 = d0 + (d3 - d0) * (double)f;
+        double d7 = d1 + (d4 - d1) * (double)f;
+        double d8 = d2 + (d5 - d2) * (double)f;
+        int i = this.getBrightnessForRender(partialTicks);
+        int j = i % 65536;
+        int k = i / 65536;
+        OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, (float)j / 1.0F, (float)k / 1.0F);
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        d6 = d6 - interpPosX;
+        d7 = d7 - interpPosY;
+        d8 = d8 - interpPosZ;
+        this.field_174842_aB.renderEntityWithPosYaw(this.field_174840_a, (double)((float)d6), (double)((float)d7), (double)((float)d8), this.field_174840_a.rotationYaw, partialTicks);
+
+        if (Config.isShaders())
+        {
+            Shaders.setEntityId((Entity)null);
+            Shaders.useProgram(program);
+        }
     }
 
     /**

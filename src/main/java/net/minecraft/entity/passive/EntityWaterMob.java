@@ -1,17 +1,15 @@
 package net.minecraft.entity.passive;
 
-import net.minecraft.entity.EntityCreature;
+import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.DamageSource;
 import net.minecraft.world.World;
 
-public abstract class EntityWaterMob extends EntityCreature implements IAnimals
+public abstract class EntityWaterMob extends EntityLiving implements IAnimals
 {
-    private static final String __OBFID = "CL_00001653";
-
-    public EntityWaterMob(World p_i1695_1_)
+    public EntityWaterMob(World worldIn)
     {
-        super(p_i1695_1_);
+        super(worldIn);
     }
 
     public boolean canBreatheUnderwater()
@@ -24,7 +22,15 @@ public abstract class EntityWaterMob extends EntityCreature implements IAnimals
      */
     public boolean getCanSpawnHere()
     {
-        return this.worldObj.checkNoEntityCollision(this.boundingBox);
+        return true;
+    }
+
+    /**
+     * Checks that the entity is not colliding with any blocks / liquids
+     */
+    public boolean isNotColliding()
+    {
+        return this.worldObj.checkNoEntityCollision(this.getEntityBoundingBox(), this);
     }
 
     /**
@@ -46,7 +52,7 @@ public abstract class EntityWaterMob extends EntityCreature implements IAnimals
     /**
      * Get the experience points the entity currently has.
      */
-    protected int getExperiencePoints(EntityPlayer p_70693_1_)
+    protected int getExperiencePoints(EntityPlayer player)
     {
         return 1 + this.worldObj.rand.nextInt(3);
     }
@@ -56,13 +62,13 @@ public abstract class EntityWaterMob extends EntityCreature implements IAnimals
      */
     public void onEntityUpdate()
     {
-        int var1 = this.getAir();
+        int i = this.getAir();
         super.onEntityUpdate();
 
         if (this.isEntityAlive() && !this.isInWater())
         {
-            --var1;
-            this.setAir(var1);
+            --i;
+            this.setAir(i);
 
             if (this.getAir() == -20)
             {
@@ -74,5 +80,10 @@ public abstract class EntityWaterMob extends EntityCreature implements IAnimals
         {
             this.setAir(300);
         }
+    }
+
+    public boolean isPushedByWater()
+    {
+        return false;
     }
 }

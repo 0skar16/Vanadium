@@ -3,62 +3,53 @@ package net.minecraft.server.management;
 import com.google.gson.JsonObject;
 import com.mojang.authlib.GameProfile;
 import java.io.File;
-import java.util.Iterator;
 
-public class UserListWhitelist extends UserList
+public class UserListWhitelist extends UserList<GameProfile, UserListWhitelistEntry>
 {
-    private static final String __OBFID = "CL_00001871";
-
     public UserListWhitelist(File p_i1132_1_)
     {
         super(p_i1132_1_);
     }
 
-    protected UserListEntry func_152682_a(JsonObject p_152682_1_)
+    protected UserListEntry<GameProfile> createEntry(JsonObject entryData)
     {
-        return new UserListWhitelistEntry(p_152682_1_);
+        return new UserListWhitelistEntry(entryData);
     }
 
-    public String[] func_152685_a()
+    public String[] getKeys()
     {
-        String[] var1 = new String[this.func_152688_e().size()];
-        int var2 = 0;
-        UserListWhitelistEntry var4;
+        String[] astring = new String[this.getValues().size()];
+        int i = 0;
 
-        for (Iterator var3 = this.func_152688_e().values().iterator(); var3.hasNext(); var1[var2++] = ((GameProfile)var4.func_152640_f()).getName())
+        for (UserListWhitelistEntry userlistwhitelistentry : this.getValues().values())
         {
-            var4 = (UserListWhitelistEntry)var3.next();
+            astring[i++] = ((GameProfile)userlistwhitelistentry.getValue()).getName();
         }
 
-        return var1;
+        return astring;
     }
 
-    protected String func_152704_b(GameProfile p_152704_1_)
+    /**
+     * Gets the key value for the given object
+     */
+    protected String getObjectKey(GameProfile obj)
     {
-        return p_152704_1_.getId().toString();
+        return obj.getId().toString();
     }
 
-    public GameProfile func_152706_a(String p_152706_1_)
+    /**
+     * Gets the GameProfile for the UserListBanEntry with the specified username, if present
+     */
+    public GameProfile getBannedProfile(String name)
     {
-        Iterator var2 = this.func_152688_e().values().iterator();
-        UserListWhitelistEntry var3;
-
-        do
+        for (UserListWhitelistEntry userlistwhitelistentry : this.getValues().values())
         {
-            if (!var2.hasNext())
+            if (name.equalsIgnoreCase(((GameProfile)userlistwhitelistentry.getValue()).getName()))
             {
-                return null;
+                return (GameProfile)userlistwhitelistentry.getValue();
             }
-
-            var3 = (UserListWhitelistEntry)var2.next();
         }
-        while (!p_152706_1_.equalsIgnoreCase(((GameProfile)var3.func_152640_f()).getName()));
 
-        return (GameProfile)var3.func_152640_f();
-    }
-
-    protected String func_152681_a(Object p_152681_1_)
-    {
-        return this.func_152704_b((GameProfile)p_152681_1_);
+        return null;
     }
 }

@@ -9,7 +9,5 @@ public interface ICamera
      */
     boolean isBoundingBoxInFrustum(AxisAlignedBB p_78546_1_);
 
-    boolean isBoundingBoxInFrustumFully(AxisAlignedBB var1);
-
     void setPosition(double p_78547_1_, double p_78547_3_, double p_78547_5_);
 }

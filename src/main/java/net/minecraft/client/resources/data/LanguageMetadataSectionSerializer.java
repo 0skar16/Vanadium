@@ -6,53 +6,43 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import java.lang.reflect.Type;
-import java.util.HashSet;
-import java.util.Iterator;
+import java.util.Set;
 import java.util.Map.Entry;
 import net.minecraft.client.resources.Language;
 import net.minecraft.util.JsonUtils;
 
-public class LanguageMetadataSectionSerializer extends BaseMetadataSectionSerializer
+public class LanguageMetadataSectionSerializer extends BaseMetadataSectionSerializer<LanguageMetadataSection>
 {
-    private static final String __OBFID = "CL_00001111";
-
-    public LanguageMetadataSection deserialize(JsonElement p_deserialize_1_, Type p_deserialize_2_, JsonDeserializationContext p_deserialize_3_)
+    public LanguageMetadataSection deserialize(JsonElement p_deserialize_1_, Type p_deserialize_2_, JsonDeserializationContext p_deserialize_3_) throws JsonParseException
     {
-        JsonObject var4 = p_deserialize_1_.getAsJsonObject();
-        HashSet var5 = Sets.newHashSet();
-        Iterator var6 = var4.entrySet().iterator();
-        String var8;
-        String var10;
-        String var11;
-        boolean var12;
+        JsonObject jsonobject = p_deserialize_1_.getAsJsonObject();
+        Set<Language> set = Sets.<Language>newHashSet();
 
-        do
+        for (Entry<String, JsonElement> entry : jsonobject.entrySet())
         {
-            if (!var6.hasNext())
+            String s = (String)entry.getKey();
+            JsonObject jsonobject1 = JsonUtils.getJsonObject((JsonElement)entry.getValue(), "language");
+            String s1 = JsonUtils.getString(jsonobject1, "region");
+            String s2 = JsonUtils.getString(jsonobject1, "name");
+            boolean flag = JsonUtils.getBoolean(jsonobject1, "bidirectional", false);
+
+            if (s1.isEmpty())
             {
-                return new LanguageMetadataSection(var5);
+                throw new JsonParseException("Invalid language->\'" + s + "\'->region: empty value");
             }
 
-            Entry var7 = (Entry)var6.next();
-            var8 = (String)var7.getKey();
-            JsonObject var9 = JsonUtils.getJsonElementAsJsonObject((JsonElement)var7.getValue(), "language");
-            var10 = JsonUtils.getJsonObjectStringFieldValue(var9, "region");
-            var11 = JsonUtils.getJsonObjectStringFieldValue(var9, "name");
-            var12 = JsonUtils.getJsonObjectBooleanFieldValueOrDefault(var9, "bidirectional", false);
-
-            if (var10.isEmpty())
+            if (s2.isEmpty())
             {
-                throw new JsonParseException("Invalid language->\'" + var8 + "\'->region: empty value");
+                throw new JsonParseException("Invalid language->\'" + s + "\'->name: empty value");
             }
 
-            if (var11.isEmpty())
+            if (!set.add(new Language(s, s1, s2, flag)))
             {
-                throw new JsonParseException("Invalid language->\'" + var8 + "\'->name: empty value");
+                throw new JsonParseException("Duplicate language->\'" + s + "\' defined");
             }
         }
-        while (var5.add(new Language(var8, var10, var11, var12)));
 
-        throw new JsonParseException("Duplicate language->\'" + var8 + "\' defined");
+        return new LanguageMetadataSection(set);
     }
 
     /**

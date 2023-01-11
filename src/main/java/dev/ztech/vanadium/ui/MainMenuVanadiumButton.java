@@ -10,8 +10,8 @@ public class MainMenuVanadiumButton extends Button {
     }
     @Override
     public void draw(Session session){
-        this.button.x = new ScaledRes(Session.INSTANCE).scaledWidth / 2 + 104;
-        this.button.y = new ScaledRes(Session.INSTANCE).scaledHeight / 4 + 48 + 72 + 12;
+        this.button.xPosition = new ScaledRes(Session.INSTANCE).scaledWidth / 2 + 104;
+        this.button.yPosition = new ScaledRes(Session.INSTANCE).scaledHeight / 4 + 48 + 72 + 12;
         super.draw(session);
     }
     @Override

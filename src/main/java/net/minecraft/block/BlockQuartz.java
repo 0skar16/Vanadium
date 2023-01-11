@@ -3,145 +3,162 @@ package net.minecraft.block;
 import java.util.List;
 import net.minecraft.block.material.MapColor;
 import net.minecraft.block.material.Material;
-import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.block.properties.IProperty;
+import net.minecraft.block.properties.PropertyEnum;
+import net.minecraft.block.state.BlockState;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.IIcon;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.IStringSerializable;
 import net.minecraft.world.World;
 
 public class BlockQuartz extends Block
 {
-    public static final String[] field_150191_a = new String[] {"default", "chiseled", "lines"};
-    private static final String[] field_150189_b = new String[] {"side", "chiseled", "lines", null, null};
-    private IIcon[] field_150192_M;
-    private IIcon field_150193_N;
-    private IIcon field_150194_O;
-    private IIcon field_150190_P;
-    private IIcon field_150188_Q;
-    private static final String __OBFID = "CL_00000292";
+    public static final PropertyEnum<BlockQuartz.EnumType> VARIANT = PropertyEnum.<BlockQuartz.EnumType>create("variant", BlockQuartz.EnumType.class);
 
     public BlockQuartz()
     {
         super(Material.rock);
+        this.setDefaultState(this.blockState.getBaseState().withProperty(VARIANT, BlockQuartz.EnumType.DEFAULT));
         this.setCreativeTab(CreativeTabs.tabBlock);
     }
 
     /**
-     * Gets the block's texture. Args: side, meta
+     * Called by ItemBlocks just before a block is actually set in the world, to allow for adjustments to the
+     * IBlockstate
      */
-    public IIcon getIcon(int p_149691_1_, int p_149691_2_)
+    public IBlockState onBlockPlaced(World worldIn, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta, EntityLivingBase placer)
     {
-        if (p_149691_2_ != 2 && p_149691_2_ != 3 && p_149691_2_ != 4)
+        if (meta == BlockQuartz.EnumType.LINES_Y.getMetadata())
         {
-            if (p_149691_1_ != 1 && (p_149691_1_ != 0 || p_149691_2_ != 1))
+            switch (facing.getAxis())
             {
-                if (p_149691_1_ == 0)
-                {
-                    return this.field_150188_Q;
-                }
-                else
-                {
-                    if (p_149691_2_ < 0 || p_149691_2_ >= this.field_150192_M.length)
-                    {
-                        p_149691_2_ = 0;
-                    }
+                case Z:
+                    return this.getDefaultState().withProperty(VARIANT, BlockQuartz.EnumType.LINES_Z);
 
-                    return this.field_150192_M[p_149691_2_];
-                }
-            }
-            else
-            {
-                return p_149691_2_ == 1 ? this.field_150193_N : this.field_150190_P;
+                case X:
+                    return this.getDefaultState().withProperty(VARIANT, BlockQuartz.EnumType.LINES_X);
+
+                case Y:
+                default:
+                    return this.getDefaultState().withProperty(VARIANT, BlockQuartz.EnumType.LINES_Y);
             }
         }
         else
         {
-            return p_149691_2_ == 2 && (p_149691_1_ == 1 || p_149691_1_ == 0) ? this.field_150194_O : (p_149691_2_ == 3 && (p_149691_1_ == 5 || p_149691_1_ == 4) ? this.field_150194_O : (p_149691_2_ == 4 && (p_149691_1_ == 2 || p_149691_1_ == 3) ? this.field_150194_O : this.field_150192_M[p_149691_2_]));
+            return meta == BlockQuartz.EnumType.CHISELED.getMetadata() ? this.getDefaultState().withProperty(VARIANT, BlockQuartz.EnumType.CHISELED) : this.getDefaultState().withProperty(VARIANT, BlockQuartz.EnumType.DEFAULT);
         }
     }
 
-    public int onBlockPlaced(World p_149660_1_, int p_149660_2_, int p_149660_3_, int p_149660_4_, int p_149660_5_, float p_149660_6_, float p_149660_7_, float p_149660_8_, int p_149660_9_)
+    /**
+     * Gets the metadata of the item this Block can drop. This method is called when the block gets destroyed. It
+     * returns the metadata of the dropped item based on the old metadata of the block.
+     */
+    public int damageDropped(IBlockState state)
     {
-        if (p_149660_9_ == 2)
+        BlockQuartz.EnumType blockquartz$enumtype = (BlockQuartz.EnumType)state.getValue(VARIANT);
+        return blockquartz$enumtype != BlockQuartz.EnumType.LINES_X && blockquartz$enumtype != BlockQuartz.EnumType.LINES_Z ? blockquartz$enumtype.getMetadata() : BlockQuartz.EnumType.LINES_Y.getMetadata();
+    }
+
+    protected ItemStack createStackedBlock(IBlockState state)
+    {
+        BlockQuartz.EnumType blockquartz$enumtype = (BlockQuartz.EnumType)state.getValue(VARIANT);
+        return blockquartz$enumtype != BlockQuartz.EnumType.LINES_X && blockquartz$enumtype != BlockQuartz.EnumType.LINES_Z ? super.createStackedBlock(state) : new ItemStack(Item.getItemFromBlock(this), 1, BlockQuartz.EnumType.LINES_Y.getMetadata());
+    }
+
+    /**
+     * returns a list of blocks with the same ID, but different meta (eg: wood returns 4 blocks)
+     */
+    public void getSubBlocks(Item itemIn, CreativeTabs tab, List<ItemStack> list)
+    {
+        list.add(new ItemStack(itemIn, 1, BlockQuartz.EnumType.DEFAULT.getMetadata()));
+        list.add(new ItemStack(itemIn, 1, BlockQuartz.EnumType.CHISELED.getMetadata()));
+        list.add(new ItemStack(itemIn, 1, BlockQuartz.EnumType.LINES_Y.getMetadata()));
+    }
+
+    /**
+     * Get the MapColor for this Block and the given BlockState
+     */
+    public MapColor getMapColor(IBlockState state)
+    {
+        return MapColor.quartzColor;
+    }
+
+    /**
+     * Convert the given metadata into a BlockState for this Block
+     */
+    public IBlockState getStateFromMeta(int meta)
+    {
+        return this.getDefaultState().withProperty(VARIANT, BlockQuartz.EnumType.byMetadata(meta));
+    }
+
+    /**
+     * Convert the BlockState into the correct metadata value
+     */
+    public int getMetaFromState(IBlockState state)
+    {
+        return ((BlockQuartz.EnumType)state.getValue(VARIANT)).getMetadata();
+    }
+
+    protected BlockState createBlockState()
+    {
+        return new BlockState(this, new IProperty[] {VARIANT});
+    }
+
+    public static enum EnumType implements IStringSerializable
+    {
+        DEFAULT(0, "default", "default"),
+        CHISELED(1, "chiseled", "chiseled"),
+        LINES_Y(2, "lines_y", "lines"),
+        LINES_X(3, "lines_x", "lines"),
+        LINES_Z(4, "lines_z", "lines");
+
+        private static final BlockQuartz.EnumType[] META_LOOKUP = new BlockQuartz.EnumType[values().length];
+        private final int meta;
+        private final String field_176805_h;
+        private final String unlocalizedName;
+
+        private EnumType(int meta, String name, String unlocalizedName)
         {
-            switch (p_149660_5_)
-            {
-                case 0:
-                case 1:
-                    p_149660_9_ = 2;
-                    break;
-
-                case 2:
-                case 3:
-                    p_149660_9_ = 4;
-                    break;
-
-                case 4:
-                case 5:
-                    p_149660_9_ = 3;
-            }
+            this.meta = meta;
+            this.field_176805_h = name;
+            this.unlocalizedName = unlocalizedName;
         }
 
-        return p_149660_9_;
-    }
-
-    /**
-     * Determines the damage on the item the block drops. Used in cloth and wood.
-     */
-    public int damageDropped(int p_149692_1_)
-    {
-        return p_149692_1_ != 3 && p_149692_1_ != 4 ? p_149692_1_ : 2;
-    }
-
-    /**
-     * Returns an item stack containing a single instance of the current block type. 'i' is the block's subtype/damage
-     * and is ignored for blocks which do not support subtypes. Blocks which cannot be harvested should return null.
-     */
-    protected ItemStack createStackedBlock(int p_149644_1_)
-    {
-        return p_149644_1_ != 3 && p_149644_1_ != 4 ? super.createStackedBlock(p_149644_1_) : new ItemStack(Item.getItemFromBlock(this), 1, 2);
-    }
-
-    /**
-     * The type of render function that is called for this block
-     */
-    public int getRenderType()
-    {
-        return 39;
-    }
-
-    public void getSubBlocks(Item p_149666_1_, CreativeTabs p_149666_2_, List p_149666_3_)
-    {
-        p_149666_3_.add(new ItemStack(p_149666_1_, 1, 0));
-        p_149666_3_.add(new ItemStack(p_149666_1_, 1, 1));
-        p_149666_3_.add(new ItemStack(p_149666_1_, 1, 2));
-    }
-
-    public void registerBlockIcons(IIconRegister p_149651_1_)
-    {
-        this.field_150192_M = new IIcon[field_150189_b.length];
-
-        for (int var2 = 0; var2 < this.field_150192_M.length; ++var2)
+        public int getMetadata()
         {
-            if (field_150189_b[var2] == null)
-            {
-                this.field_150192_M[var2] = this.field_150192_M[var2 - 1];
-            }
-            else
-            {
-                this.field_150192_M[var2] = p_149651_1_.registerIcon(this.getTextureName() + "_" + field_150189_b[var2]);
-            }
+            return this.meta;
         }
 
-        this.field_150190_P = p_149651_1_.registerIcon(this.getTextureName() + "_" + "top");
-        this.field_150193_N = p_149651_1_.registerIcon(this.getTextureName() + "_" + "chiseled_top");
-        this.field_150194_O = p_149651_1_.registerIcon(this.getTextureName() + "_" + "lines_top");
-        this.field_150188_Q = p_149651_1_.registerIcon(this.getTextureName() + "_" + "bottom");
-    }
+        public String toString()
+        {
+            return this.unlocalizedName;
+        }
 
-    public MapColor getMapColor(int p_149728_1_)
-    {
-        return MapColor.field_151677_p;
+        public static BlockQuartz.EnumType byMetadata(int meta)
+        {
+            if (meta < 0 || meta >= META_LOOKUP.length)
+            {
+                meta = 0;
+            }
+
+            return META_LOOKUP[meta];
+        }
+
+        public String getName()
+        {
+            return this.field_176805_h;
+        }
+
+        static {
+            for (BlockQuartz.EnumType blockquartz$enumtype : values())
+            {
+                META_LOOKUP[blockquartz$enumtype.getMetadata()] = blockquartz$enumtype;
+            }
+        }
     }
 }

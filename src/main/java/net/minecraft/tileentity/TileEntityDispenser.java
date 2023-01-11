@@ -2,17 +2,19 @@ package net.minecraft.tileentity;
 
 import java.util.Random;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.InventoryPlayer;
+import net.minecraft.inventory.Container;
+import net.minecraft.inventory.ContainerDispenser;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 
-public class TileEntityDispenser extends TileEntity implements IInventory
+public class TileEntityDispenser extends TileEntityLockable implements IInventory
 {
-    private ItemStack[] field_146022_i = new ItemStack[9];
-    private Random field_146021_j = new Random();
-    protected String field_146020_a;
-    private static final String __OBFID = "CL_00000352";
+    private static final Random RNG = new Random();
+    private ItemStack[] stacks = new ItemStack[9];
+    protected String customName;
 
     /**
      * Returns the number of slots in the inventory.
@@ -23,41 +25,38 @@ public class TileEntityDispenser extends TileEntity implements IInventory
     }
 
     /**
-     * Returns the stack in slot i
+     * Returns the stack in the given slot.
      */
-    public ItemStack getStackInSlot(int p_70301_1_)
+    public ItemStack getStackInSlot(int index)
     {
-        return this.field_146022_i[p_70301_1_];
+        return this.stacks[index];
     }
 
     /**
-     * Removes from an inventory slot (first arg) up to a specified number (second arg) of items and returns them in a
-     * new stack.
+     * Removes up to a specified number of items from an inventory slot and returns them in a new stack.
      */
-    public ItemStack decrStackSize(int p_70298_1_, int p_70298_2_)
+    public ItemStack decrStackSize(int index, int count)
     {
-        if (this.field_146022_i[p_70298_1_] != null)
+        if (this.stacks[index] != null)
         {
-            ItemStack var3;
-
-            if (this.field_146022_i[p_70298_1_].stackSize <= p_70298_2_)
+            if (this.stacks[index].stackSize <= count)
             {
-                var3 = this.field_146022_i[p_70298_1_];
-                this.field_146022_i[p_70298_1_] = null;
-                this.onInventoryChanged();
-                return var3;
+                ItemStack itemstack1 = this.stacks[index];
+                this.stacks[index] = null;
+                this.markDirty();
+                return itemstack1;
             }
             else
             {
-                var3 = this.field_146022_i[p_70298_1_].splitStack(p_70298_2_);
+                ItemStack itemstack = this.stacks[index].splitStack(count);
 
-                if (this.field_146022_i[p_70298_1_].stackSize == 0)
+                if (this.stacks[index].stackSize == 0)
                 {
-                    this.field_146022_i[p_70298_1_] = null;
+                    this.stacks[index] = null;
                 }
 
-                this.onInventoryChanged();
-                return var3;
+                this.markDirty();
+                return itemstack;
             }
         }
         else
@@ -67,16 +66,15 @@ public class TileEntityDispenser extends TileEntity implements IInventory
     }
 
     /**
-     * When some containers are closed they call this on each slot, then drop whatever it returns as an EntityItem -
-     * like when you close a workbench GUI.
+     * Removes a stack from the given slot and returns it.
      */
-    public ItemStack getStackInSlotOnClosing(int p_70304_1_)
+    public ItemStack removeStackFromSlot(int index)
     {
-        if (this.field_146022_i[p_70304_1_] != null)
+        if (this.stacks[index] != null)
         {
-            ItemStack var2 = this.field_146022_i[p_70304_1_];
-            this.field_146022_i[p_70304_1_] = null;
-            return var2;
+            ItemStack itemstack = this.stacks[index];
+            this.stacks[index] = null;
+            return itemstack;
         }
         else
         {
@@ -84,45 +82,49 @@ public class TileEntityDispenser extends TileEntity implements IInventory
         }
     }
 
-    public int func_146017_i()
+    public int getDispenseSlot()
     {
-        int var1 = -1;
-        int var2 = 1;
+        int i = -1;
+        int j = 1;
 
-        for (int var3 = 0; var3 < this.field_146022_i.length; ++var3)
+        for (int k = 0; k < this.stacks.length; ++k)
         {
-            if (this.field_146022_i[var3] != null && this.field_146021_j.nextInt(var2++) == 0)
+            if (this.stacks[k] != null && RNG.nextInt(j++) == 0)
             {
-                var1 = var3;
+                i = k;
             }
         }
 
-        return var1;
+        return i;
     }
 
     /**
      * Sets the given item stack to the specified slot in the inventory (can be crafting or armor sections).
      */
-    public void setInventorySlotContents(int p_70299_1_, ItemStack p_70299_2_)
+    public void setInventorySlotContents(int index, ItemStack stack)
     {
-        this.field_146022_i[p_70299_1_] = p_70299_2_;
+        this.stacks[index] = stack;
 
-        if (p_70299_2_ != null && p_70299_2_.stackSize > this.getInventoryStackLimit())
+        if (stack != null && stack.stackSize > this.getInventoryStackLimit())
         {
-            p_70299_2_.stackSize = this.getInventoryStackLimit();
+            stack.stackSize = this.getInventoryStackLimit();
         }
 
-        this.onInventoryChanged();
+        this.markDirty();
     }
 
-    public int func_146019_a(ItemStack p_146019_1_)
+    /**
+     * Add the given ItemStack to this Dispenser. Return the Slot the Item was placed in or -1 if no free slot is
+     * available.
+     */
+    public int addItemStack(ItemStack stack)
     {
-        for (int var2 = 0; var2 < this.field_146022_i.length; ++var2)
+        for (int i = 0; i < this.stacks.length; ++i)
         {
-            if (this.field_146022_i[var2] == null || this.field_146022_i[var2].getItem() == null)
+            if (this.stacks[i] == null || this.stacks[i].getItem() == null)
             {
-                this.setInventorySlotContents(var2, p_146019_1_);
-                return var2;
+                this.setInventorySlotContents(i, stack);
+                return i;
             }
         }
 
@@ -130,75 +132,75 @@ public class TileEntityDispenser extends TileEntity implements IInventory
     }
 
     /**
-     * Returns the name of the inventory
+     * Get the name of this object. For players this returns their username
      */
-    public String getInventoryName()
+    public String getName()
     {
-        return this.isInventoryNameLocalized() ? this.field_146020_a : "container.dispenser";
+        return this.hasCustomName() ? this.customName : "container.dispenser";
     }
 
-    public void func_146018_a(String p_146018_1_)
+    public void setCustomName(String customName)
     {
-        this.field_146020_a = p_146018_1_;
+        this.customName = customName;
     }
 
     /**
-     * Returns if the inventory name is localized
+     * Returns true if this thing is named
      */
-    public boolean isInventoryNameLocalized()
+    public boolean hasCustomName()
     {
-        return this.field_146020_a != null;
+        return this.customName != null;
     }
 
-    public void readFromNBT(NBTTagCompound p_145839_1_)
+    public void readFromNBT(NBTTagCompound compound)
     {
-        super.readFromNBT(p_145839_1_);
-        NBTTagList var2 = p_145839_1_.getTagList("Items", 10);
-        this.field_146022_i = new ItemStack[this.getSizeInventory()];
+        super.readFromNBT(compound);
+        NBTTagList nbttaglist = compound.getTagList("Items", 10);
+        this.stacks = new ItemStack[this.getSizeInventory()];
 
-        for (int var3 = 0; var3 < var2.tagCount(); ++var3)
+        for (int i = 0; i < nbttaglist.tagCount(); ++i)
         {
-            NBTTagCompound var4 = var2.getCompoundTagAt(var3);
-            int var5 = var4.getByte("Slot") & 255;
+            NBTTagCompound nbttagcompound = nbttaglist.getCompoundTagAt(i);
+            int j = nbttagcompound.getByte("Slot") & 255;
 
-            if (var5 >= 0 && var5 < this.field_146022_i.length)
+            if (j >= 0 && j < this.stacks.length)
             {
-                this.field_146022_i[var5] = ItemStack.loadItemStackFromNBT(var4);
+                this.stacks[j] = ItemStack.loadItemStackFromNBT(nbttagcompound);
             }
         }
 
-        if (p_145839_1_.func_150297_b("CustomName", 8))
+        if (compound.hasKey("CustomName", 8))
         {
-            this.field_146020_a = p_145839_1_.getString("CustomName");
+            this.customName = compound.getString("CustomName");
         }
     }
 
-    public void writeToNBT(NBTTagCompound p_145841_1_)
+    public void writeToNBT(NBTTagCompound compound)
     {
-        super.writeToNBT(p_145841_1_);
-        NBTTagList var2 = new NBTTagList();
+        super.writeToNBT(compound);
+        NBTTagList nbttaglist = new NBTTagList();
 
-        for (int var3 = 0; var3 < this.field_146022_i.length; ++var3)
+        for (int i = 0; i < this.stacks.length; ++i)
         {
-            if (this.field_146022_i[var3] != null)
+            if (this.stacks[i] != null)
             {
-                NBTTagCompound var4 = new NBTTagCompound();
-                var4.setByte("Slot", (byte)var3);
-                this.field_146022_i[var3].writeToNBT(var4);
-                var2.appendTag(var4);
+                NBTTagCompound nbttagcompound = new NBTTagCompound();
+                nbttagcompound.setByte("Slot", (byte)i);
+                this.stacks[i].writeToNBT(nbttagcompound);
+                nbttaglist.appendTag(nbttagcompound);
             }
         }
 
-        p_145841_1_.setTag("Items", var2);
+        compound.setTag("Items", nbttaglist);
 
-        if (this.isInventoryNameLocalized())
+        if (this.hasCustomName())
         {
-            p_145841_1_.setString("CustomName", this.field_146020_a);
+            compound.setString("CustomName", this.customName);
         }
     }
 
     /**
-     * Returns the maximum stack size for a inventory slot.
+     * Returns the maximum stack size for a inventory slot. Seems to always be 64, possibly will be extended.
      */
     public int getInventoryStackLimit()
     {
@@ -208,20 +210,56 @@ public class TileEntityDispenser extends TileEntity implements IInventory
     /**
      * Do not make give this method the name canInteractWith because it clashes with Container
      */
-    public boolean isUseableByPlayer(EntityPlayer p_70300_1_)
+    public boolean isUseableByPlayer(EntityPlayer player)
     {
-        return this.worldObj.getTileEntity(this.field_145851_c, this.field_145848_d, this.field_145849_e) != this ? false : p_70300_1_.getDistanceSq((double)this.field_145851_c + 0.5D, (double)this.field_145848_d + 0.5D, (double)this.field_145849_e + 0.5D) <= 64.0D;
+        return this.worldObj.getTileEntity(this.pos) != this ? false : player.getDistanceSq((double)this.pos.getX() + 0.5D, (double)this.pos.getY() + 0.5D, (double)this.pos.getZ() + 0.5D) <= 64.0D;
     }
 
-    public void openInventory() {}
+    public void openInventory(EntityPlayer player)
+    {
+    }
 
-    public void closeInventory() {}
+    public void closeInventory(EntityPlayer player)
+    {
+    }
 
     /**
      * Returns true if automation is allowed to insert the given stack (ignoring stack size) into the given slot.
      */
-    public boolean isItemValidForSlot(int p_94041_1_, ItemStack p_94041_2_)
+    public boolean isItemValidForSlot(int index, ItemStack stack)
     {
         return true;
+    }
+
+    public String getGuiID()
+    {
+        return "minecraft:dispenser";
+    }
+
+    public Container createContainer(InventoryPlayer playerInventory, EntityPlayer playerIn)
+    {
+        return new ContainerDispenser(playerInventory, this);
+    }
+
+    public int getField(int id)
+    {
+        return 0;
+    }
+
+    public void setField(int id, int value)
+    {
+    }
+
+    public int getFieldCount()
+    {
+        return 0;
+    }
+
+    public void clear()
+    {
+        for (int i = 0; i < this.stacks.length; ++i)
+        {
+            this.stacks[i] = null;
+        }
     }
 }
