@@ -22,7 +22,14 @@ dependencies {
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.0'
     compileClasspath 'org.yaml:snakeyaml:1.33'
 }
-
+tasks.register('build_rust', Exec) {
+    workingDir("vanadium-rs");
+    commandLine(["cargo", "build", "--release"])
+}
+tasks.register("install_lib", Exec) {
+    dependsOn("build_rust")
+    commandLine(["cp", "vanadium-rs/target/release/libvanadium_rs.so", "src/main/resources/lib/"])
+}
 test {
     useJUnitPlatform()
 }
