@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import dev.ztech.vanadium.api.base.Session;
+import dev.ztech.vanadium.impl.base.SessionImpl;
 import dev.ztech.vanadium.api.rendering.gui.ApiGui;
 import dev.ztech.vanadium.api.rendering.gui.MainMenuIntegration;
 import net.minecraft.client.Minecraft;
@@ -685,7 +685,7 @@ public class GuiMainMenu extends GuiScreen implements GuiYesNoCallback
         }
         //V Draw MainMenuElements
         for (ApiGui el: MainMenuIntegration.getElements()){
-            el.draw(Session.INSTANCE);
+            el.draw(SessionImpl.getInstance());
         }
         super.drawScreen(mouseX, mouseY, partialTicks);
 

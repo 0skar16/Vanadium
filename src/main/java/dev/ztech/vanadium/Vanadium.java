@@ -1,24 +1,18 @@
 package dev.ztech.vanadium;
 
 import dev.ztech.vanadium.api.base.Base;
-import dev.ztech.vanadium.api.base.Session;
-import dev.ztech.vanadium.api.events.GTickEvent;
-import dev.ztech.vanadium.api.events.GameStartEvent;
-import dev.ztech.vanadium.api.events.InitEvent;
-import dev.ztech.vanadium.api.events.UnsafeTickEvent;
+import dev.ztech.vanadium.api.eventsystem.events.GTickEvent;
+import dev.ztech.vanadium.impl.base.SessionImpl;
+import dev.ztech.vanadium.api.eventsystem.EventManager;
+import dev.ztech.vanadium.api.eventsystem.EventTarget;
+import dev.ztech.vanadium.api.eventsystem.events.GameStartEvent;
+import dev.ztech.vanadium.api.eventsystem.events.InitEvent;
+import dev.ztech.vanadium.api.eventsystem.events.UnsafeTickEvent;
 import dev.ztech.vanadium.api.rendering.custom.ITexture;
-import dev.ztech.vanadium.api.rendering.custom.Renderer2D;
-import dev.ztech.vanadium.api.rendering.custom.Renderer3D;
-import dev.ztech.vanadium.api.rendering.custom.ResourceTexture;
 import dev.ztech.vanadium.api.rendering.gui.MainMenuIntegration;
-import dev.ztech.vanadium.events.EventManager;
-import dev.ztech.vanadium.events.EventTarget;
 import dev.ztech.vanadium.mod.ModLoader;
 import dev.ztech.vanadium.ui.MainMenuVanadiumButton;
 import net.minecraft.client.main.Main;
-
-import java.awt.*;
-import java.util.Arrays;
 
 public class Vanadium {
     public static Vanadium INSTANCE = new Vanadium();
@@ -36,11 +30,12 @@ public class Vanadium {
     }
     @EventTarget
     public void onGameStart(GameStartEvent e){
-        new InitEvent().call();
+        SessionImpl.INSTANCE = new SessionImpl();
+        new InitEvent(SessionImpl.getInstance()).call();
         ModLoader.loadModsToList(Base.modDir);
     }
     @EventTarget
     public void onTick(UnsafeTickEvent e){
-        Session.INSTANCE.getPlayer();
+        //SessionImpl.getInstance().getPlayer();
     }
 }

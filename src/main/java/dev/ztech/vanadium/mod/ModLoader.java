@@ -1,7 +1,8 @@
 package dev.ztech.vanadium.mod;
 
 import dev.ztech.vanadium.api.base.Base;
-import org.lwjgl.Sys;
+import dev.ztech.vanadium.api.mod.Mod;
+import dev.ztech.vanadium.api.mod.ModData;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;

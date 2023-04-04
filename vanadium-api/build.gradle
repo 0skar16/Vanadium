@@ -1,0 +1,27 @@
+plugins {
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+    id 'java'
+}
+
+group 'dev.ztech'
+version '1.8.9-0.1.04'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+    implementation 'org.yaml:snakeyaml:1.33'
+    implementation 'com.google.guava:guava:31.1-jre'
+}
+
+test {
+    useJUnitPlatform()
+}
+shadowJar {
+    relocate 'org.yaml', 'dev.ztech.vanadium.api.yaml'
+    relocate 'com.google.guava', 'dev.ztech.vanadium.api.guava'
+}
+tasks.jar.finalizedBy("shadowJar")

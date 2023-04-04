@@ -11,7 +11,6 @@ import java.util.Random;
 import java.util.concurrent.Callable;
 
 import com.google.gson.JsonSyntaxException;
-import dev.ztech.vanadium.api.events.GTickEvent;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockBed;
 import net.minecraft.block.material.Material;

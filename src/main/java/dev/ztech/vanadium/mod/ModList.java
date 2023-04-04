@@ -2,8 +2,11 @@ package dev.ztech.vanadium.mod;
 
 
 import dev.ztech.vanadium.api.base.Base;
-import dev.ztech.vanadium.api.events.InitEvent;
-import dev.ztech.vanadium.events.EventManager;
+import dev.ztech.vanadium.api.eventsystem.EventManager;
+import dev.ztech.vanadium.api.eventsystem.events.InitEvent;
+import dev.ztech.vanadium.api.mod.Mod;
+import dev.ztech.vanadium.api.mod.ModData;
+import dev.ztech.vanadium.impl.base.SessionImpl;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,7 +63,7 @@ public class ModList {
             e.printStackTrace();
         }finally {
             if(mod != null){
-                new InitEvent().call(mod);
+                new InitEvent(SessionImpl.getInstance()).call(mod);
             }
         }
     }

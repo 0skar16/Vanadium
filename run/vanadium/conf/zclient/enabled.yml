@@ -1,2 +1,2 @@
-{cpsfps: true, keystrokes: false, armorstatus: true, position: true, targethud: true,
-  arraylist: true, notifications: true, rainbow: false}
+{cpsfps: true, keystrokes: true, armorstatus: true, position: true, targethud: true,
+  arraylist: true, notifications: true, rainbow: true}

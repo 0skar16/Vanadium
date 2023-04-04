@@ -36,9 +36,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 import javax.imageio.ImageIO;
 
-import dev.ztech.vanadium.api.events.CTickEvent;
-import dev.ztech.vanadium.api.events.GameStartEvent;
-import dev.ztech.vanadium.api.events.UnsafeTickEvent;
+import dev.ztech.vanadium.api.eventsystem.events.CTickEvent;
+import dev.ztech.vanadium.api.eventsystem.events.GameStartEvent;
+import dev.ztech.vanadium.api.eventsystem.events.UnsafeTickEvent;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.client.audio.MusicTicker;

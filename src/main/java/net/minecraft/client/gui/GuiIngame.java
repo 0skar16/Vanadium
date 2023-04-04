@@ -7,7 +7,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 
-import dev.ztech.vanadium.api.events.GTickEvent;
+import dev.ztech.vanadium.api.eventsystem.events.GTickEvent;
 import net.minecraft.block.material.Material;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;

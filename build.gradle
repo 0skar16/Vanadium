@@ -1,9 +1,10 @@
 plugins {
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
     id 'java'
 }
 
 group 'dev.ztech'
-version '1.8.9-0.0.41'
+version '1.8.9-0.1.04'
 jar {
     manifest {
         attributes(
@@ -16,13 +17,21 @@ repositories {
 }
 
 dependencies {
-    implementation fileTree('libraries')
-    implementation 'org.yaml:snakeyaml:1.33'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.0'
-    compileClasspath 'org.yaml:snakeyaml:1.33'
+    implementation fileTree('libraries')
+    implementation 'org.yaml:snakeyaml:1.33'
+    implementation project(":vanadium-api")
 }
 
 test {
     useJUnitPlatform()
 }
+shadowJar {
+    relocate 'org.yaml', 'dev.ztech.vanadium.api.yaml'
+    dependencies {
+        include(dependency("dev.ztech:vanadium-api"))
+    }
+}
+
+tasks.jar.finalizedBy("shadowJar")
