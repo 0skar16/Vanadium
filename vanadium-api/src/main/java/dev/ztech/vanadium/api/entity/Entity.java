@@ -11,4 +11,5 @@ public interface Entity {
     Player toPlayer();
     boolean isPlayer();
     boolean equals(Entity e);
+    boolean isInvisible();
 }

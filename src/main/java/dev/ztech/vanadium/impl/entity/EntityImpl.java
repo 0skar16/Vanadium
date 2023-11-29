@@ -58,6 +58,11 @@ public class EntityImpl implements Entity {
     }
 
     @Override
+    public boolean isInvisible() {
+        return base.isInvisible();
+    }
+
+    @Override
     public boolean equals(Object o){
         if(o instanceof Entity){
             return base.equals(((EntityImpl) o).base);
